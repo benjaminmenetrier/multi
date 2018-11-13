@@ -12,9 +12,6 @@ use hmatrix
 
 implicit none
 
-private
-public :: planczos,planczosif
-
 contains
 
 !----------------------------------------------------------------------

@@ -9,9 +9,6 @@ module hmatrix
 
 implicit none
 
-private
-public :: apply_h,apply_h_ad,h_test
-
 contains
 
 !----------------------------------------------------------------------

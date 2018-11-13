@@ -7,20 +7,18 @@
 !----------------------------------------------------------------------
 module interp
 
+use bmatrix
 use fft
 
 implicit none
-
-private
-public :: interp_sp,interp_gp,interp_gp_b_inv,interp_gp_b,interp_test
 
 contains
 
 !----------------------------------------------------------------------
 ! Subroutine: interp_sp
-! Purpose: spectral interpolation with zero padding
+! Purpose: spectral interpolation (zero padding)
 !----------------------------------------------------------------------
-subroutine interp_sp(nntrunc,sptrunc,nn,lnorm,sp)
+subroutine interp_sp(nntrunc,sptrunc,nn,sp)
 
 implicit none
 
@@ -28,7 +26,6 @@ implicit none
 integer,intent(in) :: nntrunc
 real(8),intent(in) :: sptrunc(nntrunc)
 integer,intent(in) :: nn
-logical,intent(in) :: lnorm
 real(8),intent(out) :: sp(nn)
 
 ! Local variables
@@ -43,11 +40,9 @@ elseif (nntrunc<nn) then
    ! Copy 
    sp(1:nntrunc) = sptrunc
 
-   if (lnorm) then
-      ! Normalize
-      norm = sqrt(real(nn,8)/real(nntrunc,8))
-      sp = sp*norm
-   end if
+   ! Normalize
+   norm = sqrt(real(nn,8)/real(nntrunc,8))
+   sp = sp*norm
 
    ! Halve Nyquist frequency
    sp(nntrunc) = 0.5*sp(nntrunc)
@@ -57,9 +52,9 @@ end subroutine interp_sp
 
 !----------------------------------------------------------------------
 ! Subroutine: interp_gp
-! Purpose: grid-point interpolation with zero padding in spectral space
+! Purpose: grid-point interpolation (linear)
 !----------------------------------------------------------------------
-subroutine interp_gp(nntrunc,gptrunc,nn,lnorm,gp)
+subroutine interp_gp(nntrunc,gptrunc,nn,gp)
 
 implicit none
 
@@ -67,7 +62,74 @@ implicit none
 integer,intent(in) :: nntrunc
 real(8),intent(in) :: gptrunc(nntrunc)
 integer,intent(in) :: nn
-logical,intent(in) :: lnorm
+real(8),intent(out) :: gp(nn)
+
+! Local variables
+integer :: rat,itrunc,j,i
+real(8) :: r
+
+if (nntrunc==nn) then
+   gp = gptrunc
+elseif (nntrunc<nn) then
+   ! Initialize
+   rat = nn/nntrunc
+
+   ! Interpolate
+   do itrunc=1,nntrunc
+      do j=0,rat-1
+         i = (itrunc-1)*rat+j+1
+         r = real(j,8)/real(rat,8)
+         if (itrunc<nntrunc) then
+            gp(i) = r*gptrunc(itrunc+1)+(1.0-r)*gptrunc(itrunc)
+         else
+            gp(i) = r*gptrunc(1)+(1.0-r)*gptrunc(itrunc)
+         end if
+      end do
+   end do
+end if
+
+end subroutine interp_gp
+
+!----------------------------------------------------------------------
+! Subroutine: interp_sp_from_gp
+! Purpose: spectral interpolation from grid-point interpolation
+!----------------------------------------------------------------------
+subroutine interp_sp_from_gp(nntrunc,sptrunc,nn,sp)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: nntrunc
+real(8),intent(in) :: sptrunc(nntrunc)
+integer,intent(in) :: nn
+real(8),intent(out) :: sp(nn)
+
+! Local variables
+real(8) :: gptrunc(nntrunc),gp(nn)
+
+! Inverse FFT
+call sp2gp(nn,sptrunc,gptrunc)
+
+! Grid-point interpolation
+call interp_gp(nntrunc,gptrunc,nn,gp)
+
+! FFT
+call gp2sp(nn,gp,sp)
+
+end subroutine interp_sp_from_gp
+
+!----------------------------------------------------------------------
+! Subroutine: interp_gp_from_sp
+! Purpose: grid-point interpolation from spectral interpolation
+!----------------------------------------------------------------------
+subroutine interp_gp_from_sp(nntrunc,gptrunc,nn,gp)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: nntrunc
+real(8),intent(in) :: gptrunc(nntrunc)
+integer,intent(in) :: nn
 real(8),intent(out) :: gp(nn)
 
 ! Local variables
@@ -77,18 +139,54 @@ real(8) :: sptrunc(nntrunc),sp(nn)
 call gp2sp(nntrunc,gptrunc,sptrunc)
 
 ! Spectral interpolation
-call interp_sp(nntrunc,sptrunc,nn,lnorm,sp)
+call interp_sp(nntrunc,sptrunc,nn,sp)
 
 ! Inverse FFT
 call sp2gp(nn,sp,gp)
 
-end subroutine interp_gp
+end subroutine interp_gp_from_sp
 
 !----------------------------------------------------------------------
-! Subroutine: interp_gp_b_inv
-! Purpose: grid-point interpolation with zero padding in spectral space, specific for B^{-1} space
+! Subroutine: interp_planczos
+! Purpose: PLanczos interpolation
 !----------------------------------------------------------------------
-subroutine interp_gp_b_inv(nntrunc,sigmabtrunc,spvartrunc,gptrunc,nn,sigmab,spvar,lnorm,gp)
+subroutine interp_planczos(nntrunc,sigmabtrunc,spvartrunc,sptrunc,nn,sigmab,spvar,planczos_from_planczosif,interp_b,sp)
+
+implicit none
+
+! Passed variables
+integer,intent(in) :: nntrunc
+real(8),intent(in) :: sigmabtrunc(nntrunc)
+real(8),intent(in) :: spvartrunc(nntrunc)
+real(8),intent(in) :: sptrunc(nntrunc)
+integer,intent(in) :: nn
+real(8),intent(in) :: sigmab(nn)
+real(8),intent(in) :: spvar(nn)
+logical,intent(in) :: planczos_from_planczosif
+logical,intent(in) :: interp_b
+real(8),intent(out) :: sp(nn)
+
+! Local variables
+
+if (planczos_from_planczosif) then
+   ! Grid-point interpolation
+   if (interp_b) then
+      ! Reference is B space
+   else
+      ! Reference is inverse B space
+   end if
+else
+   ! Spectral interpolation 
+   call interp_sp(nntrunc,sptrunc,nn,sp)
+end if
+
+end subroutine interp_planczos
+
+!----------------------------------------------------------------------
+! Subroutine: interp_planczosif
+! Purpose: PLanczosIF interpolation
+!----------------------------------------------------------------------
+subroutine interp_planczosif(nntrunc,sigmabtrunc,spvartrunc,gptrunc,nn,sigmab,spvar,planczosif_from_planczos,interp_b,gp)
 
 implicit none
 
@@ -100,119 +198,35 @@ real(8),intent(in) :: gptrunc(nntrunc)
 integer,intent(in) :: nn
 real(8),intent(in) :: sigmab(nn)
 real(8),intent(in) :: spvar(nn)
-logical,intent(in) :: lnorm
+logical,intent(in) :: planczosif_from_planczos
+logical,intent(in) :: interp_b
 real(8),intent(out) :: gp(nn)
 
 ! Local variables
-integer :: i
-real(8) :: gptrunctmp(nntrunc)
 real(8) :: sptrunc(nntrunc),sp(nn)
+real(8) :: bgptrunc(nntrunc),b(nn),guess(nn)
 
-! Apply grid-point standard-deviation
-gptrunctmp = gptrunc*sigmabtrunc
-
-! FFT
-call gp2sp(nntrunc,gptrunctmp,sptrunc)
-
-! Apply spectral standard-deviation
-sptrunc = sptrunc*sqrt(spvartrunc)
-
-! Spectral interpolation
-call interp_sp(nntrunc,sptrunc,nn,lnorm,sp)
-
-! Apply spectral standard-deviation inverse
-do i=1,nn
-   if (spvar(i)>tiny(1.0)) then
-      sp(i) = sp(i)/sqrt(spvar(i))
+if (planczosif_from_planczos) then
+   ! Spectral interpolation
+   call apply_u_ad(nntrunc,sigmabtrunc,spvartrunc,gptrunc,sptrunc)  
+   call interp_sp(nntrunc,sptrunc,nn,sp)
+   call apply_u(nn,sigmab,spvar,sp,b)
+   call interp_gp(nntrunc,gptrunc,nn,guess)
+   call inverse_b(nn,sigmab,spvar,b,guess,gp)  
+else
+   ! Grid-point interpolation
+   if (interp_b) then
+      ! Reference is B space
+      call apply_b(nntrunc,sigmabtrunc,spvartrunc,gptrunc,bgptrunc)
+      call interp_gp(nntrunc,bgptrunc,nn,b)
+      call interp_gp(nntrunc,gptrunc,nn,guess)
+      call inverse_b(nn,sigmab,spvar,b,guess,gp)  
    else
-      sp(i) = 0.0
+      ! Reference is inverse B space
+      call interp_gp(nntrunc,gptrunc,nn,gp)
    end if
-end do
+end if
 
-! Inverse FFT
-call sp2gp(nn,sp,gp)
-
-! Apply grid-point standard-deviation inverse
-gp = gp/sigmab
-
-end subroutine interp_gp_b_inv
-
-!----------------------------------------------------------------------
-! Subroutine: interp_gp_b
-! Purpose: grid-point interpolation with zero padding in spectral space, specific for B space
-!----------------------------------------------------------------------
-subroutine interp_gp_b(nntrunc,sigmabtrunc,spvartrunc,gptrunc,nn,sigmab,spvar,lnorm,gp)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: nntrunc
-real(8),intent(in) :: sigmabtrunc(nntrunc)
-real(8),intent(in) :: spvartrunc(nntrunc)
-real(8),intent(in) :: gptrunc(nntrunc)
-integer,intent(in) :: nn
-real(8),intent(in) :: sigmab(nn)
-real(8),intent(in) :: spvar(nn)
-logical,intent(in) :: lnorm
-real(8),intent(out) :: gp(nn)
-
-! Local variables
-integer :: i
-real(8) :: gptrunctmp(nntrunc)
-real(8) :: sptrunc(nntrunc),sp(nn)
-
-! Apply grid-point standard-deviation inverse
-gptrunctmp = gptrunc/sigmabtrunc
-
-! Inverse adjoint FFT
-call sp2gp_ad(nntrunc,gptrunctmp,sptrunc)
-
-! Apply spectral standard-deviation inverse
-do i=1,nntrunc
-   if (spvartrunc(i)>tiny(1.0)) then
-      sptrunc(i) = sptrunc(i)/sqrt(spvartrunc(i))
-   else
-      sptrunc(i) = 0.0
-   end if
-end do
-
-! Spectral interpolation
-call interp_sp(nntrunc,sptrunc,nn,lnorm,sp)
-
-! Apply spectral standard-deviation
-sp = sp*sqrt(spvar)
-
-! Adjoint FFT
-call gp2sp_ad(nn,sp,gp)
-
-! Apply grid-point standard-deviation
-gp = gp*sigmab
-
-end subroutine interp_gp_b
-
-!----------------------------------------------------------------------
-! Subroutine: interp_test
-! Purpose: test interpolation
-!----------------------------------------------------------------------
-subroutine interp_test(nn)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: nn
-
-! Local variables
-real(8) :: gp(nn),gptrunc(nn/2)
-real(8) :: sp(nn),sptrunc(nn/2)
-
-! Interpolation test
-call random_number(gptrunc)
-call gp2sp(nn/2,gptrunc,sptrunc)
-call interp_sp(nn/2,sptrunc,nn,.true.,sp)
-call sp2gp(nn,sp,gp)
-call sp2gp(nn/2,sptrunc,gptrunc)
-write(*,'(a,e15.8)') 'Interpolation test:                      ',maxval(abs(gp(1:nn-1:2)-gptrunc))
-
-end subroutine interp_test
+end subroutine interp_planczosif
 
 end module interp

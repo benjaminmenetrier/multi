@@ -16,13 +16,16 @@ integer,parameter :: ni = 5
 integer,parameter :: n = 128
 real(8),parameter :: sigmao = 0.1
 logical :: full_res = .false.
-logical :: specific_interp = .true.
+logical :: planczos_from_planczosif = .true.
+logical :: planczosif_from_planczos = .false.
+logical :: interp_b = .false.
 logical :: no_update = .false.
 character(len=1024) :: lmp = 'spectral'
 
 ! Local variables
-integer :: nobs,io,jo,ii
+integer :: nobs,io,jo,ko,lo,ii
 integer,allocatable :: fac(:),nn(:),nprec(:)
+real(8) :: norm
 real(8),allocatable :: yo(:),d(:),hxg(:)
 real(8),allocatable :: xb(:),xg(:),xa(:),dxa(:),dxbbar(:,:),dxabar(:,:),dxabar_interp(:)
 real(8),allocatable :: sigmab(:,:),spvar(:,:)
@@ -31,7 +34,14 @@ real(8),allocatable :: xa_mse_planczos(:,:),xa_mse_planczosif(:,:)
 real(8),allocatable :: dx_planczos(:,:,:),dx_planczosif(:,:,:)
 real(8),allocatable :: ritzval(:,:),dxbarritzvec(:,:,:),dxritzvec(:,:,:)
 real(8),allocatable :: vb(:),dvb(:,:),dva(:,:),dva_interp(:),vritzvec(:,:,:)
-real(8),allocatable :: precvec(:,:,:,:)
+real(8),allocatable :: precvec(:,:,:,:),coef(:)
+real(8),allocatable :: xtmp1(:),xtmp2(:)
+
+! Check parameters
+if (planczos_from_planczosif.and.planczosif_from_planczos) then
+   write(*,'(a)') 'planczos_from_planczosif and planczosif_from_planczos should not be true together'
+   write(*,'(a)') 'planczosif_from_planczos and interp_b should not be true together'
+end if
 
 ! Set seed
 call set_seed(.false.)
@@ -39,13 +49,10 @@ call set_seed(.false.)
 ! FFT test
 call fft_test(n)
 
-! Interpolation test
-call interp_test(n)
-
 ! Number of observations
-nobs = n/2**no
+nobs = n/2**(no-1)
 write(*,'(a,i4)') 'Number of observations:                 ',nobs
-if (n/=nobs*2**no) then
+if (n/=nobs*2**(no-1)) then
    write(*,'(a)') 'Error: n should be related to the number of outer iterations'
    stop
 end if
@@ -86,6 +93,9 @@ allocate(dva(n,no))
 allocate(dva_interp(n))
 allocate(vritzvec(n,ni,no))
 allocate(precvec(n,ni,no,2))
+allocate(coef(ni))
+allocate(xtmp1(n))
+allocate(xtmp2(n))
 
 ! Setup observations
 call rand_normal(nobs,yo)
@@ -127,7 +137,7 @@ do io=1,no
       xg(1:nn(io)) = xb(1:nn(io))
    else
       xa(1:nn(io-1)) = xg(1:nn(io-1))+dxa(1:nn(io-1))
-      call interp_gp(nn(io-1),xa(1:nn(io-1)),nn(io),.true.,xg(1:nn(io)))
+      call interp_gp(nn(io-1),xa(1:nn(io-1)),nn(io),xg(1:nn(io)))
    end if
 
    ! Innovation
@@ -137,7 +147,7 @@ do io=1,no
    ! Background increment
    if (.not.no_update) then
       do jo=1,io-1
-         call interp_sp(nn(jo),dva(1:nn(jo),jo),nn(io),.true.,dva_interp(1:nn(io)))
+         call interp_planczos(nn(jo),sigmab(1:nn(jo),jo),spvar(1:nn(jo),jo),dva(1:nn(jo),jo),nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),planczos_from_planczosif,interp_b,dva_interp(1:nn(io)))
          dvb(1:nn(io),io) = dvb(1:nn(io),io)-dva_interp(1:nn(io))
       end do
    end if
@@ -153,13 +163,29 @@ do io=1,no
          nprec(io) = 0
       case ('spectral')
          do jo=1,io-1
+            ! Find valid vectors
             nprec(jo) = 0
             do ii=1,ni
-               if (ritzval(ii,jo)>1.0+1.0e-3) then
+               if (ritzval(ii,jo)>1.0+1.0e-6) then
                   nprec(jo) = nprec(jo)+1
-                  call interp_sp(nn(jo),(1.0-1.0/ritzval(ii,jo))*vritzvec(1:nn(jo),ii,jo),nn(io),.false.,precvec(1:nn(io),nprec(jo),jo,1))
-                  call interp_sp(nn(jo),vritzvec(1:nn(jo),ii,jo),nn(io),.false.,precvec(1:nn(io),nprec(jo),jo,2))
+                  call interp_planczos(nn(jo),sigmab(1:nn(jo),jo),spvar(1:nn(jo),jo),vritzvec(1:nn(jo),ii,jo),nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),planczos_from_planczosif,interp_b,precvec(1:nn(io),nprec(jo),jo,1))
+                  coef(nprec(jo)) = (1.0-1.0/ritzval(ii,jo))
                end if
+            end do
+
+            ! Renormalization
+            if (.not.planczos_from_planczosif) then
+               norm = sqrt(real(nn(jo),8)/real(nn(io),8))
+               precvec(1:nn(io),1:nprec(jo),jo,1) = precvec(1:nn(io),1:nprec(jo),jo,1)*norm            
+               precvec(1:nn(io),1:nprec(jo),jo,2) = precvec(1:nn(io),1:nprec(jo),jo,1)
+            end if
+
+            ! Apply coef
+            do ko=1,nprec(jo)
+               precvec(1:nn(io),ko,jo,1) = coef(ko)*precvec(1:nn(io),ko,jo,1)
+               xtmp1(1:nn(io)) = precvec(1:nn(io),ko,jo,2)
+               call apply_u(nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),precvec(1:nn(io),ko,jo,2),xtmp2(1:nn(io)))
+               write(*,*) io,jo,ko,xtmp1(1:5),xtmp2(1:5)
             end do
          end do
       case default
@@ -212,7 +238,7 @@ do io=1,no
       xg(1:nn(io)) = xb(1:nn(io))
    else
       xa(1:nn(io-1)) = xg(1:nn(io-1))+dxa(1:nn(io-1))
-      call interp_gp(nn(io-1),xa(1:nn(io-1)),nn(io),.true.,xg(1:nn(io)))
+      call interp_gp(nn(io-1),xa(1:nn(io-1)),nn(io),xg(1:nn(io)))
    end if
 
    ! Innovation
@@ -222,11 +248,7 @@ do io=1,no
    ! Background increment
    if (.not.no_update) then
       do jo=1,io-1
-         if (specific_interp) then
-            call interp_gp_b_inv(nn(jo),sigmab(1:nn(jo),jo),spvar(1:nn(jo),jo),dxabar(1:nn(jo),jo),nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),.true.,dxabar_interp(1:nn(io)))
-         else
-            call interp_gp(nn(jo),dxabar(1:nn(jo),jo),nn(io),.true.,dxabar_interp(1:nn(io)))
-         end if
+         call interp_planczosif(nn(jo),sigmab(1:nn(jo),jo),spvar(1:nn(jo),jo),dxabar(1:nn(jo),jo),nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),planczosif_from_planczos,interp_b,dxabar_interp(1:nn(io)))
          dxbbar(1:nn(io),io) = dxbbar(1:nn(io),io)-dxabar_interp(1:nn(io))
       end do
    end if
@@ -242,18 +264,31 @@ do io=1,no
          nprec(io) = 0
       case ('spectral')
          do jo=1,io-1
+            ! Find valid vectors
             nprec(jo) = 0
             do ii=1,ni
-               if (ritzval(ii,jo)>1.0+1.0e-3) then
+               if (ritzval(ii,jo)>1.0+1.0e-6) then
                   nprec(jo) = nprec(jo)+1
-                  if (specific_interp) then
-                     call interp_gp_b(nn(jo),sigmab(1:nn(jo),jo),spvar(1:nn(jo),jo),(1.0-1.0/ritzval(ii,jo))*dxritzvec(1:nn(jo),ii,jo),nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),.false.,precvec(1:nn(io),nprec(jo),jo,1))
-                     call interp_gp_b_inv(nn(jo),sigmab(1:nn(jo),jo),spvar(1:nn(jo),jo),dxbarritzvec(1:nn(jo),ii,jo),nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),.false.,precvec(1:nn(io),nprec(jo),jo,2))
-                  else
-                     call interp_gp(nn(jo),(1.0-1.0/ritzval(ii,jo))*dxritzvec(1:nn(jo),ii,jo),nn(io),.false.,precvec(1:nn(io),nprec(jo),jo,1))
-                     call interp_gp(nn(jo),dxbarritzvec(1:nn(jo),ii,jo),nn(io),.false.,precvec(1:nn(io),nprec(jo),jo,2))
-                  end if
+                  call interp_planczosif(nn(jo),sigmab(1:nn(jo),jo),spvar(1:nn(jo),jo),dxbarritzvec(1:nn(jo),ii,jo),nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),planczosif_from_planczos,interp_b,precvec(1:nn(io),nprec(jo),jo,2))
+                  call apply_b(nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),precvec(1:nn(io),nprec(jo),jo,2),precvec(1:nn(io),nprec(jo),jo,1))
+                  coef(nprec(jo)) = (1.0-1.0/ritzval(ii,jo))
                end if
+            end do
+
+            ! Renormalization
+            if (planczosif_from_planczos) then
+               norm = sqrt(real(nn(jo),8)/real(nn(io),8))
+               precvec(1:nn(io),1:nprec(jo),jo,1) = precvec(1:nn(io),1:nprec(jo),jo,1)*norm            
+               precvec(1:nn(io),1:nprec(jo),jo,2) = precvec(1:nn(io),1:nprec(jo),jo,2)*norm   
+            end if
+
+            ! Apply coef
+            do ko=1,nprec(jo)
+               xtmp1 = precvec(1:nn(io),ko,jo,1)
+               call apply_u_ad(nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),precvec(1:nn(io),ko,jo,2),xtmp1(1:nn(io)))
+               call apply_b(nn(io),sigmab(1:nn(io),io),spvar(1:nn(io),io),precvec(1:nn(io),ko,jo,2),xtmp2(1:nn(io)))
+               write(*,*) io,jo,ko,xtmp1(1:5),xtmp2(1:5)
+               precvec(1:nn(io),ko,jo,1) = coef(ko)*precvec(1:nn(io),ko,jo,1)
             end do
          end do
       case default

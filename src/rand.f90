@@ -9,9 +9,6 @@ module rand
 
 implicit none
 
-private
-public :: set_seed,rand_normal
-
 contains
 
 !----------------------------------------------------------------------

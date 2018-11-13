@@ -11,9 +11,6 @@ implicit none
 
 INCLUDE 'fftw3.f'
 
-private
-public :: gp2sp,gp2sp_ad,sp2gp,sp2gp_ad,fft_test
-
 contains
 !----------------------------------------------------------------------
 ! Subroutine: gp2sp
