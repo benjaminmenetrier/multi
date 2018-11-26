@@ -15,6 +15,8 @@ real(8),parameter :: pi = acos(-1.0)
 real(8),parameter :: Lb = 0.5e-1
 real(8),parameter :: spvarmin = 1.0e-4
 logical,parameter :: direct_inverse = .false.
+real(8),parameter :: tol = 1.0e-5
+integer,parameter :: niter = 50
 
 contains
 
@@ -35,7 +37,7 @@ integer :: i
 
 ! Compute grid-point variance
 do i=1,nn
-   sigmab(i) = 1.0!+0.5*sin(2*pi*real(i-1,8)/real(nn,8))
+   sigmab(i) = 1.0+0.5*sin(2*pi*real(i-1,8)/real(nn,8))
 end do
 
 end subroutine gp_variance
@@ -210,14 +212,11 @@ real(8),intent(in) :: b(nn)
 real(8),intent(in) :: guess(nn)
 real(8),intent(out) :: x(nn)
 
-! Parameter
-integer,parameter :: ni = 50
-
 ! Local variables
-integer :: ii,ji,ierr,nimax
-real(8) :: cost(0:ni),y(ni),rhs(ni),subdiag(ni-1),eigenval(ni),eigenvec(ni,ni),work(max(1,2*ni-2))
-real(8) :: alpha(0:ni),beta(0:ni+1)
-real(8) :: q(nn,ni),r0(nn),t(nn,0:ni),u(nn,0:ni),v(nn,0:ni+1),w(nn,0:ni),z(nn,0:ni+1),bx(nn)
+integer :: ii,ierr,nitermax
+real(8) :: cost(0:niter),y(niter),rhs(niter),subdiag(niter-1),eigenval(niter),eigenvec(niter,niter),work(max(1,2*niter-2))
+real(8) :: alpha(0:niter),beta(0:niter+1)
+real(8) :: q(nn,niter),r0(nn),t(nn,0:niter),u(nn,0:niter),v(nn,0:niter+1),w(nn,0:niter),z(nn,0:niter+1),bx(nn)
 real(8) :: rmse_rat
 
 ! Initialization
@@ -225,62 +224,66 @@ v(:,0) = 0.0
 u(:,0) = guess
 call apply_b(nn,sigmab,spvar,u(:,0),r0)
 r0 = b-r0
-call apply_b_inv_precond(nn,sigmab,spvar,r0,t(:,0))
-beta(0) = sqrt(sum(t(:,0)*r0))
-v(:,1) = r0/beta(0)
-z(:,1) = t(:,0)/beta(0)
-beta(1) = 0.0
-rhs = 0.0
-rhs(1) = beta(0)
-cost(0) = -0.5*sum(u(:,0)*r0)
-nimax = ni
+if (any(abs(r0)>0.0)) then
+   call apply_b_inv_precond(nn,sigmab,spvar,r0,t(:,0))
+   beta(0) = sqrt(sum(t(:,0)*r0))
+   v(:,1) = r0/beta(0)
+   z(:,1) = t(:,0)/beta(0)
+   beta(1) = 0.0
+   rhs = 0.0
+   rhs(1) = beta(0)
+   cost(0) = -0.5*sum(u(:,0)*r0)
+   nitermax = niter
 
-do ii=1,ni
-   ! Update
-   call apply_b(nn,sigmab,spvar,z(:,ii),q(:,ii))
-   q(:,ii) = q(:,ii)-beta(ii)*v(:,ii-1)
-   alpha(ii) = sum(q(:,ii)*z(:,ii))
-   w(:,ii) = q(:,ii)-alpha(ii)*v(:,ii)
-   call apply_b_inv_precond(nn,sigmab,spvar,w(:,ii),t(:,ii))
-   beta(ii+1) = sqrt(sum(t(:,ii)*w(:,ii)))
-   v(:,ii+1) = w(:,ii)/beta(ii+1)
-   z(:,ii+1) = t(:,ii)/beta(ii+1)
+   do ii=1,niter
+      ! Update
+      call apply_b(nn,sigmab,spvar,z(:,ii),q(:,ii))
+      q(:,ii) = q(:,ii)-beta(ii)*v(:,ii-1)
+      alpha(ii) = sum(q(:,ii)*z(:,ii))
+      w(:,ii) = q(:,ii)-alpha(ii)*v(:,ii)
+      call apply_b_inv_precond(nn,sigmab,spvar,w(:,ii),t(:,ii))
+      beta(ii+1) = sqrt(sum(t(:,ii)*w(:,ii)))
+      v(:,ii+1) = w(:,ii)/beta(ii+1)
+      z(:,ii+1) = t(:,ii)/beta(ii+1)
 
-   ! Compute eigenpairs
-   if (ii==1) then
-      eigenval(1) = alpha(1)
-      eigenvec(1,1) = 1.0
-   else
-      eigenval(1:ii) = alpha(1:ii)
-      subdiag(1:ii-1) = beta(2:ii)
-      call dsteqr('I',ii,eigenval(1:ii),subdiag(1:ii-1),eigenvec(1:ii,1:ii),ii,work(1:2*ii-2),ierr)
-      if (ierr/=0) then
-         write(*,'(a)') 'Error in dsteqr'
-         stop
+      ! Compute eigenpairs
+      if (ii==1) then
+         eigenval(1) = alpha(1)
+         eigenvec(1,1) = 1.0
+      else
+         eigenval(1:ii) = alpha(1:ii)
+         subdiag(1:ii-1) = beta(2:ii)
+         call dsteqr('I',ii,eigenval(1:ii),subdiag(1:ii-1),eigenvec(1:ii,1:ii),ii,work(1:2*ii-2),ierr)
+         if (ierr/=0) then
+            write(*,'(a)') 'Error in dsteqr'
+            stop
+         end if
+         eigenval(1:ii) = max(eigenval(1:ii),1.0)
       end if
-      eigenval(1:ii) = max(eigenval(1:ii),1.0)
-   end if
 
-   ! Update increment
-   y(1:ii) = matmul(eigenvec(1:ii,1:ii),matmul(transpose(eigenvec(1:ii,1:ii)),rhs(1:ii))/eigenval(1:ii))
-   u(:,ii) = u(:,0)+matmul(z(:,1:ii),y(1:ii))
+      ! Update increment
+      y(1:ii) = matmul(eigenvec(1:ii,1:ii),matmul(transpose(eigenvec(1:ii,1:ii)),rhs(1:ii))/eigenval(1:ii))
+      u(:,ii) = u(:,0)+matmul(z(:,1:ii),y(1:ii))
 
-   ! Cost function
-   cost(ii) = -0.5*sum(u(:,ii)*r0)
-   write(*,*) 'cost',cost(ii)
-   if (cost(ii)>cost(ii-1)) then
-      nimax = ii-1
-      exit
-   end if
-end do
+      ! Cost function
+      cost(ii) = -0.5*sum(u(:,ii)*r0)
+      if (cost(ii)>cost(ii-1)) then
+         nitermax = ii-1
+         exit
+      end if
+   end do
 
-! Copy final iterate
-x = u(:,nimax)
+   ! Copy final iterate
+   x = u(:,nitermax)
+else
+   ! Copy guess
+   x = guess
+end if
 
 ! Check RMSE ratio
 call apply_b(nn,sigmab,spvar,x,bx)
-rmse_rat = sqrt(sum((b-bx)**2)/sum((b)**2))
-if (rmse_rat>1.0e-6) then
+rmse_rat = sqrt(sum((b-bx)**2)/sum(b**2))
+if (rmse_rat>tol) then
    write(*,*) '      B inversion RMSE ratio:',rmse_rat
    stop
 end if
@@ -325,7 +328,7 @@ gp1 = 0.0
 gp1(1) = 1.0
 sigmab_one = 1.0
 call apply_b(nn,sigmab_one,spvar,gp1,gp2)
-write(*,'(a,e15.8)') 'B normalization test:                    ',gp2(1)
+write(*,'(a,f11.8)') 'B normalization test:                    ',gp2(1)
 write(*,'(a,e15.8)') 'Correlation conditioning number:         ',maxval(spvar)/minval(spvar)
 write(*,'(a,e15.8)') 'Correlation at obs separation:           ',gp2(dobs)
 write(*,'(a)',advance='no') 'Correlation shape:                       '
