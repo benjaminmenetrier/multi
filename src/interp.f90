@@ -192,8 +192,6 @@ if (present(lmp_planczosif)) then
          call lmp_apply_inv(nn(io-1),io-1,lmp_planczosif(1:io-1,io-1),cvec,evec)
 
          ! Final vector
-Write(*,*) 'test',lmp_planczosif(io,io)%ritzvec_trunc(1:5,ip)
-Write(*,*) 'tost',evec(1:5)
          lmp_planczosif(io,io)%ritzvec_trunc(1:nn(io-1),ip) = evec
       end do
 
@@ -230,8 +228,9 @@ Write(*,*) 'tost',evec(1:5)
          ! Apply Lanczos LMP square-root inverse
          call lmp_apply_sqrt_inv(nn(io),jo-1,lmp_lanczos(1:jo-1,io),bvec,avec)
 
-         ! Final vector
+         ! Final vectors
          lmp_lanczos(jo,io)%ritzvec(1:nn(io),ip) = avec
+         lmp_lanczos(jo,io)%vec1(1:nn(io),ip) = avec
       end do
    end do
  
@@ -262,15 +261,17 @@ else
          norm = sqrt(sum(lmp_lanczos(jo,io)%ritzvec(1:nn(io),ip)**2))
          lmp_lanczos(jo,io)%ritzvec(1:nn(io),ip) = lmp_lanczos(jo,io)%ritzvec(1:nn(io),ip)/norm
       end do
-      
-      if (orthotest) then
-         ! Test orthogonality
-         do ip=1,lmp_lanczos(jo,io)%np
-            do jp=1,lmp_lanczos(jo,io)%np
-               write(*,*) 'Ortho test',io,jo,ip,jp,sum(lmp_lanczos(jo,io)%ritzvec(1:nn(io),ip)*lmp_lanczos(jo,io)%ritzvec(1:nn(io),jp))
-            end do
+   end do
+end if
+
+if (orthotest) then
+   ! Test orthogonality
+   do jo=1,io
+      do ip=1,lmp_lanczos(jo,io)%np
+         do jp=1,lmp_lanczos(jo,io)%np
+            write(*,*) 'Lanczos ortho test',io,jo,ip,jp,sum(lmp_lanczos(jo,io)%ritzvec(1:nn(io),ip)*lmp_lanczos(jo,io)%ritzvec(1:nn(io),jp))
          end do
-      end if
+      end do
    end do
 end if
 
@@ -453,15 +454,17 @@ else
          lmp_planczosif(jo,io)%vec1(1:nn(io),ip) = lmp_planczosif(jo,io)%vec1(1:nn(io),ip)/norm
          lmp_planczosif(jo,io)%vec2(1:nn(io),ip) = lmp_planczosif(jo,io)%vec2(1:nn(io),ip)/norm
       end do
-   
-      if (orthotest) then
-         ! Test orthogonality
-         do ip=1,lmp_planczosif(jo,io)%np
-            do jp=1,lmp_planczosif(jo,io)%np
-               write(*,*) 'Ortho test',io,jo,ip,jp,sum(lmp_planczosif(jo,io)%ritzvec(1:nn(io),ip)*lmp_planczosif(jo,io)%vec1(1:nn(io),jp))
-            end do
+   end do
+end if
+
+if (orthotest) then
+   ! Test orthogonality
+   do jo=1,io
+      do ip=1,lmp_planczosif(jo,io)%np
+         do jp=1,lmp_planczosif(jo,io)%np
+            write(*,*) 'PLanczosIF ortho test',io,jo,ip,jp,sum(lmp_planczosif(jo,io)%ritzvec(1:nn(io),ip)*lmp_planczosif(jo,io)%vec1(1:nn(io),jp))
          end do
-      end if
+      end do
    end do
 end if
 

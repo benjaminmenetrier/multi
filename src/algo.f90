@@ -165,22 +165,22 @@ real(8) :: alpha(0:ni),beta(0:ni+1)
 real(8) :: dxb(nn),dxbar(nn,ni),q(nn,ni),r0(nn),tbar(nn,0:ni),t(nn,0:ni),v(nn,0:ni+1),w(nn,0:ni),zbar(nn,0:ni+1),z(nn,0:ni+1)
 
 ! Initialization
+v(:,0) = 0.0
 ytmp = d/sigmao**2
 call apply_h_ad(nobs,ytmp,nn,xtmp)
 r0 = dxbbar+xtmp
 call lmp_apply(nn,io,lmp,r0,tbar(:,0))
 call apply_b(nn,sigmab,spvar,tbar(:,0),t(:,0))
 beta(0) = sqrt(sum(r0*t(:,0)))
-beta(1) = 0.0
-v(:,0) = 0.0
 v(:,1) = r0/beta(0)
 zbar(:,1) = tbar(:,0)/beta(0)
 z(:,1) = t(:,0)/beta(0)
+beta(1) = 0.0
 rhs = 0.0
 rhs(1) = beta(0)
-call apply_b(nn,sigmab,spvar,dxbbar,dxb)
 
 ! Initialize cost function
+call apply_b(nn,sigmab,spvar,dxbbar,dxb)
 jb = 0.0
 jo = 0.0
 jb(0) = 0.5*sum((0.0-dxb)*(0.0-dxbbar))

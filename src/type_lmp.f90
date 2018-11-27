@@ -130,43 +130,26 @@ real(8),intent(in) :: x(nn)
 real(8),intent(out) :: px(nn)
 
 ! Local variables
-integer :: ii,nitermax
-real(8) :: rho(0:niter),alpha(0:niter),beta(niter+1),cost(0:niter),rmse_rat
-real(8) :: r(nn,0:niter),p(nn,0:niter),q(nn,0:niter),s(nn,0:niter),xtmp(nn)
+integer :: jo,ip
+real(8) :: pxtmp(nn)
+real(8) :: rmse_rat,xtmp(nn)
 
-if (io==1) then
-   ! No preconditioning vectors
-   px = x
-else
+! Initialization
+px = x
+
+! Previous outer loops
+do jo=1,io
    ! Initialization
-   s(:,0) = x
-   call lmp_apply(nn,io,lmp,s(:,0),r(:,0))
-   r(:,0) = x-r(:,0)
-   rho(0) = sum(r(:,0)**2)
-   p(:,0) = r(:,0)
-   cost(0) = 0.5*sum(s(:,0)*r(:,0))
-   nitermax = niter
-      
-   do ii=0,niter-1
-      ! Update
-      call lmp_apply(nn,io,lmp,p(:,ii),q(:,ii))
-      alpha(ii) = rho(ii)/sum(q(:,ii)*p(:,ii))
-      s(:,ii+1) = s(:,ii)+alpha(ii)*p(:,ii)
-      cost(ii+1) = cost(0)-0.5*sum(s(:,ii+1)*r(:,0))
-      if (cost(ii+1)<cost(ii)) then
-         r(:,ii+1) = r(:,ii)-alpha(ii)*q(:,ii)
-         rho(ii+1) = sum(r(:,ii+1)**2)
-         beta(ii+1) = rho(ii+1)/rho(ii)
-         p(:,ii+1) = r(:,ii+1)+beta(ii+1)*p(:,ii)
-      else
-         nitermax = ii
-         exit
-      end if
+   pxtmp = px
+
+   ! LMP inverse
+   do ip=1,lmp(jo)%np
+      pxtmp = pxtmp+lmp(jo)%ritzvec(:,ip)*(lmp(jo)%val(ip)-1.0)*sum(lmp(jo)%vec1(:,ip)*px)
    end do
 
-   ! Final iterate
-   px = s(:,nitermax)
-end if
+   ! Update
+   px = pxtmp
+end do
 
 ! Check RMSE ratio
 call lmp_apply(nn,io,lmp,px,xtmp)
@@ -271,54 +254,34 @@ real(8),intent(in) :: x(nn)
 real(8),intent(out) :: px(nn)
 
 ! Local variables
-integer :: ii,nitermax
-real(8) :: rho(0:niter),alpha(0:niter),beta(niter+1),cost(0:niter),rmse_rat
-real(8) :: r(nn,0:niter),p(nn,0:niter),q(nn,0:niter),s(nn,0:niter),xtmp(nn)
+integer :: jo,ip
+real(8) :: pxtmp(nn)
+real(8) :: rmse_rat,xtmp(nn)
 
-if (io==1) then
-   ! No preconditioning vectors
-   px = x
-else
+! Initialization
+px = x
+
+! Previous outer loops
+do jo=1,io
    ! Initialization
-   s(:,0) = x
-   call lmp_apply_sqrt(nn,io,lmp,s(:,0),r(:,0))
-   r(:,0) = x-r(:,0)
+   pxtmp = px
 
-   if (any(abs(r(:,0))>0.0)) then
-      rho(0) = sum(r(:,0)**2)
-      p(:,0) = r(:,0)
-      cost(0) = 0.5*sum(s(:,0)*r(:,0))
-      nitermax = niter
-      
-      do ii=0,niter-1
-         ! Update
-         call lmp_apply_sqrt(nn,io,lmp,p(:,ii),q(:,ii))
-         alpha(ii) = rho(ii)/sum(q(:,ii)*p(:,ii))
-         s(:,ii+1) = s(:,ii)+alpha(ii)*p(:,ii)
-         cost(ii+1) = cost(0)-0.5*sum(s(:,ii+1)*r(:,0))
-         if (cost(ii+1)<cost(ii)) then
-            r(:,ii+1) = r(:,ii)-alpha(ii)*q(:,ii)
-            rho(ii+1) = sum(r(:,ii+1)**2)
-            beta(ii+1) = rho(ii+1)/rho(ii)
-            p(:,ii+1) = r(:,ii+1)+beta(ii+1)*p(:,ii)
-         else
-            nitermax = ii
-            exit
-         end if
-      end do
+   ! LMP square-root inverse
+   do ip=1,lmp(jo)%np
+      pxtmp = pxtmp+lmp(jo)%vec1(:,ip)*(sqrt(lmp(jo)%val(ip))-1.0)*sum(lmp(jo)%vec1(:,ip)*px)
+   end do
 
-      ! Final iterate
-      px = s(:,nitermax)
-   else
-      ! Copy guess
-      px = s(:,0)
-   end if
-end if
+   ! Update
+   px = pxtmp
+end do
 
 ! Check RMSE ratio
 call lmp_apply_sqrt(nn,io,lmp,px,xtmp)
 rmse_rat = sqrt(sum((x-xtmp)**2)/sum(x**2))
 if (rmse_rat>tol) then
+   write(*,*) x(1:5)
+   write(*,*) px(1:5)
+   write(*,*) xtmp(1:5)
    write(*,*) '      LMP sqrt inversion RMSE ratio:',rmse_rat
    stop
 end if
