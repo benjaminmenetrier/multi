@@ -301,9 +301,11 @@ else
       end do
    end do
 
-   ! Print orthogonality/norm loss
-   if (ortho_loss) write(*,*) '     Orthogonalization loss in Lanczos'
-   if (norm_loss) write(*,*) '     Normalization loss in Lanczos'
+   if (orthotest) then
+      ! Print orthogonality/norm loss
+      if (ortho_loss) write(*,*) '     Orthogonalization loss in Lanczos'
+      if (norm_loss) write(*,*) '     Normalization loss in Lanczos'
+   end if
 end if
 
 if (orthotest) then
@@ -503,9 +505,11 @@ else
       end do
    end do
 
-   ! Print orthogonality/norm loss
-   if (ortho_loss) write(*,*) '     Orthogonalization loss in PLanczosIF'
-   if (norm_loss) write(*,*) '     Normalization loss in PLanczosIF'
+   if (orthotest) then
+      ! Print orthogonality/norm loss
+      if (ortho_loss) write(*,*) '     Orthogonalization loss in PLanczosIF'
+      if (norm_loss) write(*,*) '     Normalization loss in PLanczosIF'
+   end if
 end if
 
 if (orthotest) then
