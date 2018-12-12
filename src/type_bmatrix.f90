@@ -315,6 +315,10 @@ write(*,'(a,e15.8)') 'Direct U + adjoint U test:               ',sumgp-sumsp
 write(*,'(a,e15.8)') 'Correlation conditioning number:         ',maxval(bmatrix%spvar)/minval(bmatrix%spvar)
 write(*,'(a,e15.8)') 'Correlation at obs separation:           ',gp2(dobs)
 write(*,'(a)',advance='no') 'Correlation shape:                       '
+gp1 = 0.0
+gp1(1) = 1.0
+call bmatrix_apply(bmatrix,nn,gp1,gp2)
+gp2 = gp2/(bmatrix%sigmab(1)*bmatrix%sigmab)
 do i=1,nn/2
    if (abs(gp2(i))<5.0e-3) exit
    write(*,'(f5.2)',advance='no') gp2(i)
