@@ -2,11 +2,7 @@
 set (COMPILER GNU)
 #
 # Set your build type (DEBUG or RELEASE):
-set (BUILD_TYPE DEBUG)
-#
-# Set NetCDF directories
-set (EXTERN_NETCDF_INCLUDE $ENV{NETCDF}/include)
-set (EXTERN_NETCDF_LIBPATH $ENV{NETCDF}/lib)
+set (BUILD_TYPE RELEASE)
 #
 # Set FFTW3 directories
 set (EXTERN_FFTW3_INCLUDE /usr/include)
@@ -65,8 +61,8 @@ file (GLOB MULTI_SRC
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.f90"
 )
 add_executable (multi ${MULTI_SRC})
-include_directories (${EXTERN_NETCDF_INCLUDE} ${EXTERN_FFTW3_INCLUDE} ${EXTERN_LAPACK_INCLUDE})
-target_link_libraries(multi netcdff netcdf fftw3 lapack)
+include_directories (${EXTERN_FFTW3_INCLUDE} ${EXTERN_LAPACK_INCLUDE})
+target_link_libraries(multi fftw3 lapack)
 #
 #----------------------------------------------------------------------
 # Define compiler flags
@@ -79,7 +75,7 @@ if (${COMPILER} MATCHES "GNU")
 endif (${COMPILER} MATCHES "GNU")
 #
 # Set linker flags
-set (LINKER_FLAGS "-L${EXTERN_NETCDF_LIBPATH} -Wl,-rpath,${EXTERN_NETCDF_LIBPATH} -L${EXTERN_FFTW3_LIBPATH} -Wl,-rpath,${EXTERN_FFTW3_LIBPATH} -L${EXTERN_LAPACK_LIBPATH} -Wl,-rpath,${EXTERN_LAPACK_LIBPATH} -lnetcdff -lnetcdf -lfftw3 -llapack")
+set (LINKER_FLAGS "-L${EXTERN_FFTW3_LIBPATH} -Wl,-rpath,${EXTERN_FFTW3_LIBPATH} -L${EXTERN_LAPACK_LIBPATH} -Wl,-rpath,${EXTERN_LAPACK_LIBPATH} -lfftw3 -llapack")
 set_target_properties (multi PROPERTIES LINKER_LANGUAGE Fortran)
 set (CMAKE_EXE_LINKER_FLAGS ${LINKER_FLAGS})
 #

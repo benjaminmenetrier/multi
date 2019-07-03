@@ -13,12 +13,12 @@ use type_rmatrix
 implicit none
 
 ! Parameters
+integer,parameter :: n = 128                       ! Full resolution
 integer,parameter :: no = 3                        ! Number of outer iterations
 integer,parameter :: ni = 5                        ! Number of inner iterations
-integer,parameter :: n = 128                       ! Full resolution
-logical,parameter :: full_res = .false.            ! All outer iterations at full resolution if true
 character(len=1024),parameter :: lmp_mode = 'ritz' ! LMP mode ('none', 'spectral', 'ritz')
 logical,parameter :: new_seed = .true.             ! New random seed
+logical,parameter :: full_res = .false.            ! All outer iterations at full resolution if true
 
 ! Local variables
 integer :: nobs,io,jo,ii

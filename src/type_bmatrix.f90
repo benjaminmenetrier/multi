@@ -16,9 +16,8 @@ type bmatrix_type
    real(8),allocatable :: spvar(:)
 end type bmatrix_type
 
-real(8),parameter :: pi = acos(-1.0)
-real(8),parameter :: Lb = 5.0e-2
-real(8),parameter :: sigmabvar = 0.0
+real(8),parameter :: Lb = 5.0e-2     ! Correlation length-scale
+real(8),parameter :: sigmabvar = 0.0 ! Grid-point standard deviation variations amplitude
 
 contains
 
@@ -38,6 +37,7 @@ integer,intent(in) :: nnmax
 ! Local variables
 integer :: i
 real(8) :: spvar(nnmax),x(nnmax),v(nnmax)
+real(8),parameter :: pi = acos(-1.0)
 
 ! Check nnmax
 if (nn>nnmax) then
