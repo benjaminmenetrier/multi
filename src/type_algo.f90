@@ -22,11 +22,6 @@ type algo_type
    real(8),allocatable :: eigenvec(:,:)
    real(8),allocatable :: lancvec(:,:)
    real(8) :: lastbeta
-   real(8),allocatable :: pvec(:,:)
-   real(8),allocatable :: pbarvec(:,:)
-   real(8),allocatable :: qvec(:,:)
-   real(8),allocatable :: rvec(:,:)
-   real(8),allocatable :: tvec(:,:)
 end type algo_type
 
 contains
@@ -51,11 +46,6 @@ if (allocated(algo%jo)) deallocate(algo%jo)
 if (allocated(algo%eigenval)) deallocate(algo%eigenval)
 if (allocated(algo%eigenvec)) deallocate(algo%eigenvec)
 if (allocated(algo%lancvec)) deallocate(algo%lancvec)
-if (allocated(algo%pvec)) deallocate(algo%pvec)
-if (allocated(algo%pbarvec)) deallocate(algo%pbarvec)
-if (allocated(algo%qvec)) deallocate(algo%qvec)
-if (allocated(algo%rvec)) deallocate(algo%rvec)
-if (allocated(algo%tvec)) deallocate(algo%tvec)
 
 ! Allocation
 allocate(algo%dx(nn,ni))
@@ -64,11 +54,6 @@ allocate(algo%jo(0:ni))
 allocate(algo%eigenval(ni))
 allocate(algo%eigenvec(ni,ni))
 allocate(algo%lancvec(nn,ni+1))
-allocate(algo%pvec(nn,ni))
-allocate(algo%pbarvec(nn,ni))
-allocate(algo%qvec(nn,ni))
-allocate(algo%rvec(nn,ni))
-allocate(algo%tvec(nn,ni))
 
 end subroutine algo_alloc
 
@@ -144,7 +129,7 @@ do ii=1,ni
       subdiag(1:ii-1) = beta(2:ii)
       call dsteqr('I',ii,algo%eigenval(1:ii),subdiag(1:ii-1),algo%eigenvec(1:ii,1:ii),ii,work(1:2*ii-2),info)
       if (info/=0) then
-         write(*,*) 'Error in dsteqr: ',info
+         write(*,'(a,i2)') 'Error in dsteqr: ',info
          stop
       end if
       algo%eigenval(1:ii) = max(algo%eigenval(1:ii),1.0)
@@ -164,7 +149,7 @@ do ii=1,ni
 
    ! Check cost function
    if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
-      write(*,*) 'ERROR: increasing cost function in Lanczos'
+      write(*,'(a)') 'ERROR: increasing cost function in Lanczos'
       stop
    end if
 end do
@@ -190,34 +175,6 @@ do ii=1,ni
    alpha(ii-1) = sqrt(sum((s(:,ii)-s(:,ii-1))**2)/sum(p(:,ii-1)**2))
    q(:,ii-1) = -(r(:,ii)-r(:,ii-1))/alpha(ii-1)
 end do
-
-! Quasi-Newton vectors
-algo%pvec = p(:,0:ni-1)
-algo%qvec = q(:,0:ni-1)
-algo%rvec = r(:,0:ni-1)
-
-if (.false.) then
-   ! CG for test
-   rho(0) = sum(r(:,0)**2)
-   p(:,0) = r(:,0)
-   do ii=0,ni-1
-      call lmp_apply_sqrt(lmp,nn,ni,lmp%io,p(:,ii),vtmp)
-      call bmatrix_apply_sqrt(bmatrix,nn,vtmp,xtmp)
-      call hmatrix_apply(hmatrix,nn,xtmp,nobs,ytmp)
-      call rmatrix_apply_inv(rmatrix,nobs,ytmp,ytmp2)
-      call hmatrix_apply_ad(hmatrix,nobs,ytmp2,nn,xtmp)
-      call bmatrix_apply_sqrt_ad(bmatrix,nn,xtmp,vtmp2)
-      vtmp = vtmp+vtmp2
-      call lmp_apply_sqrt_ad(lmp,nn,ni,lmp%io,vtmp,q(:,ii))
-      alpha(ii) = rho(ii)/sum(q(:,ii)*p(:,ii))
-      s(:,ii+1) = s(:,ii)+alpha(ii)*p(:,ii)
-      r(:,ii+1) = r(:,ii)-alpha(ii)*q(:,ii)
-      rho(ii+1) = sum(r(:,ii+1)**2)
-      beta(ii+1) = rho(ii+1)/rho(ii)
-      p(:,ii+1) = r(:,ii+1)+beta(ii+1)*p(:,ii)
-   end do
-   write(*,*) '      Lanczos to CG test:',maxval(abs(algo%pvec-p(:,0:ni-1))),maxval(abs(algo%qvec-q(:,0:ni-1))),maxval(abs(algo%rvec-r(:,0:ni-1)))
-end if
 
 end subroutine algo_apply_lanczos
 
@@ -294,7 +251,7 @@ do ii=1,ni
       subdiag(1:ii-1) = beta(2:ii)
       call dsteqr('I',ii,algo%eigenval(1:ii),subdiag(1:ii-1),algo%eigenvec(1:ii,1:ii),ii,work(1:2*ii-2),info)
       if (info/=0) then
-         write(*,*) 'Error in dsteqr: ',info
+         write(*,'(a,i2)') 'Error in dsteqr: ',info
          stop
       end if
       algo%eigenval(1:ii) = max(algo%eigenval(1:ii),1.0)
@@ -314,7 +271,7 @@ do ii=1,ni
 
    ! Check cost function
    if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
-      write(*,*) 'ERROR: increasing cost function in PLanczosIF'
+      write(*,'(a)') 'ERROR: increasing cost function in PLanczosIF'
       stop
    end if
 end do
@@ -349,40 +306,6 @@ do ii=1,ni
    q(:,ii-1) = -(r(:,ii)-r(:,ii-1))/alpha(ii-1)
    t(:,ii-1) = -(l(:,ii)-l(:,ii-1))/alpha(ii-1)
 end do
-
-! Quasi-Newton vectors
-algo%pvec = p(:,0:ni-1)
-algo%pbarvec = pbar(:,0:ni-1)
-algo%qvec = q(:,0:ni-1)
-algo%tvec = t(:,0:ni-1)
-
-if (.false.) then
-   ! PCGIF for test
-   call bmatrix_apply(bmatrix,nn,r(:,0),l(:,0))
-   call lmp_apply(lmp,nn,ni,lmp%io,r(:,0),zbar(:,0))
-   call lmp_apply_ad(lmp,nn,ni,lmp%io,l(:,0),z(:,0))
-   rho(0) = sum(r(:,0)*z(:,0))
-   pbar(:,0) = zbar(:,0)
-   p(:,0) = z(:,0)
-   do ii=0,ni-1
-      call hmatrix_apply(hmatrix,nn,p(:,ii),nobs,ytmp)
-      call rmatrix_apply_inv(rmatrix,nobs,ytmp,ytmp2)
-      call hmatrix_apply_ad(hmatrix,nobs,ytmp2,nn,xtmp)
-      q(:,ii) = pbar(:,ii)+xtmp
-      alpha(ii) = rho(ii)/sum(q(:,ii)*p(:,ii))
-      s(:,ii+1) = s(:,ii)+alpha(ii)*pbar(:,ii)
-      r(:,ii+1) = r(:,ii)-alpha(ii)*q(:,ii)
-      call bmatrix_apply(bmatrix,nn,r(:,ii+1),l(:,ii+1))
-      t(:,ii) = -(l(:,ii+1)-l(:,ii))/alpha(ii)
-      call lmp_apply(lmp,nn,ni,lmp%io,r(:,ii+1),zbar(:,ii+1))
-      call lmp_apply_ad(lmp,nn,ni,lmp%io,l(:,ii+1),z(:,ii+1))
-      rho(ii+1) = sum(r(:,ii+1)*z(:,ii+1))
-      beta(ii+1) = rho(ii+1)/rho(ii)
-      pbar(:,ii+1) = zbar(:,ii+1)+beta(ii+1)*pbar(:,ii)
-      p(:,ii+1) = z(:,ii+1)+beta(ii+1)*p(:,ii)
-   end do
-   write(*,*) '     PLanczosIF to PCGIF test:',maxval(abs(algo%pvec-p(:,0:ni-1))),maxval(abs(algo%pbarvec-pbar(:,0:ni-1))),maxval(abs(algo%qvec-q(:,0:ni-1))),maxval(abs(algo%tvec-t(:,0:ni-1)))
-end if
 
 end subroutine algo_apply_planczosif
 
