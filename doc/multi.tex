@@ -1,0 +1,703 @@
+\documentclass[12pt]{scrartcl}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsbsy}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{bm}
+\usepackage{verbatim}
+\usepackage[english]{babel}
+\usepackage{color}
+\usepackage{url}
+\usepackage{fancybox}
+\usepackage[stable]{footmisc}
+\usepackage[format=plain,labelfont=bf]{caption}
+\usepackage{fancyhdr}
+\usepackage{natbib}
+\usepackage{calc}
+\usepackage{textcomp}
+\usepackage[pdftex,pdfborder={0 0 0}]{hyperref}
+\usepackage{pdfpages}
+\usepackage{tikz}
+\usetikzlibrary{shapes,backgrounds,fit,positioning}
+\usepackage{mathtools}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{placeins}
+
+\renewcommand*{\familydefault}{\sfdefault}
+
+% Margins
+\addtolength{\textheight}{1.0cm}
+\addtolength{\oddsidemargin}{-0.5cm}
+\addtolength{\evensidemargin}{-0.5cm}
+\addtolength{\textwidth}{1.0cm}
+\parindent=0em
+
+% New math commands
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\Diag}{Diag}
+\DeclareMathOperator{\tr}{tr}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Cor}{Cor}
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\setbox0\hbox{$#1#2$}%
+\copy0\kern-\wd0\mkern4mu\box0}} 
+
+% Appropriate font for \mathcal{}
+\DeclareSymbolFont{cmmathcal}{OMS}{cmsy}{m}{n}
+\DeclareSymbolFontAlphabet{\mathcal}{cmmathcal}
+
+% Set subscript and superscripts positions
+\everymath{
+\fontdimen13\textfont2=5pt
+\fontdimen14\textfont2=5pt
+\fontdimen15\textfont2=5pt
+\fontdimen16\textfont2=5pt
+\fontdimen17\textfont2=5pt
+}
+
+% Bibliography style
+\setlength{\bibsep}{1pt}
+
+% Part
+\renewcommand\partheadstartvskip{\clearpage\null\vfil}
+\renewcommand\partheadmidvskip{\par\nobreak\vskip 20pt\thispagestyle{empty}}
+\renewcommand\partheadendvskip{\vfil\clearpage}
+\renewcommand\raggedpart{\centering}
+
+\begin{document}
+
+\title{\vspace{-1.2cm}Multi-incremental multi-resolution variational method:\\ practical constraints}
+\author{Benjamin Ménétrier}
+\date{Last update: \today\vspace{-0.5cm}}
+
+\thispagestyle{empty}
+
+\maketitle
+
+\tableofcontents
+
+\section{Problem linearization}
+
+\subsection{Full cost function}
+The full cost function, nonquadratic, is defined as:
+\begin{align}
+\hspace{-0.7cm} \mathcal{J}(\mathbf{x}) = \frac{1}{2} \left(\mathbf{x}-\mathbf{x}^b\right)^\mathrm{T} \mathbf{B}^{-1} \left(\mathbf{x}-\mathbf{x}^b\right) + \frac{1}{2} \left(\mathbf{y}^o-\mathcal{H}(\mathbf{x})\right)^\mathrm{T} \mathbf{R}^{-1} \left(\mathbf{y}^o-\mathcal{H}(\mathbf{x})\right)
+\end{align}
+where:
+\begin{itemize}
+\item $\mathbf{x} \in \mathbb{R}^n$ is the state in model space,
+\item $\mathbf{x}^b \in \mathbb{R}^n$ is the background state,
+\item $\mathbf{R} \in \mathbb{B}^{n \times n}$ is the background error covariance matrix,
+\item $\mathbf{y}^o \in \mathbb{R}^p$ is the observation vector,
+\item $\mathbf{R} \in \mathbb{R}^{p \times p}$ is the observation error covariance matrix,
+\item $\mathcal{H} : \mathbb{R}^n \rightarrow \mathbb{R}^p$ is the observation operator, nonlinear.
+\end{itemize}
+
+\subsection{Operators linearization}
+The guess state $\mathbf{x}^g_k \in \mathbb{R}^n$ is introduced to define the increment:
+\begin{align}
+\delta \mathbf{x}_k =  \mathbf{x}-\mathbf{x}^g_k
+\end{align}
+and to linearize the observation operator for $\mathbf{x} \approx \mathbf{x}^g_k$:
+\begin{align}
+\label{eq:linearize}
+\mathcal{H}(\mathbf{x}) & \approx \mathcal{H}(\mathbf{x}^g_k) + \mathbf{H}_k \delta \mathbf{x}_k
+\end{align}
+where $\mathbf{H}_k \in \mathbb{R}^{p \times m}$ is the observation operator linearized around $\mathbf{x}^g_k$:
+\begin{align}
+H_{k,ij} = \left.\frac{\partial \mathcal{H}_i}{\partial x_j}\right|_{\mathbf{x} = \mathbf{x}^g_k}
+\end{align}
+
+\subsection{Quadratic cost function}
+Instead of minimizing the full cost function $\mathcal{J}(\mathbf{x})$, we minimize successive quadratic approximations around the guess $\mathbf{x}^g_k$, which can be written as:
+\begin{align}
+\label{eq:cost_quad}
+J \left(\delta \mathbf{x}_k\right) = \frac{1}{2} \left(\delta \mathbf{x}_k-\delta \mathbf{x}^b_k\right)^\mathrm{T} \mathbf{B}^{-1} \left(\delta \mathbf{x}_k-\delta \mathbf{x}^b_k\right) + \frac{1}{2} \left(\mathbf{d}_k - \mathbf{H}_k \delta \mathbf{x}_k\right)^\mathrm{T} \mathbf{R}^{-1} \left(\mathbf{d}_k - \mathbf{H}_k \delta \mathbf{x}_k\right)
+\end{align}
+where:
+\begin{itemize}
+\item $\delta \mathbf{x}^b_k  \in \mathbb{R}^n$ is the background increment:
+\begin{align}
+\delta \mathbf{x}^b_k = \mathbf{x}^b - \mathbf{x}^g_k
+\end{align}
+\item $\mathbf{d}_k \in \mathbb{R}^p$ is the innovation vector:
+\begin{align}
+\mathbf{d}_k = \mathbf{y}^o - \mathcal{H}(\mathbf{x}^g_k)
+\end{align}
+\end{itemize}
+
+\subsection{Linear system}
+Setting the gradient of $J(\delta \mathbf{x}_k)$ to zero gives the analysis increment $\delta \mathbf{x}^a_k$:
+\begin{align}
+\label{eq:inc}
+& \ \mathbf{B}^{-1} \left(\delta \mathbf{x}^a_k - \delta \mathbf{x}^b_k\right) - \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \left(\mathbf{d}_k - \mathbf{H}_k \delta \mathbf{x}^a_k\right) = 0 \nonumber \\
+\Leftrightarrow & \ \left(\mathbf{B}^{-1} + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k\right) \delta \mathbf{x}^a_k = \mathbf{B}^{-1} \delta \mathbf{x}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k \nonumber \\
+\Leftrightarrow & \ \mathbf{A}^\mathbf{x}_k \delta \mathbf{x}^a_k = \mathbf{b}^\mathbf{x}_k
+\end{align}
+with $\mathbf{A}^\mathbf{x}_k \in \mathbb{R}^{n \times n}$ and $\mathbf{b}^\mathbf{x}_k \in \mathbb{R}^{n}$ defined as:
+\begin{align}
+\mathbf{A}^\mathbf{x}_k & = \mathbf{B}^{-1} + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \\
+\mathbf{b}^\mathbf{x}_k & = \mathbf{B}^{-1} \delta \mathbf{x}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k
+\end{align}
+
+
+
+
+\section{Iterative solvers and preconditionings}
+For high-dimensional problems, linear system \eqref{eq:inc} can be solved with iterative methods, for instance the Lanczos method. Preconditioners are useful to accelerate the convergence. This section is based on \citet{gurol_phd_2013}.
+
+\subsection{Full $\mathbf{B}$ preconditioning}
+A new variable $\delta \overline{\mathbf{x}}_k \in \mathbb{R}^n$ is defined as:
+\begin{align}
+\delta \overline{\mathbf{x}}_k = \mathbf{B}_k^{-1} \delta \mathbf{x}_k \ \Leftrightarrow \ \delta \mathbf{x}_k = \mathbf{B}_k \delta \overline{\mathbf{x}}_k
+\end{align}
+Linear system \eqref{eq:inc} is transformed into:
+\begin{align}
+\label{eq:inc_B}
+\mathbf{A}^{\overline{\mathbf{x}}}_k \delta \overline{\mathbf{x}}^a_k = \mathbf{b}^{\overline{\mathbf{x}}}_k
+\end{align}
+with $\mathbf{A}^{\overline{\mathbf{x}}}_k \in \mathbb{R}^{n \times n}$ and $\mathbf{b}^{\overline{\mathbf{x}}}_k \in \mathbb{R}^{n}$ defined as:
+\begin{align}
+\mathbf{A}^{\overline{\mathbf{x}}}_k & = \mathbf{I}_n + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \mathbf{B}_k \\
+\mathbf{b}^{\overline{\mathbf{x}}}_k & =  \delta \overline{\mathbf{x}}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k
+\end{align}
+
+
+The PLanczosIF method with a preconditioner $\mathbf{P}_k = \mathbf{B}\mathbf{C}_k$, where $\mathbf{C}_k \in \mathbb{R}^{n \times n}$ and $\mathbf{P}_k \in \mathbb{R}^{n \times n}$ is detailed in algorithm \ref{algo:planczosif}.\\
+
+A common (but not unique) way to define the preconditioner $\mathbf{P}_k = \mathbf{B}\mathbf{C}_k$ is to use the spectral Limited Memory Preconditioner (LMP) approximated from the Ritz pairs:
+\begin{itemize}
+\item For the first outer iteration ($k=1$): $\mathbf{C}_1 = \mathbf{I}_n$.
+\item For subsequent outer iteration ($k>1$):
+\begin{align}
+\mathbf{C}_{k+1} = \mathbf{C}_k + \overline{\mathbf{V}}_k \left(\mathbf{\Lambda}_k^{-1} - \mathbf{I}_{I_k}\right) \mathbf{V}_k^\mathrm{T}
+\end{align}
+where
+\begin{align}
+\overline{\mathbf{V}}_k & = \mathbf{C}_k \underline{\overline{\mathbf{V}}}_k \\
+\mathbf{V}_k & = \mathbf{B} \overline{\mathbf{V}}_k
+\end{align}
+\end{itemize}
+It should be noted that the Ritz vectors are orthogonal with respect to the $\mathbf{P}_k$-inner product:
+\begin{align}
+\underline{\overline{\mathbf{V}}}_k^\mathrm{T} \mathbf{P}_k \underline{\overline{\mathbf{V}}}_k = \mathbf{I}_{I_k}
+\end{align}
+As a consequence, the inverse of $\mathbf{C}_{k+1}$ can be easily computed from the Woodbury matrix identity:
+\begin{align}
+\mathbf{C}_{k+1}^{-1} & = \mathbf{C}_k^{-1} - \mathbf{C}_k^{-1} \overline{\mathbf{V}}_k \left(\left(\mathbf{\Lambda}_k^{-1} - \mathbf{I}_{I_k}\right)^{-1}+\mathbf{V}_k^\mathrm{T} \mathbf{C}_k^{-1} \overline{\mathbf{V}}_k\right)^{-1} \mathbf{V}_k^\mathrm{T} \mathbf{C}_k^{-1} \nonumber \\
+& = \left(\mathbf{I}_n-\underline{\overline{\mathbf{V}}}_k \left(\left(\mathbf{\Lambda}_k^{-1} - \mathbf{I}_{I_k}\right)^{-1}+\mathbf{I}_{I_k}\right)^{-1} \mathbf{V}_k^\mathrm{T}\right)\mathbf{C}_k^{-1} \nonumber \\
+& = \left(\mathbf{I}_n+\underline{\overline{\mathbf{V}}}_k \left(\mathbf{\Lambda}_k-\mathbf{I}_{I_k}\right) \mathbf{V}_k^\mathrm{T}\right)\mathbf{C}_k^{-1}
+\end{align}
+
+\begin{algorithm}[!ht]
+\caption{PLanczosIF algorithm with a preconditioner $\mathbf{P}_k = \mathbf{B}\mathbf{C}_k$\label{algo:planczosif}}
+\begin{algorithmic}
+\STATE Set the number of iterations: $I_k$
+\STATE $  $
+\STATE Objects sizes:
+\STATE $\alpha_i$, $\beta_i \in \mathbb{R}$ for $0 \le i \le I_k$
+\STATE $\mathbf{q}_i$, $\mathbf{r}_i$, $\overline{\mathbf{t}}_i$, $\mathbf{t}_i$, $\mathbf{v}_i$, $\mathbf{w}_i$, $\overline{\mathbf{z}}_i$, $\mathbf{z}_i \in \mathbb{R}^n$ for $0 \le i \le I_k$
+\STATE $\mathbf{e_1} = [1,0,\dots,0]^\mathrm{T} \in \mathbb{R}^{I_k}$
+\STATE $\mathbf{T}$, $\boldsymbol{\Theta}$, $\mathbf{Y}$, $\boldsymbol{\Lambda}_k \in \mathbb{R}^{I_k \times I_k}$
+\STATE $\underline{\mathbf{V}}$, $\underline{\overline{\mathbf{V}}}_k \in \mathbb{R}^{n \times I_k}$
+\STATE $  $
+\STATE Initialization:
+\STATE $\mathbf{v}_0 = 0$
+\STATE $\mathbf{r}_0 = \delta \overline{\mathbf{x}}^b_k + \mathbf{K}_k^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k$
+\STATE $\overline{\mathbf{t}}_0 = \mathbf{C}_k \mathbf{r}_0$
+\STATE $\mathbf{t}_0 = \mathbf{B} \overline{\mathbf{t}}_0$
+\STATE $\beta_0 = \sqrt{\mathbf{r}_0^\mathrm{T} \mathbf{t}_0}$
+\STATE $\mathbf{v}_1 = \mathbf{r}_0/\beta_0$
+\STATE $\overline{\mathbf{z}}_1 = \overline{\mathbf{t}}_0/\beta_0$
+\STATE $\mathbf{z}_1 = \mathbf{t}_0/\beta_0$
+\STATE $\beta_1 = 0$
+\STATE $  $
+\FOR{$1 \le i \le I_k$}
+\STATE Store the Lanczos vector $\mathbf{v}_i$ as the $i^\text{th}$ column of $\underline{\mathbf{V}}$
+\STATE Update scalars and vectors:
+\STATE $\mathbf{q}_i = \overline{\mathbf{z}}_i + \mathbf{K}_k^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \mathbf{K}_k \mathbf{z}_i - \beta_i \mathbf{v}_{i-1}$ 
+\STATE $\alpha_i = \mathbf{q}_i^\mathrm{T} \mathbf{z}_i$
+\STATE $\mathbf{w}_i = \mathbf{q}_i - \alpha_i \mathbf{v}_i$
+\STATE $\overline{\mathbf{t}}_i = \mathbf{C}_k \mathbf{w}_i$
+\STATE $\mathbf{t}_i = \mathbf{B} \overline{\mathbf{t}_i}$
+\STATE $\beta_{i+1} = \sqrt{\mathbf{w}_i \mathbf{z}_i}$
+\STATE $\mathbf{v}_{i+1} = \mathbf{w}_i/\beta_{i+1}$
+\STATE $\overline{\mathbf{z}}_{i+1} = \overline{\mathbf{t}}_i/\beta_{i+1}$
+\STATE $\mathbf{z}_{i+1} = \mathbf{t}_i/\beta_{i+1}$
+\STATE Fill the tridiagonal matrix $\mathbf{T}$:
+\STATE $T_{ii} = \alpha_i$
+\IF{$i>1$}
+\STATE $T_{(i-1)i} = T_{i(i-1)} = \beta_i$
+\ENDIF
+\ENDFOR
+\STATE Compute $\left(\boldsymbol{\Theta},\mathbf{Y}\right)$, the eigendecomposition of $\mathbf{T} = \mathbf{Y} \boldsymbol{\Theta} \mathbf{Y}^\mathrm{T}$
+\STATE Compute the analysis increment: $\delta \mathbf{x}^a_k = \mathbf{P}_k \underline{\mathbf{V}} \mathbf{Y} \boldsymbol{\Theta}^{-1} \mathbf{Y}^\mathrm{T} \left(\beta_0 \mathbf{e}_1\right)$
+\STATE Store the Ritz pairs $\left(\boldsymbol{\Lambda}_k,\underline{\overline{\mathbf{V}}}_k \right) = \left(\boldsymbol{\Theta},\underline{\mathbf{V}} \mathbf{Y}\right)$
+\end{algorithmic}
+\end{algorithm}
+
+\FloatBarrier
+
+\subsection{Square-root $\mathbf{B}$ preconditioning}
+Since $\mathbf{B}$ is positive definite, there is an infinity of square-roots $\mathbf{U} \in \mathbb{R}^{n \times m}$ with $m \ge n$ verifying:
+\begin{align}
+\mathbf{B} = \mathbf{U} \mathbf{U}^\mathrm{T}
+\end{align}
+A new variable $\delta \mathbf{v}_k \in \mathbb{R}^m$ is defined as:
+\begin{align}
+\delta \mathbf{v}_k = \mathbf{U}^\mathrm{T} \mathbf{B}^{-1} \delta \mathbf{x}_k \ \Rightarrow \ \delta \mathbf{x}_k = \mathbf{U} \delta \mathbf{v}_k
+\end{align}
+Linear system \eqref{eq:inc} is transformed into:
+\begin{align}
+\label{eq:inc_U}
+\mathbf{A}^\mathbf{v}_k \delta \mathbf{v}^a_k = \mathbf{b}^\mathbf{v}_k &
+\end{align}
+with $\mathbf{A}^\mathbf{v}_k \in \mathbb{R}^{m \times m}$ and $\mathbf{b}^\mathbf{v}_k \in \mathbb{R}^{m}$ defined as:
+\begin{align}
+\mathbf{A}^\mathbf{v}_k & = \mathbf{I}_m + \mathbf{U}^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \mathbf{U} \\
+\mathbf{b}^\mathbf{v}_k & = \delta \mathbf{v}^b_k + \mathbf{U}^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k
+\end{align}
+
+The Lanczos method with a preconditioner $\mathbf{Q}_k = \mathbf{Q}_k^{1/2} \mathbf{Q}_k^{\mathrm{T}/2}$, where $\mathbf{Q}_k^{1/2} \in \mathbb{R}^{m \times m}$, is detailed in algorithm \ref{algo:lanczos}.\\
+
+A common (but not unique) way to define the preconditioner $\mathbf{Q}_k$ is to use the spectral Limited Memory Preconditioner (LMP) approximated from the Ritz pairs:
+\begin{itemize}
+\item For the first outer iteration ($k=1$): $\mathbf{Q}^{1/2}_1 = \mathbf{I}_m$.
+\item For subsequent outer iteration ($k>1$):
+\begin{align}
+\mathbf{Q}^{1/2}_k = \mathbf{Q}^{1/2}_{k-1} \mathbf{F}_k
+\end{align}
+where $\mathbf{F}_k \in \mathbb{R}^{m \times m}$ is defined from the Ritz pairs of the previous outer iteration:
+\begin{align}
+\mathbf{F}_{k+1} = \mathbf{I}_m+\underline{\widetilde{\mathbf{V}}}_k \left(\mathbf{\Lambda}_k^{-1/2} - \mathbf{I}_{I_k}\right) \underline{\widetilde{\mathbf{V}}}_k^\mathrm{T}
+\end{align}
+\end{itemize}
+It should be noted that the Ritz vectors are orthogonal with respect to the canonical inner product:
+\begin{align}
+\underline{\widetilde{\mathbf{V}}}_k^\mathrm{T} \underline{\widetilde{\mathbf{V}}}_k = \mathbf{I}_{I_k}
+\end{align}
+As a consequence, the inverse of $\mathbf{Q}^{1/2}_k$ can be easily computed using the Woodbury matrix identity:
+\begin{align}
+\left(\mathbf{Q}^{1/2}_k\right)^{-1} = \mathbf{F}_k^{-1} \left(\mathbf{Q}^{1/2}_{k-1}\right)^{-1}
+\end{align}
+where
+\begin{align}
+\mathbf{F}_{k+1}^{-1} & = \mathbf{I}_m-\underline{\widetilde{\mathbf{V}}}_k \left(\left(\mathbf{\Lambda}_k^{-1/2} - \mathbf{I}_{I_k}\right)^{-1}+\underline{\widetilde{\mathbf{V}}}_k^\mathrm{T} \underline{\widetilde{\mathbf{V}}}_k\right)^{-1} \underline{\widetilde{\mathbf{V}}}_k^\mathrm{T} \nonumber \\
+& = \mathbf{I}_m-\underline{\widetilde{\mathbf{V}}}_k \left(\left(\mathbf{\Lambda}_k^{-1/2} - \mathbf{I}_{I_k}\right)^{-1}+\mathbf{I}_{I_k}\right)^{-1} \underline{\widetilde{\mathbf{V}}}_k^\mathrm{T} \nonumber \\
+& = \mathbf{I}_m+\underline{\widetilde{\mathbf{V}}}_k \left(\mathbf{\Lambda}_k^{1/2}-\mathbf{I}_{I_k}\right) \underline{\widetilde{\mathbf{V}}}_k^\mathrm{T}
+\end{align}
+
+\begin{algorithm}[!ht]
+\caption{Lanczos algorithm with a preconditioner $\mathbf{Q}_k$\label{algo:lanczos}}
+\begin{algorithmic}
+\STATE Set the number of iterations: $I_k$
+\STATE $  $
+\STATE Objects sizes:
+\STATE $\alpha_i$, $\beta_i \in \mathbb{R}$ for $0 \le i \le I_k$
+\STATE $\mathbf{q}_i$, $\mathbf{r}_i$, $\mathbf{v}_i$, $\mathbf{w}_i \in \mathbb{R}^m$ for $0 \le i \le I_k$
+\STATE $\mathbf{e_1} = [1,0,\dots,0]^\mathrm{T} \in \mathbb{R}^{I_k}$
+\STATE $\mathbf{T}$, $\boldsymbol{\Theta}$, $\mathbf{Y}$, $\boldsymbol{\Lambda}_k \in \mathbb{R}^{I_k \times I_k}$
+\STATE $\underline{\mathbf{V}}$, $\underline{\widetilde{\mathbf{V}}}_k \in \mathbb{R}^{m \times I_k}$
+\STATE $  $
+\STATE Initialization:
+\STATE $\mathbf{v}_0 = 0$
+\STATE $\mathbf{r}_0 = \mathbf{Q}^{\mathrm{T}/2}_k \left(\delta \mathbf{v}^b_k + \mathbf{U}^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k\right)$
+\STATE $\beta_0 = \Vert \mathbf{r}_0\Vert_2$
+\STATE $\mathbf{v}_1 = \mathbf{r}_0/\beta_0$
+\STATE $\beta_1 = 0$
+\STATE $  $
+\FOR{$1 \le i \le I_k$}
+\STATE Store the Lanczos vector $\mathbf{v}_i$ as the $i^\text{th}$ column of $\underline{\mathbf{V}}$
+\STATE Update scalars and vectors:
+\STATE $\mathbf{q}_i = \mathbf{Q}^{\mathrm{T}/2}_k \left(\mathbf{I}_m + \mathbf{U}^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \mathbf{U}\right) \mathbf{Q}^{1/2}_k \mathbf{v}_i- \beta_i \mathbf{v}_{i-1}$ 
+\STATE $\alpha_i = \mathbf{q}_i^\mathrm{T} \mathbf{v}_i$
+\STATE $\mathbf{w}_i = \mathbf{q}_i - \alpha_i \mathbf{v}_i$
+\STATE $\beta_{i+1} = \Vert \mathbf{w}_i\Vert_2$
+\STATE $\mathbf{v}_{i+1} = \mathbf{w}_i/\beta_{i+1}$
+\STATE Fill the tridiagonal matrix $\mathbf{T}$:
+\STATE $T_{ii} = \alpha_i$
+\IF{$i>1$}
+\STATE $T_{(i-1)i} = T_{i(i-1)} = \beta_i$
+\ENDIF
+\ENDFOR
+\STATE $  $
+\STATE Compute $\left(\boldsymbol{\Theta},\mathbf{Y}\right)$, the eigendecomposition of $\mathbf{T} = \mathbf{Y} \boldsymbol{\Theta} \mathbf{Y}^\mathrm{T}$
+\STATE Compute the analysis increment: $\delta \mathbf{v}^a_k = \mathbf{Q}^{1/2}_k \underline{\mathbf{V}} \mathbf{Y} \boldsymbol{\Theta}^{-1} \mathbf{Y}^\mathrm{T} \left(\beta_0 \mathbf{e}_1\right)$
+\STATE Store the Ritz pairs $\left(\boldsymbol{\Lambda}_k,\underline{\widetilde{\mathbf{V}}}_k \right) = \left(\boldsymbol{\Theta},\underline{\mathbf{V}} \mathbf{Y}\right)$
+\end{algorithmic}
+\end{algorithm}
+
+\FloatBarrier
+
+\subsection{Equivalence condition for preconditioners}
+Both approaches are equivalent if the preconditioners are linked via:
+\begin{align}
+\label{eq:eq_cond_1}
+\mathbf{P}^{1/2}_k = \mathbf{Q}^{1/2}_k \mathbf{U}
+\end{align}
+which is verified for the spectral preconditioner approximated with the Ritz pairs. Figure \ref{fig:map} summarize the relationships between the different quantities.
+
+\begin{figure}[!ht]
+\begin{center}
+\tikzstyle{field}=[draw,thin,rounded corners,inner sep=3pt]
+\begin{tikzpicture}[auto,>=latex]
+\node[field] (a) {$\underline{\widetilde{\mathbf{V}}}_k$};
+\node[field,below of=a,node distance=2cm] (b) {$\delta \mathbf{v}_k, \widetilde{\mathbf{V}}_k$};
+\node[field,below of=b,node distance=4cm,xshift=-5cm] (c) {$\delta \overline{\mathbf{x}}_k,\overline{\mathbf{V}}_k$};
+\node[field,below of=b,node distance=4cm,xshift=5cm] (d) {$\delta \mathbf{x}_k,\mathbf{V}_k$};
+\node[field,below of=c,node distance=2cm] (e) {$\underline{\overline{\mathbf{V}}}_k$};
+
+\node[circle,draw,inner sep=1pt,above of=a,node distance=0.9cm,xshift=-0.9cm] (ortho_lanczos) {$\perp_{\mathbf{I}_{I_k}}$};
+\node[circle,draw,inner sep=1pt,below of=e,node distance=0.9cm,xshift=-0.9cm] (ortho_planczosif) {$\perp_{\mathbf{P}_k}$};
+
+
+\node[above of=c,node distance=1.8cm] (leftside) {};
+\node[above of=d,node distance=1.8cm] (rightside) {};
+\node[right of=c,node distance=1.6cm] (bottomsideleft) {};
+\node[left of=d,node distance=1.8cm] (bottomsideright) {};
+\node[above of=bottomsideleft,node distance=5.0cm] (topsideleft) {};
+\node[above of=bottomsideright,node distance=5.0cm] (topsideright) {};
+\node[below of=e,node distance=2.4cm,xshift=-0.5cm] (bottomlabel1) {\begin{tabular}{@{\hspace{0.07cm}}c@{\hspace{0.07cm}}}
+Model \\
+space
+\end{tabular}};
+\node[right of=bottomlabel1,node distance=5.8cm] (bottomlabel2) {\begin{tabular}{@{\hspace{0.07cm}}c@{\hspace{0.07cm}}}
+Control \\
+space
+\end{tabular}};
+\node[right of=bottomlabel1,node distance=10.6cm] (bottomlabel3) {\begin{tabular}{@{\hspace{0.07cm}}c@{\hspace{0.07cm}}}
+Model \\
+space
+\end{tabular}};
+
+\path[->,thick] ([xshift=-0.1cm]a.south) edge node[left] {$\mathbf{Q}^{1/2}_k$} ([xshift=-0.1cm]b.north);
+\path[<-,thick] ([xshift=0.1cm]a.south) edge node[right] {$\left(\mathbf{Q}^{1/2}_k\right)^{-1}$} ([xshift=0.1cm]b.north);
+\path[<-,thick,bend left=50] ([yshift=0.1cm]a.east) edge node[right,xshift=0.2cm] {$\left(\mathbf{P}^{1/2}_k\right)^{-1}$} ([xshift=0.1cm]d.north);
+\path[->,thick,bend left=50] ([yshift=-0.1cm]a.east) edge node[left,xshift=0.4cm,yshift=-0.8cm] {$\mathbf{P}^{1/2}_k$} ([xshift=-0.1cm]d.north);
+\path[->,thick] (b.east) edge node[right,yshift=0.2cm,xshift=-0.2cm] {$\mathbf{U}$} ([yshift=0.2cm]d.west);
+\path[<-,thick] (b.west) edge node[left,yshift=0.2cm] {$\mathbf{U}^\mathrm{T}$} ([yshift=0.2cm]c.east);
+\path[<-,thick] ([yshift=0.1cm]c.east) edge node[above] {$\mathbf{B}^{-1}$} ([yshift=0.1cm]d.west);
+\path[->,thick] ([yshift=-0.1cm]c.east) edge node[below] {$\mathbf{B}$} ([yshift=-0.1cm]d.west);
+\path[->,thick] ([xshift=0.1cm]c.south) edge node[right] {$\mathbf{C}^{-1}_k$} ([xshift=0.1cm]e.north);
+\path[<-,thick] ([xshift=-0.1cm]c.south) edge node[left] {$\mathbf{C}_k$} ([xshift=-0.1cm]e.north);
+\path[<-,thick,bend left=-30] ([yshift=0.1cm]e.east) edge node[above] {$\mathbf{P}_k^{-1}$} ([xshift=-0.12cm]d.south);
+\path[->,thick,bend left=-30] ([yshift=-0.1cm]e.east) edge node[below] {$\mathbf{P}_k$} ([xshift=0.12cm]d.south);
+
+\path[-,thick,dashed] ([xshift=-2cm]leftside.east) edge node[above] {Lanczos algorithm} ([xshift=2cm]rightside.west);
+\path[-,thick,dashed] ([xshift=-2cm]leftside.east) edge node[below] {PLanczosIF algorithm} ([xshift=2cm]rightside.west);
+\path[-,thick,dashed] ([yshift=-5cm]bottomsideleft.north) edge node {} ([yshift=2.7cm]topsideleft.south);
+\path[-,thick,dashed] ([yshift=-5cm]bottomsideright.north) edge node {} ([yshift=2.7cm]topsideright.south);
+
+\path[-,thick,bend left=-50] (a.north) edge node {} (ortho_lanczos.east);
+\path[->,thick,bend left=-50] (ortho_lanczos.south) edge node {} (a.west);
+\path[-,thick,bend left=-50] (e.west) edge node {} (ortho_planczosif.north);
+\path[->,thick,bend left=-50] (ortho_planczosif.east) edge node {} (e.south);
+\end{tikzpicture}
+\end{center}
+\caption{Map of spaces and links between them. Circles indicate orthogonality properties.}
+\label{fig:map}
+\end{figure}
+
+\FloatBarrier
+
+\clearpage
+
+\section{Practical computations}
+
+\subsection{Getting rid of $\mathbf{B}^{-1}$}
+In practice, the inverse of the background error covariance matrix $\mathbf{B}^{-1}$ is not available, even if it is needed in general to compute the right-hand sides $\mathbf{b}^{\overline{\mathbf{x}}}_k$ and $\mathbf{b}^\mathbf{v}_k$. However, it is very usual to define the guess as follows:
+\begin{itemize}
+\item for $k = 1$: $\mathbf{x}^g_1 = \mathbf{x}^b$,
+\item for $k > 1$: $\mathbf{x}^g_k = \mathbf{x}^a_{k-1}$.
+\end{itemize}
+Thus:
+\begin{itemize}
+\item for $k = 1$:
+\begin{align}
+\delta \mathbf{x}^b_1 = \mathbf{x}^g_1 - \mathbf{x}^b = 0
+\end{align}
+\item for $k > 1$:
+\begin{align}
+\delta \mathbf{x}^b_k & = \mathbf{x}^b - \mathbf{x}^g_k \nonumber \\
+& = \mathbf{x}^b - \mathbf{x}^a_{k-1} \nonumber \\
+& = \mathbf{x}^b - \left(\mathbf{x}^g_{k-1} + \delta \mathbf{x}^a_{k-1}\right) \nonumber \\
+& = \delta \mathbf{x}^b_{k-1} - \delta \mathbf{x}^a_{k-1}
+\end{align}
+\end{itemize}
+As a conclusion:
+\begin{align}
+\label{eq:back_inc}
+\delta \mathbf{x}^b_k & = - \sum_{i=1}^{k-1} \delta \mathbf{x}^a_i
+\end{align}
+With the full $\mathbf{B}$ preconditioning, $\mathbf{B}^{-1}$ can be applied on both side of equation \eqref{eq:back_inc}:
+\begin{align}
+\label{eq:back_inc_B}
+\delta \overline{\mathbf{x}}^b_k & = - \sum_{i=1}^{k-1} \delta \overline{\mathbf{x}}^a_i
+\end{align}
+and with the square-root $\mathbf{B}$ preconditioning, $\mathbf{U}^\mathrm{T} \mathbf{B}^{-1}$ can be applied on both side of equation \eqref{eq:back_inc}:
+\begin{align}
+\label{eq:back_inc_U}
+\delta \mathbf{v}^b_k & = - \sum_{i=1}^{k-1} \delta \mathbf{v}^a_i
+\end{align}
+Equations \eqref{eq:back_inc_B} and \eqref{eq:back_inc_U} can be used to compute $\mathbf{b}^{\overline{\mathbf{x}}}_k$ and $\mathbf{b}^\mathbf{v}_k$ respectively, without needing $\mathbf{B}^{-1}$.
+
+\subsection{Changing the resolution}
+For computational efficiency, it is common to start the optimization at a lower resolution, and to increase it at each iteration $k$. At resolution $\mathcal{R}_k$, the model space size is denoted $n_k$ and the control space size $m_k$. It is assumed that the full resolution is obtained at the last iteration $K$.\\
+
+Obviously, $\mathbf{B}$ now depends on iteration $k$. Hereafter, it is denoted $\mathbf{B}_k$, and its square-root is denoted $\mathbf{U}_k$.\\
+
+For $i < k$, we define two interpolation operators from resolution $\mathcal{R}_i$ to resolution $\mathcal{R}_k$:
+\begin{itemize}
+\item $\mathbf{T}^\mathbf{x}_{i \rightarrow k} \in \mathbb{R}^{n_k \times n_i}$ in model space,
+\item $\mathbf{T}^\mathbf{v}_{i \rightarrow k} \in \mathbb{R}^{m_k \times m_i}$ in control space,
+\end{itemize}
+and the corresponding simplification operators from resolution $\mathcal{R}_k$ to resolution $\mathcal{R}_i$:
+\begin{itemize}
+\item $\mathbf{T}^\mathbf{x}_{k \rightarrow i} \in \mathbb{R}^{n_i \times n_k}$ in model space,
+\item $\mathbf{T}^\mathbf{v}_{k \rightarrow i} \in \mathbb{R}^{m_i \times m_k}$ in control space.
+\end{itemize}
+
+It should be noted that the interpolation operator $\mathbf{T}^\mathbf{x}_{i \rightarrow k}$ is only the right-inverse of the simplification operator $\mathbf{T}^\mathbf{x}_{k \rightarrow i}$. For $i < k$, $n_i < n_k$ and:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{k \rightarrow i} \mathbf{T}^\mathbf{x}_{i \rightarrow k} & = \mathbf{I}_{n_i} \\
+\mathbf{T}^\mathbf{x}_{i \rightarrow k} \mathbf{T}^\mathbf{x}_{k \rightarrow i} & \ne \mathbf{I}_{n_k}
+\end{align}
+and similarly in control space.
+
+\subsection{Usual but inconsistent strategy}
+It is a usual strategy to define a full resolution guess at each iteration $k$, denoted $\mathbf{x}^{g+}_k$. This full resolution guess can be simplified at resolution $\mathcal{R}_k$ if required:
+\begin{align}
+\mathbf{x}^g_k = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^{g+}_k 
+\end{align}
+
+For the first iteration, the full resolution guess is the background state, also provided at full resolution:
+\begin{align}
+\mathbf{x}^{g+}_1 = \mathbf{x}^b
+\end{align}
+
+At the end of iteration $k$, an analysis increment $\delta \mathbf{x}^a_k$ is produced at resolution $\mathcal{R}_k$. In the previous section, the guess of iteration $k$ has been defined as the analysis of iteration $k-1$, which is not possible anymore since the resolution increases. A common practice is to interpolate the analysis increment $\delta \mathbf{x}^a_{k-1}$ at full resolution, in order to compute the full resolution guess $\mathbf{x}^{g+}_k$:
+\begin{align}
+\mathbf{x}^{g+}_k = \mathbf{x}^{g+}_{k-1} + \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \delta \mathbf{x}^a_{k-1}
+\end{align}
+However, $\mathbf{x}^{g+}_{k-1} \ne \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \mathbf{x}^g_{k-1}$, so $\mathbf{x}^{g+}_k$ is different from the analysis of iteration $k-1$ interpolated at full resolution:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \mathbf{x}^a_{k-1} = \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \left(\mathbf{x}^g_{k-1} + \delta \mathbf{x}^a_{k-1} \right) \ne \mathbf{x}^{g+}_k
+\end{align}
+
+It is possible to define the background increment at full resolution for each iteration $k$:
+\begin{align}
+\delta \mathbf{x}^{b+}_k & = \mathbf{x}^b - \mathbf{x}^{g+}_k
+\end{align}
+which can be simplified at resolution $\mathcal{R}_k$:
+\begin{align}
+\delta \mathbf{x}^b_k & = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{b+}_k \nonumber \\
+& = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^b - \mathbf{x}^{g}_k
+\end{align}
+
+This strategy would normally require $\mathbf{B}^{-1}_k$ to compute the right-hand sides $\mathbf{b}^{\overline{\mathbf{x}}}_k$ and $\mathbf{b}^\mathbf{v}_k$. In practice, transformed versions of equations \eqref{eq:back_inc_B} and \eqref{eq:back_inc_U} are used:
+\begin{align}
+\label{eq:back_inc_Bvar}
+\delta \underline{\overline{\mathbf{x}}}^b_k & = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i
+\end{align}
+and 
+\begin{align}
+\label{eq:back_inc_Uvar}
+\delta \underline{\mathbf{v}}^b_k & = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i
+\end{align}
+
+\textbf{It should be emphasized that this strategy is inconsistent}:
+\begin{align}
+\delta \underline{\overline{\mathbf{x}}}^b_k & \ne \mathbf{B}^{-1}_k \delta \mathbf{x}^b_k
+\end{align}
+and
+\begin{align}
+\delta \underline{\mathbf{v}}^b_k & \ne \mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \delta \mathbf{x}^b_k
+\end{align}
+
+\subsection{Consistent strategy}
+A consistent strategy would start from equations \eqref{eq:back_inc_Bvar} or \eqref{eq:back_inc_Uvar} to define the background increment:
+\begin{align}
+\delta \mathbf{x}^b_k & = \mathbf{B}_k \delta \underline{\overline{\mathbf{x}}}^b_k
+\end{align}
+or
+\begin{align}
+\delta \mathbf{x}^b_k & = \mathbf{U}_k \delta \underline{\mathbf{v}}^b_k
+\end{align}
+The guess would be defined as:
+\begin{align}
+\mathbf{x}^g_k = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^b - \delta \mathbf{x}^b_k
+\end{align}
+and the full resolution guess as:
+\begin{align}
+\mathbf{x}^{g+}_k = \mathbf{x}^b - \mathbf{T}^\mathbf{x}_{k \rightarrow K} \delta \mathbf{x}^b_k
+\end{align}
+
+\subsection{Equivalence condition on the background increment}
+The consistent strategy detailed in the previous section could yield different results depending on the interpolation operators. A first condition required to ensure that both full $\mathbf{B}$ and square-root $\mathbf{B}$ preconditionings give the same result can be derived from the background increment implied by equations \eqref{eq:back_inc_Bvar} and \eqref{eq:back_inc_Uvar}:
+\begin{align}
+\label{eq:back_inc_B2}
+\delta \mathbf{x}^b_k & = \mathbf{B}_k \delta \underline{\overline{\mathbf{x}}}^b_k \nonumber \\
+ & = - \mathbf{B}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i
+\end{align}
+whereas:
+\begin{align}
+\label{eq:back_inc_U2}
+\delta \mathbf{x}^b_k & = \mathbf{U}_k \delta \underline{\mathbf{v}}^b_k \nonumber \\
+ & = -\mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i \nonumber \\
+ & = -\mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{U}_i^\mathrm{T} \delta \overline{\mathbf{x}}^a_i
+\end{align}
+Background increments of equations \eqref{eq:back_inc_B2} and \eqref{eq:back_inc_U2} are equal if and only if:
+\begin{align}
+\label{eq:eq_cond_2}
+\mathbf{U}_k^\mathrm{T} \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{U}_i^\mathrm{T}
+\end{align}
+
+\subsection{Equivalence condition on Ritz vectors}
+If the resolution changes, the equivalence condition for preconditioners \eqref{eq:eq_cond_1} must be adapted since $\mathbf{U}$ depends on $k$:
+\begin{align}
+\mathbf{P}^{1/2}_k = \mathbf{Q}^{1/2}_k \mathbf{U}_k
+\end{align}
+In the case where the preconditioners are built using Ritz vectors, the map of Figure \ref{fig:map} shows that this condition is equivalent to a relation between the Ritz vectors:
+\begin{align}
+\mathbf{W}_k\underline{\overline{\mathbf{V}}}_k = \underline{\widetilde{\mathbf{V}}}_k
+\end{align}
+with $\mathbf{W}_k = \left(\mathbf{Q}^{1/2}_k\right)^{-1} \mathbf{U}^\mathrm{T}_k \mathbf{C}_k$.\\
+
+If the resolution changes, the Ritz vectors also require an interpolation from their original resolution to the resolution $\mathcal{R}_k$ in order to build the preconditioner for iteration $k$, so the condition becomes: 
+\begin{align}
+\mathbf{W}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} \underline{\overline{\mathbf{V}}}_i = \mathbf{T}^\mathbf{v}_{i \rightarrow k} \underline{\widetilde{\mathbf{V}}}_i
+\end{align}
+which is verified if and only if:
+\begin{align}
+\label{eq:eq_cond_3}
+\mathbf{W}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{W}_i
+\end{align}
+A last set of conditions regarding the orthogonality of Ritz vectors, which should not be lost during the interpolation process, should be verified:
+\begin{align}
+\label{eq:eq_cond_4}
+\left(\mathbf{T}^\mathbf{x}_{i \rightarrow k} \underline{\overline{\mathbf{V}}}_i\right)^\mathrm{T} \mathbf{P}_k\left(\mathbf{T}^\mathbf{x}_{i \rightarrow k} \underline{\overline{\mathbf{V}}}_i\right) = \mathbf{I}_{I_k}
+\end{align}
+and
+\begin{align}
+\label{eq:eq_cond_5}
+\left(\mathbf{T}^\mathbf{v}_{i \rightarrow k} \underline{\widetilde{\mathbf{V}}}_i\right)^\mathrm{T} \left(\mathbf{T}^\mathbf{v}_{i \rightarrow k} \underline{\widetilde{\mathbf{V}}}_i\right) = \mathbf{I}_{I_k}
+\end{align}
+
+\subsection{Example of equivalence}
+An example of equivalence is the following:
+\begin{itemize}
+\item The vector $\boldsymbol{\gamma} \in \mathbb{R}^{n_K}$ of positive coefficients is used to define the diagonal matrices $\boldsymbol{\Gamma}_k \in \mathbb{R}^{n_k \times n_k}$:
+\begin{align}
+\Gamma_{k,\alpha \beta} = \left\{
+\begin{array}{ccc}
+\gamma_i & \text{ if } & \alpha = \beta \\
+0 & \text{ if } & \alpha \ne \beta
+\end{array}\right.
+\end{align}
+At resolution $\mathcal{R}_k$, the background error covariance matrix $\mathbf{B}_k$ is defined as:
+\begin{align}
+\mathbf{B}_k = \mathbf{S}_k \boldsymbol{\Gamma}_k \mathbf{S}_k^{-1}
+\end{align}
+where $\mathbf{S}_k \in \mathbb{R}^{n_k \times n_k}$ is orthogonal:
+\begin{align}
+\mathbf{S}_k \mathbf{S}_k^\mathrm{T} = \mathbf{S}_k^\mathrm{T} \mathbf{S}_k = \mathbf{I}_{n_k}
+\end{align}
+Its square-root $\mathbf{U}_k$ is simply:
+\begin{align}
+\mathbf{U}_k = \mathbf{S}_k \boldsymbol{\Gamma}_k^{1/2} \mathbf{G}_k
+\end{align}
+where $\mathbf{G} \in \mathbb{R}^{n_k \times m_k}$ is any matrix verifying:
+\begin{align}
+\mathbf{G}_k \mathbf{G}_k^\mathrm{T} = \mathbf{I}_{n_k}
+\end{align}
+\item The interpolators are defined as: 
+\begin{align}
+\mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{S}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{S}^\mathrm{T}_i
+\end{align}
+and
+\begin{align}
+\mathbf{T}^\mathbf{v}_{i \rightarrow k} = \mathbf{G}^\mathrm{T}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{G}_i
+\end{align}
+where $\boldsymbol{\Delta}_{i \rightarrow k} \in \mathbb{R}^{n_k \times n_i}$ is a zero-padding operator:
+\begin{align}
+\Delta_{i \rightarrow k, \alpha \beta} = \left\{
+\begin{array}{ccc}
+1 & \text{ if } & \alpha = \beta \\
+0 & \text{ if } & \alpha \ne \beta
+\end{array}\right.
+\end{align}
+\end{itemize}
+
+Thus:
+\begin{align}
+\mathbf{U}_k^\mathrm{T} \mathbf{T}^\mathbf{x}_{i \rightarrow k} & = \mathbf{G}^\mathrm{T}_k \boldsymbol{\Gamma}_k^{1/2} \mathbf{S}^\mathrm{T}_k \mathbf{S}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{S}^\mathrm{T}_i \nonumber \\
+ & = \mathbf{G}^\mathrm{T}_k \boldsymbol{\Gamma}_k^{1/2}\boldsymbol{\Delta}_{i \rightarrow k} \mathbf{S}^\mathrm{T}_i
+\end{align}
+and
+\begin{align}
+\mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{U}_i^\mathrm{T} & = \mathbf{G}^\mathrm{T}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{G}_i \mathbf{G}^\mathrm{T}_i \boldsymbol{\Gamma}_i^{1/2} \mathbf{S}^\mathrm{T}_i \nonumber \\
+& = \mathbf{G}^\mathrm{T}_k \boldsymbol{\Delta}_{i \rightarrow k}  \boldsymbol{\Gamma}_i^{1/2} \mathbf{S}^\mathrm{T}_i
+\end{align}
+Since $\boldsymbol{\Gamma}_k^{1/2}\boldsymbol{\Delta}_{i \rightarrow k} = \boldsymbol{\Delta}_{i \rightarrow k}  \boldsymbol{\Gamma}_i^{1/2}$, the equivalence condition on the background increment \eqref{eq:eq_cond_2} is verified.\\
+
+Equivalence conditions on Ritz vectors \eqref{eq:eq_cond_3}, \eqref{eq:eq_cond_4}, \eqref{eq:eq_cond_5} are very difficult to proove, even with this simple case, but they seem to be verified according to a simple test with the code ``multi''.\\
+
+\section{The code ``multi''}
+Available at \url{https://github.com/benjaminmenetrier/multi}, this code implements the previous example, where the equivalence conditions are verified for a multi-resolution minimization.\\
+
+In this code, the user can change the following hard-coded parameters:
+\begin{itemize}
+\item In main.F90:
+\begin{itemize}
+\item The full resolution model space consists in ``n'' points equally spaced along a unit-radius circle. At resolution $\mathbf{R}^k$, only one point over $2^{K-k}$ is kept.
+\item The number of outer iterations ($K$) is defined by ``no'',
+\item The number of inner iterations ($I_k$) is defined by ``ni'',
+\item Three kinds of preconditionings are implemented:
+\begin{itemize}
+\item ``lmp\_mode = none'' (no preconditioning),
+\item ``lmp\_mode = spectral'' (spectral preconditioning),
+\item ``lmp\_mode = ritz'' (with an additional term detailed in \citet{gurol_phd_2013}).
+\end{itemize}
+\end{itemize}
+\item In interp.f90:
+\begin{itemize}
+\item In control space, the interpolation is a zero-padding in spectral space. In model space, a bilinear interpolation is implemented, but the spectral interpolation can be used if ``gp\_from\_sp = .true.''.
+\end{itemize}
+\item In type\_bmatrix.f90, $\mathbf{B}_k$ is defined as:
+\begin{align}
+\mathbf{B}_k = \boldsymbol{\Sigma}_k \mathbf{S}_k \boldsymbol{\Gamma}_k \mathbf{S}_k^{-1} \boldsymbol{\Sigma}_k
+\end{align}
+where $\boldsymbol{\Sigma}_k$ is a diagonal matrix of grid-point standard deviations:
+\begin{itemize}
+\item The correlation length-scale ``Lb'' defines the spectral variances in $\boldsymbol{\gamma}$.
+\item The grid-point standard deviation $\boldsymbol{\Sigma}_k$ can have spatial variations, defined by their amplitude ``sigmabvar''.
+\end{itemize}
+\end{itemize}
+$  $\\
+The equivalence conditions are verified for:
+\begin{itemize}
+\item ``gp\_from\_sp = .true.'': the spectral interpolation is used in both control and model spaces.
+\item ``sigmabvar = 0'': $\mathbf{B}_k$ is purely diagonal spectral.
+\end{itemize}
+If one of these parameters is different, the equivalence is broken.\\
+$  $\\
+Other noticeable features:
+\begin{itemize}
+\item The control space is the spectral space, slightly modified to make sure that the spectral transform $\mathbf{S}$ verifies $\mathbf{S}^\mathrm{T} = \mathbf{S}^{-1}$. Obviously, $m_k = n_k$.
+\item The number of observations is fixed at $p = n_1$ (all variables are observed at the first iteration).
+\item With this model of $\mathbf{B}_k$, the normalization of $\mathbf{B}_k$ (the common value of its diagonal coefficients) varies depending on the iteration $k$.
+\end{itemize}
+
+\bibliographystyle{mybib-en}
+\bibliography{multi}
+
+\end{document}

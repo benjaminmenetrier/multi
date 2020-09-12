@@ -1,2 +1,9 @@
 build
 run/multi
+doc/multi.aux
+doc/multi.bbl
+doc/multi.blg
+doc/multi.log
+doc/multi.out
+doc/multi.synctex.gz
+doc/multi.toc
