@@ -16,8 +16,9 @@ type bmatrix_type
    real(8),allocatable :: spvar(:)
 end type bmatrix_type
 
-real(8),parameter :: Lb = 5.0e-2     ! Correlation length-scale
-real(8),parameter :: sigmabvar = 0.0 ! Grid-point standard deviation variations amplitude
+!real(8),parameter :: Lb = 5.0e-2     ! Correlation length-scale
+!real(8),parameter :: sigmabvar = 0.0 ! Grid-point standard deviation variations amplitude
+
 
 contains
 
@@ -25,7 +26,7 @@ contains
 ! Subroutine: bmatrix_setup
 ! Purpose: setup B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_setup(bmatrix,nn,nnmax)
+subroutine bmatrix_setup(bmatrix,nn,nnmax,sigmabvar,Lb)
 
 implicit none
 
@@ -33,6 +34,8 @@ implicit none
 type(bmatrix_type),intent(inout) :: bmatrix
 integer,intent(in) :: nn
 integer,intent(in) :: nnmax
+real(8),intent(in) :: sigmabvar
+real(8),intent(in) :: Lb
 
 ! Local variables
 integer :: i

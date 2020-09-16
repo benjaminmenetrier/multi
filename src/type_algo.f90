@@ -148,10 +148,10 @@ do ii=1,ni
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
 
    ! Check cost function
-   if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
-      write(*,'(a)') 'ERROR: increasing cost function in Lanczos'
-      stop
-   end if
+   ! if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
+   !    write(*,'(a)') 'ERROR: increasing cost function in Lanczos'
+   !    stop
+   ! end if
 end do
 
 ! Final update
@@ -270,10 +270,10 @@ do ii=1,ni
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
 
    ! Check cost function
-   if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
-      write(*,'(a)') 'ERROR: increasing cost function in PLanczosIF'
-      stop
-   end if
+   ! if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
+   !    write(*,'(a)') 'ERROR: increasing cost function in PLanczosIF'
+   !    stop
+   ! end if
 end do
 
 ! Final update

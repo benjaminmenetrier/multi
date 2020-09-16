@@ -7,3 +7,9 @@ doc/multi.log
 doc/multi.out
 doc/multi.synctex.gz
 doc/multi.toc
+*#
+*~
+*.log
+*.png
+results
+multi_analysis/analysis_results

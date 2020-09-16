@@ -149,8 +149,8 @@ implicit none
 integer,intent(in) :: nn
 
 ! Local variables
-real(8) :: gpsave(nn),gp(nn),gp1(nn),gp2(nn),sumgp,sumsp
-real(8) :: spsave(nn),sp(nn),sp1(nn),sp2(nn)
+real(8) :: gpsave(nn),gp(nn),gp1(nn),gp2(nn),sumgp
+real(8) :: spsave(nn),sp(nn),sp1(nn),sp2(nn),sumsp
 
 ! Initialization
 call random_number(gpsave)

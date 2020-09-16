@@ -13,7 +13,8 @@ type rmatrix_type
    real(8),allocatable :: sigmao(:)
 end type rmatrix_type
 
-real(8),parameter :: sigmao = 0.1 ! Observation error standard-error
+! Changed it since sigmao should not be two objects of different types.
+!real(8),parameter :: sigmao = 0.1 ! Observation error standard-error
 
 contains
 
@@ -21,14 +22,14 @@ contains
 ! Subroutine: rmatrix_setup
 ! Purpose: setup R matrix
 !----------------------------------------------------------------------
-subroutine rmatrix_setup(rmatrix,nobs)
+subroutine rmatrix_setup(rmatrix,nobs,sigma_obs)
 
 implicit none
 
 ! Passed variables
 type(rmatrix_type),intent(inout) :: rmatrix
 integer,intent(in) :: nobs
-
+real(8),intent(in) :: sigma_obs
 ! Local variables
 integer :: iobs
 
@@ -40,7 +41,7 @@ allocate(rmatrix%sigmao(nobs))
 
 ! Set observation error standard deviation
 do iobs=1,nobs
-   rmatrix%sigmao(iobs) = sigmao
+   rmatrix%sigmao(iobs) = sigma_obs
 end do
 
 end subroutine rmatrix_setup

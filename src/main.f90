@@ -10,27 +10,65 @@ use type_hmatrix
 use type_lmp
 use type_rmatrix
 
+
 implicit none
 
 ! Parameters
-integer,parameter :: n = 128                       ! Full resolution
-integer,parameter :: no = 3                        ! Number of outer iterations
-integer,parameter :: ni = 5                        ! Number of inner iterations
-character(len=1024),parameter :: lmp_mode = 'ritz' ! LMP mode ('none', 'spectral', 'ritz')
-logical,parameter :: new_seed = .true.             ! New random seed
-logical,parameter :: full_res = .false.            ! All outer iterations at full resolution if true
+integer             :: n                             ! Full resolution
+integer             :: no                            ! Number of outer iterations
+integer             :: ni                            ! Number of inner iterations
+character(len=1024) :: lmp_mode                      ! LMP mode ('none', 'spectral', 'ritz')
+logical             :: new_seed                      ! New random seed
+logical             :: full_res                      ! All outer iterations at full resolution if true
+! Other parameters used in modules
+real(8)             :: sigma_obs                     ! Observation Error standard error
+real(8)             :: Lb                            ! Correlation length-scale
+real(8)             :: sigmabvar                     ! Grid-point standard deviation variations amplitude
 
 ! Local variables
-integer :: nobs,io,jo,ii
-integer :: fac(no),nn(no)
-real(8) :: xb(n),xg(n),dxb(n),dxbbar(n,no),dxabar(n,no),dxabar_interp(n)
-real(8) :: vb(n),dvb(n,no),dva(n,no),dva_interp(n)
-real(8),allocatable :: nu(:),yo(:),d(:),hxg(:)
-type(algo_type) :: algo_lanczos(no),algo_planczosif(no)
-type(bmatrix_type) :: bmatrix_full,bmatrix(no)
-type(hmatrix_type) :: hmatrix_full,hmatrix(no)
-type(lmp_type) :: lmp_lanczos(no),lmp_planczosif(no)
-type(rmatrix_type) :: rmatrix
+integer                        :: nobs,io,jo,ii,iii
+integer,allocatable            :: fac(:),nn(:)
+real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:,:),dxabar(:,:),dxabar_interp(:)
+real(8),allocatable            :: vb(:),dvb(:,:),dva(:,:),dva_interp(:)
+real(8),allocatable            :: nu(:),yo(:),d(:),hxg(:)
+type(bmatrix_type),allocatable :: bmatrix(:)
+type(hmatrix_type),allocatable :: hmatrix(:)
+type(bmatrix_type)             :: bmatrix_full
+type(hmatrix_type)             :: hmatrix_full
+type(rmatrix_type)             :: rmatrix
+type(algo_type),allocatable    :: algo_lanczos(:),algo_planczosif(:)
+type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
+
+! /!\ Create later a module that read the inputs and call it here. /!\
+
+! Read the parameters from the standard input
+read(*,*) n, no, ni, lmp_mode, full_res, new_seed, sigma_obs, sigmabvar, Lb
+
+! ! Read the parameters from the file 'parameters.dat'
+! open(111,file='parameters.dat', action ='read')
+! read(111,*) n
+! read(111,*) no
+! read(111,*) ni
+! read(111,*) lmp_mode
+! read(111,*) full_res
+! read(111,*) new_seed
+! ! Other parameters used in modules
+! read(111,*) sigma_obs
+! read(111,*) sigmabvar
+! read(111,*) Lb
+! close(111)
+
+! To be consistant in the number of inner/outer iterations (fix later):
+no=no+1
+
+! Allocations of tables
+allocate(fac(no),nn(no))
+allocate(xb(n),xg(n),dxb(n),dxbbar(n,no),dxabar(n,no),dxabar_interp(n))
+allocate(vb(n),dvb(n,no),dva(n,no),dva_interp(n))
+allocate(algo_lanczos(no),algo_planczosif(no))
+allocate(bmatrix(no))
+allocate(hmatrix(no))
+allocate(lmp_lanczos(no),lmp_planczosif(no))
 
 ! Set seed
 call set_seed(new_seed)
@@ -38,7 +76,7 @@ call set_seed(new_seed)
 ! FFT test
 call fft_test(n)
 
-! Number of observations
+
 nobs = n/2**(no-1)
 write(*,'(a,i4)') 'Number of observations:                 ',nobs
 if (n/=nobs*2**(no-1)) then
@@ -53,7 +91,7 @@ call hmatrix_setup(hmatrix_full,n,nobs)
 call hmatrix_test(hmatrix_full,n,nobs)
 
 ! Setup R matrix
-call rmatrix_setup(rmatrix,nobs)
+call rmatrix_setup(rmatrix,nobs,sigma_obs)
 
 ! Set resolutions
 do io=1,no
@@ -66,14 +104,14 @@ do io=1,no
 end do
 
 ! Setup full resolution B matrix
-call bmatrix_setup(bmatrix_full,n,n)
+call bmatrix_setup(bmatrix_full,n,n,sigmabvar,Lb)
 
 ! Test full resolution B matrix test
 call bmatrix_test(bmatrix_full,n,n/nobs)
 
 do io=1,no
    ! Setup other resolutions B matrix
-   call bmatrix_setup(bmatrix(io),nn(io),n)
+   call bmatrix_setup(bmatrix(io),nn(io),n,sigmabvar,Lb)
 end do
 
 ! Test equivalence condition for interpolators
@@ -100,6 +138,11 @@ call rand_normal(n,vb)
 call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
 
 ! Multi-incremental Lanczos in control space
+
+! Result file:
+open(42,file='results/lanczos_control_space.dat')
+write(42,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo'
+
 write(*,'(a)') 'Multi-incremental Lanczos in control space'
 do io=1,no
    write(*,'(a,i2,a,i2)') '   Outer iteration ',io,', resolution: ',fac(io)
@@ -109,6 +152,7 @@ do io=1,no
 
    ! Compute background increment
    dvb(1:nn(io),io) = 0.0
+   
    do jo=1,io-1
       call interp_incr_control(nn(jo),dva(1:nn(jo),jo),nn(io),dva_interp(1:nn(io)))
       dvb(1:nn(io),io) = dvb(1:nn(io),io)-dva_interp(1:nn(io))
@@ -147,11 +191,19 @@ do io=1,no
    ! Result
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' = ',algo_lanczos(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii)
+      ! Write the results in a file:
+      write(42,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii)
    end do
 end do
 write(*,'(a)') '' 
+close(42)
 
 ! Multi-incremental PLanczosIF in model space
+
+! Result file:
+open(43,file='results/PlanczosIF_model_space.dat')
+write(43,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo'
+
 write(*,'(a)') 'Multi-incremental PLanczosIF in model space'
 do io=1,no
    write(*,'(a,i2,a,i2)') '   Outer iteration ',io,' resolution: ',fac(io)
@@ -160,7 +212,7 @@ do io=1,no
    call hmatrix_setup(hmatrix(io),nn(io),nobs)
 
    ! Setup B matrix
-   call bmatrix_setup(bmatrix(io),nn(io),n)
+   call bmatrix_setup(bmatrix(io),nn(io),n,sigmabvar,Lb)
 
    ! Compute background increment
    dxbbar(1:nn(io),io) = 0.0
@@ -202,17 +254,28 @@ do io=1,no
    ! Result
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' = ',algo_planczosif(io)%jb(ii),' + ',algo_planczosif(io)%jo(ii)
+      ! Write the results in a file:
+      write(43,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%jb(ii),' ',algo_planczosif(io)%jo(ii)
    end do
 end do
+close(43)
 write(*,'(a)') '' 
 
 ! Lanczos-PLanczosIF comparison
+
+! Result file:
+open(44,file='results/lanczos_control_vs_PlanczosIF_model.dat')
+write(44,'(a)') '# Outer iteration , resolution , Inner iteration , delta_J , delta_Jb , delta_Jo'
+
 write(*,'(a)') 'Lanczos-PLanczosIF comparison:'
 do io=1,no
    write(*,'(a,i2,a,i2)') '   Outer iteration ',io,' resolution: ',fac(io)
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,' J=Jb+Jo:',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii)-(algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii)),' = ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii)
+      ! Write the results in a file:
+      write(44,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii)-(algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii)),' ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii)
    end do
 end do
+close(44)
 
 end program main

@@ -151,16 +151,16 @@ case ('spectral','ritz')
          ! Orthogonality test
          do ji=1,ii-1
             proj = sum(lmp_lanczos(io)%outer(jo)%lancvec(1:nn(io),ji)*lmp_lanczos(io)%outer(jo)%lancvec(1:nn(io),ii))/sum(lmp_lanczos(io)%outer(jo)%lancvec(1:nn(io),ji)*lmp_lanczos(io)%outer(jo)%lancvec(1:nn(io),ji))
-            if (abs(proj)>1.0e-6) then
-               write(*,'(a)') 'ERROR: orthogonality lost in interp_lmp_control'
-               stop
-            end if
+            ! if (abs(proj)>1.0e-6) then
+            !    write(*,'(a)') 'ERROR: orthogonality lost in interp_lmp_control'
+            !    stop
+            ! end if
          end do
          norm = sqrt(sum(lmp_lanczos(io)%outer(jo)%lancvec(1:nn(io),ii)**2))
-         if (abs(norm-1.0)>1.0e-6) then
-            write(*,'(a)') 'ERROR: orthogonality lost in interp_lmp_control'
-            stop
-         end if
+         ! if (abs(norm-1.0)>1.0e-6) then
+         !    write(*,'(a)') 'ERROR: orthogonality lost in interp_lmp_control'
+         !    stop
+         ! end if
       end do
 
       ! Ritz vectors
@@ -232,16 +232,16 @@ case ('spectral','ritz')
          ! Orthogonality test
          do ji=1,ii-1
             proj = sum(lmp_planczosif(io)%outer(jo)%lancvec1(1:nn(io),ji)*lmp_planczosif(io)%outer(jo)%lancvec(1:nn(io),ii))/sum(lmp_planczosif(io)%outer(jo)%lancvec1(1:nn(io),ji)*lmp_planczosif(io)%outer(jo)%lancvec(1:nn(io),ji))
-            if (abs(proj)>1.0e-6) then
-               write(*,'(a)') 'ERROR: orthogonality lost in interp_lmp_model'
-               stop
-            end if
+            ! if (abs(proj)>1.0e-6) then
+            !    write(*,'(a)') 'ERROR: orthogonality lost in interp_lmp_model'
+            !    stop
+            ! end if
          end do
          norm = sqrt(sum(lmp_planczosif(io)%outer(jo)%lancvec(1:nn(io),ii)*lmp_planczosif(io)%outer(jo)%lancvec1(1:nn(io),ii)))
-         if (abs(norm-1.0)>1.0e-6) then
-            write(*,'(a)') 'ERROR: orthogonality lost in interp_lmp_model'
-            stop
-         end if
+         ! if (abs(norm-1.0)>1.0e-6) then
+         !    write(*,'(a)') 'ERROR: orthogonality lost in interp_lmp_model'
+         !    stop
+         ! end if
       end do
 
       ! Ritz vectors
