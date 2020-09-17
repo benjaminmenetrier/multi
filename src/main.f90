@@ -58,9 +58,6 @@ read(*,*) n, no, ni, lmp_mode, full_res, new_seed, sigma_obs, sigmabvar, Lb
 ! read(111,*) Lb
 ! close(111)
 
-! To be consistant in the number of inner/outer iterations (fix later):
-no=no+1
-
 ! Allocations of tables
 allocate(fac(no),nn(no))
 allocate(xb(n),xg(n),dxb(n),dxbbar(n,no),dxabar(n,no),dxabar_interp(n))

@@ -45,13 +45,16 @@ if not os.path.exists(results_dir_root):
 
 # Loop over a given parameter:
 for sigmabvar in [0.0]:
+
+    # outer iteraions for plotting
     outer_iterations=[]
-    for io in range(no+2):
-        outer_iterations.append(io+(ni-1)*io)
+    for io in range(no):
+        outer_iterations.append((ni+1)*io)
     
     parameters=[n, no, ni, lmp_mode, full_res, new_seed, sigma_obs, sigmabvar, Lb]
 
-    print("============== running with sigmabvar={} ============== ".format(sigmabvar))
+    print("\n ============== running with sigmabvar={} ============== \n".format(sigmabvar))
+
     # Create the results directory:
     res_dir=results_dir_root+'res_n{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
     print('res_dir=', res_dir)
