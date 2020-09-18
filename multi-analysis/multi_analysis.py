@@ -73,10 +73,10 @@ def compare_plot_N(out_name,obj1,ylabel1,obj2,ylabel2,x,xlabel,io):
     """Produces usefull comparision with N plots:
     Args:
         out_name (string): Name of the output png file.
-        obj1 (list): List containing lists of numbers to be compared together.
-        yabel (string) : Label of the y-axis.
+        obj1 (list)      : List containing lists to be compared together.
+        yabel (string)   : Label of the y-axis.
         obj2 (list)      : List of numbers regarding which one wants to compare.
-        ylabel (string) : Label of obj2.
+        ylabel (string)  : Label of obj2.
         x (list)         : List of numbers for x-axis.
         xlabel (string)  : Label of x-axis
     Return:
@@ -87,27 +87,27 @@ def compare_plot_N(out_name,obj1,ylabel1,obj2,ylabel2,x,xlabel,io):
     fig = plt.figure(1, figsize=(9,9))
     gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
 
-    # Top plot: obj1 vs obj2
+    # Top plot: [obj11,obj12,..obj1N]
     ax1 = fig.add_subplot(gs[0])
     plt.yscale("log")
     ymax=0.
     for obj in obj1:
-        ymax_tmp=max(max(obj))
+        ymax_tmp=max(obj)
         if (ymax_tmp>ymax):
             ymax=ymax_tmp
-        c=list(np.random.choice(range(256), size=3)))
+        c=np.random.random(3)
         ax1.plot(x[:],obj,color=c)
     ax1.set_ylabel(ylabel1)
     start, end = ax1.get_xlim()
     #ax1.xaxis.set_ticks(np.arange(start, end, 1.))
     ax1.vlines(io, 0, ymax, colors='black', linestyles='dashed')
 
-    # Bottom plot: obj3
+    # Bottom plot: obj2
     ax2 = fig.add_subplot(gs[1])
-    ax2.plot(x[:],obj3,color='black')
+    ax2.plot(x[:],obj2,color='black')
     ax2.axhline(color="gray", zorder=-1)
     ax2.set_xlabel(xlabel)
-    ax2.set_ylabel(ylabel3)
+    ax2.set_ylabel(ylabel2)
     plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
     #ax2.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.4f'))
     plt.savefig(out_name)
@@ -116,7 +116,7 @@ def compare_plot_N(out_name,obj1,ylabel1,obj2,ylabel2,x,xlabel,io):
 
 
 ################################################################################
-def multi_plot_(results_directory,io):
+def multi_plot(results_directory,io):
 
     # Get the results files from the results directory and store them in lists:
     lanczos=np.atleast_2d(np.genfromtxt(results_directory+'/lanczos_control_space.dat', comments='#'))
@@ -145,9 +145,17 @@ def multi_plot_(results_directory,io):
                  itot,'iterations',io)
 
     # test plot:
-    none_vs_ritz=
-    out_name=results_directory+"/lanczos_vs_PlanczosIF_J_none_vs_ritz.png"
-    compare_plot_N(out_name,none_vs_ritz,r'$J=J_o+J_b$',
-                 residuals,r'$\Delta J$',
-                 itot,'iterations',io)
+    obj1=[lanczos[:,5],PlanczosIF[:,3],lanczos[:,3]]
+    ylabel1='lala'
+    ylabel2='toto'
+    obj2=diff[:,5]
+    x=itot
+    xlabel='iterations'
+    io=io
+    out_name=results_directory+"/test.png"
+
+    compare_plot_N(out_name,obj1,ylabel1,obj2,ylabel2,x,xlabel,io)
+
+
 ################################################################################
+
