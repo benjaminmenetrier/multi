@@ -13,8 +13,8 @@ import sys
 import numpy as np
 from distutils.dir_util import copy_tree
 from multi_analysis import multi_plot
-from multi_analysis import compare_plots_2N
-
+from multi_analysis import lmp_compare
+from fnmatch import fnmatch
 
 # Default values for the parameters:
 n=128
@@ -27,11 +27,33 @@ sigma_obs=0.1
 sigmabvar=0.0
 Lb=0.005
 
+# if True, the results already existing will be rewritten
+rewrite_results=False
+
 # Paths and executable file:
 path_to_code='..'
 exec_code='./run/multi '
+
+# Output paths:
+# Where are written the raw outputs of the code:
 code_output='../results'
+if not os.path.exists(code_output):
+    os.mkdir(code_output)
+
+# Global results of the analysis:
 results_dir_root='./analysis_results/'
+if not os.path.exists(results_dir_root):
+    os.mkdir(results_dir_root)
+
+# Raw results of the analysis: 
+res_dir_raw=results_dir_root+'raw_results/'
+if not os.path.exists(res_dir_raw):
+    os.mkdir(res_dir_raw)
+
+# Results for the comparision between LMP modes:
+res_dir_lmp_compare=results_dir_root+'lmp_compare/'
+if not os.path.exists(res_dir_lmp_compare):
+    os.mkdir(res_dir_lmp_compare)
 
 # Get the current working directory:
 cwd=os.getcwd()
@@ -41,82 +63,94 @@ os.chdir(path_to_code)
 os.system('make')
 os.chdir(cwd)
 
-# Create the results directory:
-if not os.path.exists(results_dir_root):
-    os.mkdir(results_dir_root)
-
-# Outer iteraions for plotting:
-outer_iterations=[]
-for io in range(no):
-    outer_iterations.append((ni+1)*io)
+################################################################################
+# Run the code, and store the results:
 
 # Store the results directories produced in the following loop:
 res_dir_list=[]
+# Outer iteraions for plotting:
+outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
-for lmp_mode in ['ritz','spectral']:
-    
-    parameters=[n, no, ni, lmp_mode, full_res, new_seed, sigma_obs, sigmabvar, Lb]
-    
-    # Create the results directory:
-    res_dir=results_dir_root+'res_n{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
-    res_dir_list.append(res_dir)
-    if not os.path.exists(res_dir):
-        os.mkdir(res_dir)
-    
-    # define the command line to run the code:
-    arguments=''
-    for par in parameters:
-        arguments+=' {} '.format(par)
-    exec_command ='echo '+ arguments + ' | ' + exec_code
-    print("\n",exec_command,"\n")
-    
-    # Run the code and save the results:
-    os.chdir(path_to_code)
-    os.system(exec_command)
-    os.chdir(cwd)
-    copy_tree(code_output,res_dir)
+for lmp_mode in ['ritz','spectral']:#,'none']:
+    for n in [128]:#[128,512,2048]:
+        for no in [2,3]:#[2,3,4,5]:
+            for ni in [4]:#[2,4,6,8]:
+                # Outer iteraions for plotting:
+                outer_iterations=[]
+                for io in range(no):
+                    outer_iterations.append((ni+1)*io)
+                outer_iterations_list.append(outer_iterations)
 
-# Run the analysis over the results:
-for res_dir in res_dir_list:
-    multi_plot(res_dir,outer_iterations)
+                # parameters of the code:
+                parameters=[n, no, ni, lmp_mode, full_res, new_seed, sigma_obs, sigmabvar, Lb]
+                
+                # Create the results directory:
+                res_dir=res_dir_raw+'res_n{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
+                res_dir_list.append(res_dir)
+                
+                if not rewrite_results and os.path.exists(res_dir):
+                    continue
+                if not os.path.exists(res_dir):
+                    os.mkdir(res_dir)
+                    
+                # define the command line to run the code:
+                arguments=''
+                for par in parameters:
+                    arguments+=' {} '.format(par)
+                exec_command ='echo '+ arguments + ' | ' + exec_code
+                print("\n",exec_command,"\n")
+                
+                # Run the code and save the results:
+                os.chdir(path_to_code)
+                os.system(exec_command)
+                os.chdir(cwd)
+                copy_tree(code_output,res_dir)
+################################################################################
 
 
 
+################################################################################
+# Plot the results of the code:
+#multi_plot(res_dir_list,outer_iterations_list)
+################################################################################
 
-# Compare spectral and ritz lmp modes:
-results_directory_test=[]
-labels=[]
-legend=[]
 
-for lmp_mode in ['ritz','spectral']:
-    labels.append(lmp_mode)
-    legend.append([lmp_mode+'-model',lmp_mode+'-control'])
-    results_directory_test.append(results_dir_root+'res_n{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}'.format(n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res))
-    
 
-diff_list=[]
-obj_list=[]
+################################################################################
+# Comparision of LMP methods:
 
-for res_dir in results_directory_test:
-    res1=np.genfromtxt(res_dir+'/lanczos_control_vs_PlanczosIF_model.dat', comments='#')
-    res2=np.genfromtxt(res_dir+'/PlanczosIF_model_space.dat', comments='#')    
-    res3=np.genfromtxt(res_dir+'/lanczos_control_space.dat', comments='#')
-    diff_list.append(res1[:,3])
-    obj_list.append([res2[:,3],res3[:,3]])
-    
+# Output filenames:
+out_names=[]
+# Store the outer_itertaions:
+outer_iterations_list_tmp=[]
+# Store the results files to compare:
+lmp_to_compare=[]
 
-# maybe dirtyish but...
-itot=list(range(len(obj_list[0][0])))
+for r,res_dir in enumerate(res_dir_list):
+    if 'ritz' in res_dir:
+        res_tmp=res_dir.split('ritz')
+        res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
+        # Store the output files names
+        out_name=res_tmp1+'compare'+res_tmp2
+        out_name=out_name.split(res_dir_raw)[1]
+        if not os.path.exists(res_dir_lmp_compare+out_name):
+            os.mkdir(res_dir_lmp_compare+out_name)
+        out_name=res_dir_lmp_compare+out_name+'lmp_compare.png'
+        out_names.append(out_name)
+        # Store the outer iterations:
+        outer_iterations_list_tmp.append(outer_iterations_list[r])
+        # Store the results files to compare:
+        lmp_to_compare_tmp=[]
+        for lmp in ['ritz','spectral']:#,'none']:
+            lmp_to_compare_tmp.append(res_tmp1+lmp+res_tmp2)
+        lmp_to_compare.append(lmp_to_compare_tmp)
+        print(lmp_to_compare)
+    print('\n')
 
-print(legend)
+print('outnames',out_names)
+print('\n lmp_to_compare',lmp_to_compare)
+print('\n i',outer_iterations_list)
 
-ylabel1=r'$J=J_o+J_b$'
-ylabel2=r'$\Delta J$'
-x=itot
-xlabel='iterations'
-io=outer_iterations
-out_name=results_dir_root+"/test.png"
-
-compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,legend)
-
+# Plots the comparision of LMP methods:
+lmp_compare(out_names,lmp_to_compare,outer_iterations_list)

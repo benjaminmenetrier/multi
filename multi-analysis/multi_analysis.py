@@ -96,7 +96,7 @@ def compare_plots_2N(out_name,obj1,ylabel1,obj2,ylabel2,x,xlabel,io,legend):
         c.append(tuple(np.random.random(3)))
         ymax_tmp=max(max(obj[0]),max(obj[1]))
         if (ymax_tmp>ymax):
-            ymax=ymax_tmp    
+            ymax=ymax_tmp
         ax1.plot(x[:],obj[0],color=c[o],label=legend[o][0])
         ax1.plot(x[:],obj[1],color=c[o],linestyle='dashed',label=legend[o][1])
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
@@ -122,13 +122,13 @@ def compare_plots_2N(out_name,obj1,ylabel1,obj2,ylabel2,x,xlabel,io,legend):
 
 
 ################################################################################
-def multi_plot(results_directory,io):
+def evolution_plot(results_directory,io):
     """Plots J, Jo and Jb for lanczos and PlanczosIf, as well as their difference.
     """
     # Get the results files from the results directory and store them in lists:
-    lanczos=np.genfromtxt(results_directory+'/lanczos_control_space.dat', comments='#')
-    PlanczosIF=np.genfromtxt(results_directory+'/PlanczosIF_model_space.dat', comments='#')
-    diff=np.genfromtxt(results_directory+'/lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+    lanczos=np.genfromtxt(results_directory+'lanczos_control_space.dat', comments='#')
+    PlanczosIF=np.genfromtxt(results_directory+'PlanczosIF_model_space.dat', comments='#')
+    diff=np.genfromtxt(results_directory+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
 
     # lanczos=np.atleast_2d(np.genfromtxt(results_directory+'/lanczos_control_space.dat', comments='#'))
     # PlanczosIF=np.atleast_2d(np.genfromtxt(results_directory+'/PlanczosIF_model_space.dat', comments='#'))
@@ -156,4 +156,91 @@ def multi_plot(results_directory,io):
                  itot,'iterations',io)
 ################################################################################
 
-    
+
+################################################################################
+def multi_plot(res_dir_list,outer_iterations):
+    """Run the analysis over the results:
+    """
+    for r,res_dir in enumerate(res_dir_list):
+        print(res_dir)
+        try:
+            evolution_plot(res_dir,outer_iterations[r])
+        except:
+            print("Error with directory:",res_dir)
+            pass
+################################################################################
+
+  
+
+################################################################################
+def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
+    """Compare spectral and ritz lmp modes:
+    """
+
+    labels=[]
+    legend=[]
+    for lmp_mode in ['ritz','spectral','none']:
+        labels.append(lmp_mode)
+        legend.append([lmp_mode+'-model',lmp_mode+'-control'])
+        
+
+    for r,res_dirs in enumerate(lmp_to_compare):
+        diff_list=[]
+        obj_list=[]
+        for res_dir in res_dirs:
+            res1=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+            res2=np.genfromtxt(res_dir+'PlanczosIF_model_space.dat', comments='#')    
+            res3=np.genfromtxt(res_dir+'lanczos_control_space.dat', comments='#')
+            diff_list.append(res1[:,3])
+            obj_list.append([res2[:,3],res3[:,3]])
+            
+        # maybe dirtyish but...
+        itot=list(range(len(res1)))
+
+        ylabel1=r'$J=J_o+J_b$'
+        ylabel2=r'$\Delta J$'
+        x=itot
+        xlabel='iterations'
+        out_name=out_names[r]
+        outer_iterations=outer_iterations_list[r]
+        compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+################################################################################
+
+
+
+################################################################################
+# def lmp_compare(results_dir_root,n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res,outer_iterations):
+#     """Compare spectral and ritz lmp modes:
+#     """
+
+#     results_directory_lmp=[]
+#     out_names=[]
+#     labels=[]
+#     legend=[]
+#     for lmp_mode in ['ritz','spectral','none']:
+#         labels.append(lmp_mode)
+#         legend.append([lmp_mode+'-model',lmp_mode+'-control'])
+        
+#         res_dir=results_dir_root+'res_n{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}'.format(n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
+#         results_directory_lmp.append(res_dir)
+
+#         out_name=res_dir.replace("lmp_{}".format(lmp_mode),"")
+        
+#     diff_list=[]
+#     obj_list=[]
+#     for res_dir in results_directory_lmp:
+#         res1=np.genfromtxt(res_dir+'/lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+#         res2=np.genfromtxt(res_dir+'/PlanczosIF_model_space.dat', comments='#')    
+#         res3=np.genfromtxt(res_dir+'/lanczos_control_space.dat', comments='#')
+#         diff_list.append(res1[:,3])
+#         obj_list.append([res2[:,3],res3[:,3]])
+        
+#     # maybe dirtyish but...
+#     itot=list(range(len(obj_list[0][0])))
+
+#     ylabel1=r'$J=J_o+J_b$'
+#     ylabel2=r'$\Delta J$'
+#     x=itot
+#     xlabel='iterations'                                                                    
+#     compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+################################################################################
