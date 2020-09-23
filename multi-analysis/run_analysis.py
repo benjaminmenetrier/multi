@@ -71,48 +71,52 @@ res_dir_list=[]
 # Outer iteraions for plotting:
 outer_iterations_list=[]
 
+
 # Loop over the parameters and run the code:
 for lmp_mode in ['ritz','spectral','none']:
-    for n in [128,512,2048]:
-        for no in [2,3,4,5]:
-            for ni in [2,4,6,8]:
-                # Outer iteraions for plotting:
-                outer_iterations=[]
-                for io in range(no):
-                    outer_iterations.append((ni+1)*io)
-                outer_iterations_list.append(outer_iterations)
+    for n in [128,2048]:
+        for no in [3,5]:
+            for ni in [4,8]:
+                for sigma_obs in [0.1,0.2]:
+                    for sigmabvar in [0.,0.01]:
+                        for Lb in [0.005,0.1]:
+                            # Outer iteraions for plotting:
+                            outer_iterations=[]
+                            for io in range(no):
+                                outer_iterations.append((ni+1)*io)
+                            outer_iterations_list.append(outer_iterations)
 
-                # parameters of the code:
-                parameters=[n, no, ni, lmp_mode, full_res, new_seed, sigma_obs, sigmabvar, Lb]
-                
-                # Create the results directory:
-                res_dir=res_dir_raw+'res_n{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
-                res_dir_list.append(res_dir)
-                
-                if not rewrite_results and os.path.exists(res_dir):
-                    continue
-                if not os.path.exists(res_dir):
-                    os.mkdir(res_dir)
-                    
-                # define the command line to run the code:
-                arguments=''
-                for par in parameters:
-                    arguments+=' {} '.format(par)
-                exec_command ='echo '+ arguments + ' | ' + exec_code
-                print("\n",exec_command,"\n")
-                
-                # Run the code and save the results:
-                os.chdir(path_to_code)
-                os.system(exec_command)
-                os.chdir(cwd)
-                copy_tree(code_output,res_dir)
+                            # parameters of the code:
+                            parameters=[n, no, ni, lmp_mode, full_res, new_seed, sigma_obs, sigmabvar, Lb]
+
+                            # Create the results directory:
+                            res_dir=res_dir_raw+'res_n{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
+                            res_dir_list.append(res_dir)
+
+                            if not rewrite_results and os.path.exists(res_dir):
+                                continue
+                            if not os.path.exists(res_dir):
+                                os.mkdir(res_dir)
+
+                            # define the command line to run the code:
+                            arguments=''
+                            for par in parameters:
+                                arguments+=' {} '.format(par)
+                            exec_command ='echo '+ arguments + ' | ' + exec_code
+                            print("\n",exec_command,"\n")
+
+                            # Run the code and save the results:
+                            os.chdir(path_to_code)
+                            os.system(exec_command)
+                            os.chdir(cwd)
+                            copy_tree(code_output,res_dir)
 ################################################################################
 
 
 
 ################################################################################
 # Plot the results of the code:
-#multi_plot(res_dir_list,outer_iterations_list)
+multi_plot(res_dir_list,outer_iterations_list)
 ################################################################################
 
 
@@ -149,3 +153,33 @@ for r,res_dir in enumerate(res_dir_list):
 # Plots the comparision of LMP methods:
 lmp_compare(out_names,lmp_to_compare,outer_iterations_list)
 ################################################################################
+
+
+
+
+
+# Output filenames:
+out_names=[]
+# Store the outer_itertaions:
+outer_iterations_list_tmp=[]
+# Store the results files to compare:
+lmp_to_compare=[]
+
+for n in []
+    if 'ritz' in res_dir:
+        res_tmp=res_dir.split('ritz')
+        res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
+        # Store the output files names
+        out_name=res_tmp1+'compare'+res_tmp2
+        out_name=out_name.split(res_dir_raw)[1]
+        if not os.path.exists(res_dir_lmp_compare+out_name):
+            os.mkdir(res_dir_lmp_compare+out_name)
+        out_name=res_dir_lmp_compare+out_name+'lmp_compare.png'
+        out_names.append(out_name)
+        # Store the outer iterations:
+        outer_iterations_list_tmp.append(outer_iterations_list[r])
+        # Store the results files to compare:
+        lmp_to_compare_tmp=[]
+        for lmp in ['ritz','spectral','none']:
+            lmp_to_compare_tmp.append(res_tmp1+lmp+res_tmp2)
+        lmp_to_compare.append(lmp_to_compare_tmp)
