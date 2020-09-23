@@ -69,14 +69,14 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io):
 
 
 ################################################################################
-def compare_plots_2N(out_name,obj1,ylabel1,obj2,ylabel2,x,xlabel,io,legend):
+def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,legend):
     """Produces usefull comparision with 2N plots:
     Args:
         out_name (string): Name of the output png file.
-        obj1 (list)      : List containing lists to be compared together.
+        obj_list (list)      : List containing lists to be compared together.
         yabel (string)   : Label of the y-axis.
-        obj2 (list)      : List of numbers regarding which one wants to compare.
-        ylabel (string)  : Label of obj2.
+        diff_list (list)      : List of numbers regarding which one wants to compare.
+        ylabel (string)  : Label of diff_list.
         x (list)         : List of numbers for x-axis.
         xlabel (string)  : Label of x-axis
     Return:
@@ -87,29 +87,31 @@ def compare_plots_2N(out_name,obj1,ylabel1,obj2,ylabel2,x,xlabel,io,legend):
     fig = plt.figure(1, figsize=(9,9))
     gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
 
-    # Top plot: [obj11,obj12,..obj1N]:
+    # Top plot: [obj_list1,obj_list2,..obj_listN]:
     ax1 = fig.add_subplot(gs[0])
     plt.yscale("log")
     ymax=0.
     c=[]
-    for o,obj in enumerate(obj1):
+    for o,obj in enumerate(obj_list):
         c.append(tuple(np.random.random(3)))
+        # boucle for ici sur obj a faire plus tard:
         ymax_tmp=max(max(obj[0]),max(obj[1]))
         if (ymax_tmp>ymax):
             ymax=ymax_tmp
         ax1.plot(x[:],obj[0],color=c[o],label=legend[o][0])
         ax1.plot(x[:],obj[1],color=c[o],linestyle='dashed',label=legend[o][1])
+        #ax1.plot(x[:],obj[2],color=c[o],linestyle='dotted',label=legend[o][2])
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-           ncol=2, mode="expand", borderaxespad=0.)
+           ncol=3, mode="expand", borderaxespad=0.)
     ax1.set_ylabel(ylabel1)
     start, end = ax1.get_xlim()
     #ax1.xaxis.set_ticks(np.arange(start, end, 1.))
     ax1.vlines(io, 0, ymax, colors='black', linestyles='dashed')
 
-    # Bottom plot: obj2
+    # Bottom plot: diff_list
     ax2 = fig.add_subplot(gs[1])
-    for o,obj in enumerate(obj2):
-        ax2.plot(x[:],obj,color=c[o])
+    for d,diff in enumerate(diff_list):
+        ax2.plot(x[:],diff,color=c[d])
     ax2.axhline(color="gray", zorder=-1)
     ax2.set_xlabel(xlabel)
     ax2.set_ylabel(ylabel2)
@@ -162,7 +164,7 @@ def multi_plot(res_dir_list,outer_iterations):
     """Run the analysis over the results:
     """
     for r,res_dir in enumerate(res_dir_list):
-        print(res_dir)
+        print("plotting for: ",res_dir)
         try:
             evolution_plot(res_dir,outer_iterations[r])
         except:
@@ -193,54 +195,19 @@ def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
             res3=np.genfromtxt(res_dir+'lanczos_control_space.dat', comments='#')
             diff_list.append(res1[:,3])
             obj_list.append([res2[:,3],res3[:,3]])
-            
+        
         # maybe dirtyish but...
         itot=list(range(len(res1)))
-
+        print("plotting lmp comparision for:\n",out_names[r])
         ylabel1=r'$J=J_o+J_b$'
         ylabel2=r'$\Delta J$'
         x=itot
         xlabel='iterations'
         out_name=out_names[r]
         outer_iterations=outer_iterations_list[r]
-        compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
-################################################################################
-
-
-
-################################################################################
-# def lmp_compare(results_dir_root,n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res,outer_iterations):
-#     """Compare spectral and ritz lmp modes:
-#     """
-
-#     results_directory_lmp=[]
-#     out_names=[]
-#     labels=[]
-#     legend=[]
-#     for lmp_mode in ['ritz','spectral','none']:
-#         labels.append(lmp_mode)
-#         legend.append([lmp_mode+'-model',lmp_mode+'-control'])
-        
-#         res_dir=results_dir_root+'res_n{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}'.format(n,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
-#         results_directory_lmp.append(res_dir)
-
-#         out_name=res_dir.replace("lmp_{}".format(lmp_mode),"")
-        
-#     diff_list=[]
-#     obj_list=[]
-#     for res_dir in results_directory_lmp:
-#         res1=np.genfromtxt(res_dir+'/lanczos_control_vs_PlanczosIF_model.dat', comments='#')
-#         res2=np.genfromtxt(res_dir+'/PlanczosIF_model_space.dat', comments='#')    
-#         res3=np.genfromtxt(res_dir+'/lanczos_control_space.dat', comments='#')
-#         diff_list.append(res1[:,3])
-#         obj_list.append([res2[:,3],res3[:,3]])
-        
-#     # maybe dirtyish but...
-#     itot=list(range(len(obj_list[0][0])))
-
-#     ylabel1=r'$J=J_o+J_b$'
-#     ylabel2=r'$\Delta J$'
-#     x=itot
-#     xlabel='iterations'                                                                    
-#     compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+        try:
+            compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+        except:
+            compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+#            print("Error with lmp comparision of:",res_dirs)
 ################################################################################

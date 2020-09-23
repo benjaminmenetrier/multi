@@ -72,10 +72,10 @@ res_dir_list=[]
 outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
-for lmp_mode in ['ritz','spectral']:#,'none']:
-    for n in [128]:#[128,512,2048]:
-        for no in [2,3]:#[2,3,4,5]:
-            for ni in [4]:#[2,4,6,8]:
+for lmp_mode in ['ritz','spectral','none']:
+    for n in [128,512,2048]:
+        for no in [2,3,4,5]:
+            for ni in [2,4,6,8]:
                 # Outer iteraions for plotting:
                 outer_iterations=[]
                 for io in range(no):
@@ -142,15 +142,10 @@ for r,res_dir in enumerate(res_dir_list):
         outer_iterations_list_tmp.append(outer_iterations_list[r])
         # Store the results files to compare:
         lmp_to_compare_tmp=[]
-        for lmp in ['ritz','spectral']:#,'none']:
+        for lmp in ['ritz','spectral','none']:
             lmp_to_compare_tmp.append(res_tmp1+lmp+res_tmp2)
         lmp_to_compare.append(lmp_to_compare_tmp)
-        print(lmp_to_compare)
-    print('\n')
-
-print('outnames',out_names)
-print('\n lmp_to_compare',lmp_to_compare)
-print('\n i',outer_iterations_list)
 
 # Plots the comparision of LMP methods:
 lmp_compare(out_names,lmp_to_compare,outer_iterations_list)
+################################################################################
