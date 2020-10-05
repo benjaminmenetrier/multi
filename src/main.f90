@@ -42,7 +42,7 @@ type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
 ! /!\ Create later a module that read the inputs and call it here. /!\
 
 ! Read the parameters from the standard input
-read(*,*) n, no, ni, lmp_mode, full_res, new_seed, sigma_obs, sigmabvar, Lb
+read(*,*) n, no, ni, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed
 
 ! ! Read the parameters from the file 'parameters.dat'
 ! open(111,file='parameters.dat', action ='read')
@@ -91,14 +91,25 @@ call hmatrix_test(hmatrix_full,n,nobs)
 call rmatrix_setup(rmatrix,nobs,sigma_obs)
 
 ! Set resolutions
+! do io=1,no
+!    if (full_res) then
+!       fac(io) = 1
+!    else
+!       fac(io) = 2**(no-io)
+!    end if
+!    nn(io) = n/fac(io)
+! end do
+
+
 do io=1,no
    if (full_res) then
       fac(io) = 1
    else
-      fac(io) = 2**(no-io)
+      fac(io) = 1**(no-io)
    end if
    nn(io) = n/fac(io)
 end do
+
 
 ! Setup full resolution B matrix
 call bmatrix_setup(bmatrix_full,n,n,sigmabvar,Lb)

@@ -50,8 +50,8 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io):
     # Top plot: obj1 vs obj2
     ax1 = fig.add_subplot(gs[0])
     plt.yscale("log")
-    ax1.plot(x[:],obj1,color='blue')
-    ax1.plot(x[:],obj2,color='blue',linestyle='dashed')
+    ax1.plot(x[:len(obj1)],obj1,color='blue')
+    ax1.plot(x[:len(obj2)],obj2,color='blue',linestyle='dashed')
     ymax=max(max(obj1),max(obj2))
     ax1.set_ylabel(ylabel12)
     start, end = ax1.get_xlim()
@@ -60,7 +60,7 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io):
 
     # Bottom plot: obj3
     ax2 = fig.add_subplot(gs[1])
-    ax2.plot(x[:],obj3,color='black')
+    ax2.plot(x[:len(obj3)],obj3,color='black')
     ax2.axhline(color="gray", zorder=-1)
     ax2.set_xlabel(xlabel)
     ax2.set_ylabel(ylabel3)
@@ -112,12 +112,12 @@ def multi_plot(res_dir_list,outer_iterations):
     """Run the analysis over the results:
     """
     for r,res_dir in enumerate(res_dir_list):
-        print("plotting for: ",res_dir)
+        print("plotting for raw results for: \n",res_dir)
         try:
             evolution_plot(res_dir,outer_iterations[r])
         except:
-            print("Error with directory:",res_dir)
-            pass
+            evolution_plot(res_dir,outer_iterations[r])
+            #print("Error with directory:",res_dir)
 ################################################################################
 
 
@@ -142,21 +142,20 @@ def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,leg
     fig = plt.figure(1, figsize=(9,9))
     gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
 
-    print(out_name)
     # Top plot: [obj_list1,obj_list2,..obj_listN]:
     ax1 = fig.add_subplot(gs[0])
-    at = AnchoredText("Figure 1a",
-                  prop=dict(size=15), frameon=True,loc='upper left',)
-    at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
-    ax1.add_artist(at)
+    # at = AnchoredText(r"Figure 1",
+    #               prop=dict(size=15), frameon=True,loc='upper left',)
+    # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
+    # ax1.add_artist(at)
     plt.yscale("log")
     ymax=0.
     for o,obj in enumerate(obj_list):
         ymax_tmp=max(max(obj[0]),max(obj[1]))
         if (ymax_tmp>ymax):
             ymax=ymax_tmp
-        ax1.plot(x[:],obj[0],color=colors[o],label=legend[o][0])
-        ax1.plot(x[:],obj[1],color=colors[o],linestyle='dashed',label=legend[o][1])
+        ax1.plot(x[:len(obj[0])],obj[0],color=colors[o],label=legend[o][0])
+        ax1.plot(x[:len(obj[1])],obj[1],color=colors[o],linestyle='dashed',label=legend[o][1])
         plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
            ncol=3, mode="expand", borderaxespad=0.)
     ax1.set_ylabel(ylabel1)
@@ -167,7 +166,7 @@ def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,leg
     # Bottom plot: diff_list
     ax2 = fig.add_subplot(gs[1])
     for d,diff in enumerate(diff_list):
-        ax2.plot(x[:],diff,color=colors[d])
+        ax2.plot(x[:len(diff)],diff,color=colors[d])
     ax2.axhline(color="gray", zorder=-1)
     ax2.set_xlabel(xlabel)
     ax2.set_ylabel(ylabel2)
@@ -200,7 +199,7 @@ def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
         
         # maybe dirtyish but...
         itot=list(range(len(res1)))
-        print("plotting lmp comparision for:\n",out_names[r])
+        print("plotting lmp comparision for:\n",out_names[r],"\n")
         ylabel1=r'$J=J_o+J_b$'
         ylabel2=r'$J_{B^{1/2}}-J_{B}$'
         x=itot
@@ -210,40 +209,40 @@ def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
         try:
             compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
         except:
-            #compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
-            print("Error with lmp comparision of:",res_dirs)
+            compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+            #print("Error with lmp comparision of:\n",res_dirs,"\n")
 ################################################################################
 
 
-################################################################################
-def diff_plot(out_names,param_list,res_dir_list):
+# ################################################################################
+# def diff_plot(out_names,param_list,res_dir_list):
 
-    legend=[]
-    for lmp_mode in ['ritz','spectral','none']:
-            for par in param_list:
-                legend.append([lmp_mode+'-model',lmp_mode+'-control'])
+#     legend=[]
+#     for lmp_mode in ['ritz','spectral','none']:
+#             for par in param_list:
+#                 legend.append([lmp_mode+'-model',lmp_mode+'-control'])
 
-    ylabel=r'$J_{B^{1/2}}-J_{B}$'
-    xlabel=r'\N_obs'
-    color_map=cm.get_cmap('copper', 3)
-    colors=color_map(range(len(param_list)))
+#     ylabel=r'$J_{B^{1/2}}-J_{B}$'
+#     xlabel=r'\N_obs'
+#     color_map=cm.get_cmap('copper', 3)
+#     colors=color_map(range(len(param_list)))
 
-    for r,res_dirs in enumerate(res_dir_list):
-        diff_list=[]
-        for res_dir in res_dirs:
-            res=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
-            diff_list.append(res[-1,3])
+#     for r,res_dirs in enumerate(res_dir_list):
+#         diff_list=[]
+#         for res_dir in res_dirs:
+#             res=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+#             diff_list.append(res[-1,3])
             
-    # Create figure window to plot data:
-    fig = plt.figure(1, figsize=(9,9))
+#     # Create figure window to plot data:
+#     fig = plt.figure(1, figsize=(9,9))
 
-    for par in param_list: 
-        ax1.plot(param_list[:],diff_list[:],color=colors[o],label=legend[o][0])
-    plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-                                   ncol=3, mode="expand", borderaxespad=0.)
-    ax1.set_ylabel(ylabel)
-    ax1.set_xlabel(xlabel)
-    plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-    plt.savefig(out_name)
-    plt.clf()
-################################################################################
+#     for par in param_list: 
+#         ax1.plot(param_list[:],diff_list[:],color=colors[o],label=legend[o][0])
+#     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
+#                                    ncol=3, mode="expand", borderaxespad=0.)
+#     ax1.set_ylabel(ylabel)
+#     ax1.set_xlabel(xlabel)
+#     plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+#     plt.savefig(out_name)
+#     plt.clf()
+# ################################################################################
