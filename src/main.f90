@@ -105,7 +105,7 @@ do io=1,no
    if (full_res) then
       fac(io) = 1
    else
-      fac(io) = 1**(no-io)
+      fac(io) = 1.2**(no-io)
    end if
    nn(io) = n/fac(io)
 end do

@@ -49,10 +49,11 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io):
 
     # Top plot: obj1 vs obj2
     ax1 = fig.add_subplot(gs[0])
-    plt.yscale("log")
     ax1.plot(x[:len(obj1)],obj1,color='blue')
     ax1.plot(x[:len(obj2)],obj2,color='blue',linestyle='dashed')
     ymax=max(max(obj1),max(obj2))
+    if ymax > 100:
+        plt.yscale("log")
     ax1.set_ylabel(ylabel12)
     start, end = ax1.get_xlim()
     #ax1.xaxis.set_ticks(np.arange(start, end, 1.))
@@ -90,19 +91,19 @@ def evolution_plot(results_directory,io):
     #--------------- Plots for J -----------------------------
     out_name=results_directory+"/lanczos_vs_PlanczosIF_J.png"
     compare_plots(out_name,lanczos[:,3],PlanczosIF[:,3],r'$J=J_b+J_o$',
-                 diff[:,3],r'$\Delta J$',
+                 diff[:,3],r'$J_{B^{1/2}}-J_{B}$',
                  itot,r'iterations',io)
 
     #--------------- Plots for Jb ----------------------------
     out_name=results_directory+"/lanczos_vs_PlanczosIF_Jb.png"
     compare_plots(out_name, lanczos[:,4],PlanczosIF[:,4],r'$J_b$',
-                 diff[:,4],r'$\Delta J_b$',
+                 diff[:,4],r'$J_{b,B^{1/2}}-J_{b,B}$',
                  itot,'iterations',io)
 
     #--------------- Plots for Jo ----------------------------
     out_name=results_directory+"/lanczos_vs_PlanczosIF_Jo.png"
     compare_plots(out_name,lanczos[:,5],PlanczosIF[:,5],r'$J_o$',
-                 diff[:,5],r'$\Delta J_o$',
+                 diff[:,5],r'$J_{o,B^{1/2}}-J_{o,B}$',
                  itot,'iterations',io)
 ################################################################################
 
@@ -214,6 +215,48 @@ def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
 ################################################################################
 
 
+def check_second_level_lmp(out_names,lmp_to_compare,outer_iterations_list):
+    """Compare spectral and ritz lmp modes:
+    """
+
+    legend=[]
+    for space in ['model','control']:
+        legend.append([space+'-ritz',space+'-spectral'])
+        
+    for r,res_dirs in enumerate(lmp_to_compare):
+        print(res_dirs)
+        
+        res_ritz1=np.genfromtxt(res_dirs[0]+'PlanczosIF_model_space.dat', comments='#')    
+        res_ritz2=np.genfromtxt(res_dirs[0]+'lanczos_control_space.dat', comments='#')
+
+        res_spec1=np.genfromtxt(res_dirs[1]+'PlanczosIF_model_space.dat', comments='#')    
+        res_spec2=np.genfromtxt(res_dirs[1]+'lanczos_control_space.dat', comments='#')
+
+        diff1=res_ritz1[:,3]-res_spec1[:,3]
+        diff2=res_ritz2[:,3]-res_spec2[:,3]
+        diff_list=[diff1,diff2]
+        print(diff_list)
+        
+        obj1=[res_ritz1[:,3],res_spec1[:,3]]
+        obj2=[res_ritz2[:,3],res_spec2[:,3]]
+        obj_list=[obj1,obj2]
+
+        for o, obj in obj_list:
+            # maybe dirtyish but...
+            itot=list(range(len(res_ritz1)))
+            print("checkin second level lmp for:\n",out_names[r],"\n")
+            ylabel1=r'$J=J_o+J_b$'
+            ylabel2=r'$J_{ritz}-J_{spec}$'
+            x=itot
+            xlabel='iterations'
+            out_name=out_names[r]
+            outer_iterations=outer_iterations_list[r]
+            try:
+                compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+            except:
+                compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+                #print("Error with lmp comparision of:\n",res_dirs,"\n")
+            
 # ################################################################################
 # def diff_plot(out_names,param_list,res_dir_list):
 
