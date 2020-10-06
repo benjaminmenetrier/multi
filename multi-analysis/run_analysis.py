@@ -52,7 +52,7 @@ code_output='../results'
 out_dirs.append(code_output)
 
 # Roots of the results of the analysis:
-results_dir_root='./analysis_results_res2_nogpfromsp/'
+results_dir_root='./analysis_results_res2_more_complex/'
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -112,11 +112,11 @@ outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
 for lmp_mode in ['ritz','spectral','none']:
-    for nres in [128]:
+    for nres in [2048]:
         for no in [4]:
             for ni in [1,2,6,8]:
                 for sigma_obs in [0.01]:
-                    for sigmabvar in [0.01]:
+                    for sigmabvar in [0.1]:
                         for Lb in [0.001]:
 
                             # Outer iteraions for plotting:
