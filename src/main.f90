@@ -39,7 +39,6 @@ type(rmatrix_type)             :: rmatrix
 type(algo_type),allocatable    :: algo_lanczos(:),algo_planczosif(:)
 type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
 
-! /!\ Create later a module that read the inputs and call it here. /!\
 
 ! Read the parameters from the standard input
 read(*,*) n, no, ni, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed
@@ -72,7 +71,6 @@ call set_seed(new_seed)
 
 ! FFT test
 call fft_test(n)
-
 
 nobs = n/2**(no-1)
 write(*,'(a,i4)') 'Number of observations:                 ',nobs
@@ -109,7 +107,6 @@ do io=1,no
    end if
    nn(io) = n/fac(io)
 end do
-
 
 ! Setup full resolution B matrix
 call bmatrix_setup(bmatrix_full,n,n,sigmabvar,Lb)
@@ -149,7 +146,7 @@ call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
 
 ! Result file:
 open(42,file='results/lanczos_control_space.dat')
-write(42,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo'
+write(42,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, rho'
 
 write(*,'(a)') 'Multi-incremental Lanczos in control space'
 do io=1,no
@@ -196,11 +193,14 @@ do io=1,no
    ! Minimization
    call algo_apply_lanczos(algo_lanczos(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dvb(1:nn(io),io),nobs,d,ni,lmp_lanczos(io),dva(1:nn(io),io))
 
+
    ! Result
    do ii=0,ni
-      write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' = ',algo_lanczos(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii)
+      write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' = ',algo_lanczos(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho(ii)
+
       ! Write the results in a file:
-      write(42,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii)
+      write(42,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho(ii)
+
    end do
 end do
 write(*,'(a)') '' 
@@ -210,7 +210,7 @@ close(42)
 
 ! Result file:
 open(43,file='results/PlanczosIF_model_space.dat')
-write(43,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo'
+write(43,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, rho'
 
 write(*,'(a)') 'Multi-incremental PLanczosIF in model space'
 do io=1,no
@@ -263,7 +263,7 @@ do io=1,no
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' = ',algo_planczosif(io)%jb(ii),' + ',algo_planczosif(io)%jo(ii)
       ! Write the results in a file:
-      write(43,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%jb(ii),' ',algo_planczosif(io)%jo(ii)
+      write(43,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%jb(ii),' ',algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%rho(ii)
    end do
 end do
 close(43)

@@ -22,6 +22,7 @@ type algo_type
    real(8),allocatable :: eigenvec(:,:)
    real(8),allocatable :: lancvec(:,:)
    real(8) :: lastbeta
+   real(8),allocatable :: rho(:)
 end type algo_type
 
 contains
@@ -47,6 +48,8 @@ if (allocated(algo%eigenval)) deallocate(algo%eigenval)
 if (allocated(algo%eigenvec)) deallocate(algo%eigenvec)
 if (allocated(algo%lancvec)) deallocate(algo%lancvec)
 
+if (allocated(algo%rho)) deallocate(algo%rho)
+
 ! Allocation
 allocate(algo%dx(nn,ni))
 allocate(algo%jb(0:ni))
@@ -55,8 +58,11 @@ allocate(algo%eigenval(ni))
 allocate(algo%eigenvec(ni,ni))
 allocate(algo%lancvec(nn,ni+1))
 
+allocate(algo%rho(0:ni))
+
 end subroutine algo_alloc
 
+        
 !----------------------------------------------------------------------
 ! Subroutine: algo_apply_lanczos
 ! Purpose: Lanczos algorithm in control space
@@ -163,49 +169,24 @@ algo%lancvec = v(:,1:ni+1)
 ! Last beta value
 algo%lastbeta = beta(ni+1)
 
-
-! nico:-------------------------------------------------------------------------------
+! ancienne version:
 ! Lanczos to CG
-! Save the residuals:
-open(444,file='results/residuals.dat',status='old',action='write',
-        form='formatted',position="append")
-
 beta(0) = sqrt(sum(r(:,0)**2))
 p(:,0) = r(:,0)
 rho(0) = sum(r(:,0)**2)
-
-write(444,'(a)') '# inner iteration    residuals'
-write(444,'(e15.8)' ) beta(0)
-! store them in a tabmle and write the whole lines in the main.
+algo%rho(0)=rho(0)
 
 do ii=1,ni
    r(:,ii) = -beta(ii+1)*y(ii,ii)*v(:,ii+1)
    rho(ii) = sum(r(:,ii)**2)
-   beta(ii) = rho(ii)/rho(ii-1)
-
-   write(444,'(e15.8)' ) beta(ii)
    
+   algo%rho(ii)=rho(ii)
+   
+   beta(ii) = rho(ii)/rho(ii-1)
    p(:,ii) = r(:,ii)+beta(ii)*p(:,ii-1)
    alpha(ii-1) = sqrt(sum((s(:,ii)-s(:,ii-1))**2)/sum(p(:,ii-1)**2))
    q(:,ii-1) = -(r(:,ii)-r(:,ii-1))/alpha(ii-1)
 end do
-close(444)
-! nico:-------------------------------------------------------------------------------
-
-
-! ancienne version:
-! ! Lanczos to CG
-! beta(0) = sqrt(sum(r(:,0)**2))
-! p(:,0) = r(:,0)
-! rho(0) = sum(r(:,0)**2)
-! do ii=1,ni
-!    r(:,ii) = -beta(ii+1)*y(ii,ii)*v(:,ii+1)
-!    rho(ii) = sum(r(:,ii)**2)
-!    beta(ii) = rho(ii)/rho(ii-1)
-!    p(:,ii) = r(:,ii)+beta(ii)*p(:,ii-1)
-!    alpha(ii-1) = sqrt(sum((s(:,ii)-s(:,ii-1))**2)/sum(p(:,ii-1)**2))
-!    q(:,ii-1) = -(r(:,ii)-r(:,ii-1))/alpha(ii-1)
-! end do
 
 end subroutine algo_apply_lanczos
 

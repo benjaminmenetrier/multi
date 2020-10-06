@@ -215,47 +215,49 @@ def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
 ################################################################################
 
 
-def check_second_level_lmp(out_names,lmp_to_compare,outer_iterations_list):
-    """Compare spectral and ritz lmp modes:
-    """
+# def check_second_level_lmp(out_names,lmp_to_compare,outer_iterations_list):
+#     """Compare spectral and ritz lmp modes:
+#     """
 
-    legend=[]
-    for space in ['model','control']:
-        legend.append([space+'-ritz',space+'-spectral'])
+#     legend=[]
+#     for space in ['model','control']:
+#         legend.append([space+'-ritz',space+'-spectral'])
         
-    for r,res_dirs in enumerate(lmp_to_compare):
-        print(res_dirs)
+#     for r,res_dirs in enumerate(lmp_to_compare):
+#         print(res_dirs)
         
-        res_ritz1=np.genfromtxt(res_dirs[0]+'PlanczosIF_model_space.dat', comments='#')    
-        res_ritz2=np.genfromtxt(res_dirs[0]+'lanczos_control_space.dat', comments='#')
+#         res_ritz1=np.genfromtxt(res_dirs[0]+'PlanczosIF_model_space.dat', comments='#')    
+#         res_ritz2=np.genfromtxt(res_dirs[0]+'lanczos_control_space.dat', comments='#')
 
-        res_spec1=np.genfromtxt(res_dirs[1]+'PlanczosIF_model_space.dat', comments='#')    
-        res_spec2=np.genfromtxt(res_dirs[1]+'lanczos_control_space.dat', comments='#')
+#         res_spec1=np.genfromtxt(res_dirs[1]+'PlanczosIF_model_space.dat', comments='#')    
+#         res_spec2=np.genfromtxt(res_dirs[1]+'lanczos_control_space.dat', comments='#')
 
-        diff1=res_ritz1[:,3]-res_spec1[:,3]
-        diff2=res_ritz2[:,3]-res_spec2[:,3]
-        diff_list=[diff1,diff2]
-        print(diff_list)
+#         diff1=res_ritz1[:,3]-res_spec1[:,3]
+#         diff2=res_ritz2[:,3]-res_spec2[:,3]
+#         diff_list=[diff1,diff2]
+#         print(diff_list)
         
-        obj1=[res_ritz1[:,3],res_spec1[:,3]]
-        obj2=[res_ritz2[:,3],res_spec2[:,3]]
-        obj_list=[obj1,obj2]
+#         obj1=[res_ritz1[:,3],res_spec1[:,3]]
+#         obj2=[res_ritz2[:,3],res_spec2[:,3]]
+#         obj_list=[obj1,obj2]
 
-        for o, obj in obj_list:
-            # maybe dirtyish but...
-            itot=list(range(len(res_ritz1)))
-            print("checkin second level lmp for:\n",out_names[r],"\n")
-            ylabel1=r'$J=J_o+J_b$'
-            ylabel2=r'$J_{ritz}-J_{spec}$'
-            x=itot
-            xlabel='iterations'
-            out_name=out_names[r]
-            outer_iterations=outer_iterations_list[r]
-            try:
-                compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
-            except:
-                compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
-                #print("Error with lmp comparision of:\n",res_dirs,"\n")
+#         for o, obj in obj_list:
+#             # maybe dirtyish but...
+#             itot=list(range(len(res_ritz1)))
+#             print("checkin second level lmp for:\n",out_names[r],"\n")
+#             ylabel1=r'$J=J_o+J_b$'
+#             ylabel2=r'$J_{ritz}-J_{spec}$'
+#             x=itot
+#             xlabel='iterations'
+#             out_name=out_names[r]
+#             outer_iterations=outer_iterations_list[r]
+
+#             print(np.shape(obj_list))
+#             try:
+#                 compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+#             except:
+#                 compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+#                 #print("Error with lmp comparision of:\n",res_dirs,"\n")
             
 # ################################################################################
 # def diff_plot(out_names,param_list,res_dir_list):

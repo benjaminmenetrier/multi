@@ -46,19 +46,19 @@ code_output='../results'
 out_dirs.append(code_output)
 
 # Global results of the analysis:
-results_dir_root='./analysis_results/'
+results_dir_root='./analysis_results_dev/'
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
-res_dir_raw=results_dir_root+'raw_results_res1_gpfrom_sp/'
+res_dir_raw=results_dir_root+'residual/'
 out_dirs.append(res_dir_raw)
 
 # Results for the comparision between LMP modes:
-res_dir_lmp_compare=results_dir_root+'lmp_compare_res1_gp_from_sp/'
+res_dir_lmp_compare=results_dir_root+'residual/'
 out_dirs.append(res_dir_lmp_compare)
 
 # Results for the check of second-level lmp:
-res_dir_lmp_check=results_dir_root+'lmp_check_res1_gp_from_sp/'
+res_dir_lmp_check=results_dir_root+'residual/'
 out_dirs.append(res_dir_lmp_check)
 
 # Results for the evolution of the difference in J vs nobs
