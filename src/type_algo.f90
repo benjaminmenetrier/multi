@@ -22,7 +22,8 @@ type algo_type
    real(8),allocatable :: eigenvec(:,:)
    real(8),allocatable :: lancvec(:,:)
    real(8) :: lastbeta
-   real(8),allocatable :: rho(:)
+   real(8),allocatable :: rho_sqrt(:)
+   real(8),allocatable :: beta(:)
 end type algo_type
 
 contains
@@ -48,7 +49,8 @@ if (allocated(algo%eigenval)) deallocate(algo%eigenval)
 if (allocated(algo%eigenvec)) deallocate(algo%eigenvec)
 if (allocated(algo%lancvec)) deallocate(algo%lancvec)
 
-if (allocated(algo%rho)) deallocate(algo%rho)
+if (allocated(algo%rho_sqrt)) deallocate(algo%rho_sqrt)
+if (allocated(algo%beta)) deallocate(algo%beta)
 
 ! Allocation
 allocate(algo%dx(nn,ni))
@@ -58,7 +60,8 @@ allocate(algo%eigenval(ni))
 allocate(algo%eigenvec(ni,ni))
 allocate(algo%lancvec(nn,ni+1))
 
-allocate(algo%rho(0:ni))
+allocate(algo%rho_sqrt(0:ni))
+allocate(algo%beta(0:ni))
 
 end subroutine algo_alloc
 
@@ -174,15 +177,20 @@ algo%lastbeta = beta(ni+1)
 beta(0) = sqrt(sum(r(:,0)**2))
 p(:,0) = r(:,0)
 rho(0) = sum(r(:,0)**2)
-algo%rho(0)=rho(0)
+
+algo%rho_sqrt(0) = sqrt(rho(0))
+algo%beta(0) = beta(0)
 
 do ii=1,ni
    r(:,ii) = -beta(ii+1)*y(ii,ii)*v(:,ii+1)
    rho(ii) = sum(r(:,ii)**2)
    
-   algo%rho(ii)=rho(ii)
+   algo%rho_sqrt(ii)=sqrt(rho(ii))
    
    beta(ii) = rho(ii)/rho(ii-1)
+
+   algo%beta(ii) = beta(ii)
+   
    p(:,ii) = r(:,ii)+beta(ii)*p(:,ii-1)
    alpha(ii-1) = sqrt(sum((s(:,ii)-s(:,ii-1))**2)/sum(p(:,ii-1)**2))
    q(:,ii-1) = -(r(:,ii)-r(:,ii-1))/alpha(ii-1)
@@ -305,13 +313,23 @@ rho(0) = sum(r(:,0)*z(:,0))
 beta(0) = sqrt(sum(r(:,0)*z(:,0)))
 pbar(:,0) = zbar(:,0)
 p(:,0) = z(:,0)
+
+algo%rho_sqrt(0)=sqrt(rho(0))
+algo%beta(0)=beta(0)
+
 do ii=1,ni
    r(:,ii) = -beta(ii+1)*y(ii,ii)*v(:,ii+1)
    call bmatrix_apply(bmatrix,nn,r(:,ii),l(:,ii))
    call lmp_apply(lmp,nn,ni,lmp%io,r(:,ii),zbar(:,ii))
    call lmp_apply_ad(lmp,nn,ni,lmp%io,l(:,ii),z(:,ii))
    rho(ii) = sum(r(:,ii)*z(:,ii))
+
+   algo%rho_sqrt(ii)=sqrt(rho(ii))
+
    beta(ii) = rho(ii)/rho(ii-1)
+
+   algo%beta(ii) = beta(ii)
+   
    pbar(:,ii) = zbar(:,ii)+beta(ii)*pbar(:,ii-1)
    p(:,ii) = z(:,ii)+beta(ii)*p(:,ii-1)
    alpha(ii-1) = sqrt(sum((s(:,ii)-s(:,ii-1))**2)/sum(p(:,ii-1)**2))

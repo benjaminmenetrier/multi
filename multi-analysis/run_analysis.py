@@ -50,16 +50,20 @@ results_dir_root='./analysis_results_dev/'
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
-res_dir_raw=results_dir_root+'residual/'
+res_dir_raw=results_dir_root+'raw_results/'
 out_dirs.append(res_dir_raw)
 
 # Results for the comparision between LMP modes:
-res_dir_lmp_compare=results_dir_root+'residual/'
-out_dirs.append(res_dir_lmp_compare)
+res_dir_lmp_compare_J=results_dir_root+'lmp_compare_J/'
+out_dirs.append(res_dir_lmp_compare_J)
 
 # Results for the check of second-level lmp:
-res_dir_lmp_check=results_dir_root+'residual/'
+res_dir_lmp_check=results_dir_root+'check_second_level_lmp/'
 out_dirs.append(res_dir_lmp_check)
+
+# Results for the residue:
+res_dir_lmp_compare_rho=results_dir_root+'lmp_compare_rho/'
+out_dirs.append(res_dir_lmp_compare_rho)
 
 # Results for the evolution of the difference in J vs nobs
 res_dir_diff_vs_nobs=results_dir_root+'diff_vs_nobs/'
@@ -140,8 +144,9 @@ multi_plot(res_dir_list,outer_iterations_list)
 # Comparision of LMP methods:
 
 # Output filenames:
-out_names=[]
+out_names_J=[]
 out_names_check=[]
+out_names_rho=[]
 # Store the outer_itertaions:
 outer_iterations_list_tmp=[]
 # Store the results files to compare:
@@ -155,12 +160,18 @@ for r,res_dir in enumerate(res_dir_list):
         # Store the output files names
         out_name=res_tmp1+'compare'+res_tmp2
         out_name=out_name.split(res_dir_raw)[1]
+
+        out_name_J=res_dir_lmp_compare_J+out_name[:-1]+'.png'
         out_name_check=res_dir_lmp_check+out_name[:-1]+'.png'
-        out_name=res_dir_lmp_compare+out_name[:-1]+'.png'
-        out_names.append(out_name)
+        out_name_rho=res_dir_lmp_compare_rho+out_name[:-1]+'.png'
+        
+        out_names_J.append(out_name_J)
         out_names_check.append(out_name_check)
+        out_names_rho.append(out_name_rho)
+        
         # Store the outer iterations:
         outer_iterations_list_tmp.append(outer_iterations_list[r])
+
         # Store the results files to compare:
         lmp_to_compare_tmp=[]
         check_second_level_lmp_tmp=[]
@@ -170,11 +181,25 @@ for r,res_dir in enumerate(res_dir_list):
                 check_second_level_lmp_tmp.append(res_tmp1+lmp+res_tmp2)
         lmp_to_compare.append(lmp_to_compare_tmp)
         check_second_level_lmp_dirs.append(check_second_level_lmp_tmp)
-# Plots the comparision of LMP methods:
-lmp_compare(out_names,lmp_to_compare,outer_iterations_list)
+        
+# Plots the comparision of LMP methods according to J:
+column_of_interest=3
+ylabel1=r'$J=J_o+J_b$'
+ylabel2=r'$J_{B^{1/2}}-J_{B}$'
+lmp_compare(out_names_J,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
+# Plots the comparision of LMP methods according to the residue:
+column_of_interest=6
+ylabel1=r'$\rho$'
+ylabel2=r'$\rho_{B^{1/2}}-\rho_{B}$'
+lmp_compare(out_names_rho,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
 ################################################################################
 
-check_second_level_lmp(out_names_check,check_second_level_lmp_dirs,outer_iterations_list)
+
+
+# Check that the difference between the second level preconditionners:
+#check_second_level_lmp(out_names_check,check_second_level_lmp_dirs,outer_iterations_list)
+
+
 
 # ################################################################################
 # # Comparision of LMP methods:

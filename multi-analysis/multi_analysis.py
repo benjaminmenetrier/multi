@@ -57,7 +57,7 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io):
     ax1.set_ylabel(ylabel12)
     start, end = ax1.get_xlim()
     #ax1.xaxis.set_ticks(np.arange(start, end, 1.))
-    ax1.vlines(io, 0, ymax, colors='black', linestyles='dashed')
+    ax1.vlines(io, 0, ymax, colors='blue', linestyles='dashed')
 
     # Bottom plot: obj3
     ax2 = fig.add_subplot(gs[1])
@@ -162,7 +162,7 @@ def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,leg
     ax1.set_ylabel(ylabel1)
     #start, end = ax1.get_xlim()
     #ax1.xaxis.set_ticks(np.arange(start, end, 1.))
-    ax1.vlines(io, 0, ymax, colors='black', linestyles='dashed')
+    ax1.vlines(io, 0, ymax, colors='blue', linestyles='dashed')
 
     # Bottom plot: diff_list
     ax2 = fig.add_subplot(gs[1])
@@ -179,7 +179,7 @@ def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,leg
 
 
 ################################################################################
-def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
+def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list):
     """Compare spectral and ritz lmp modes:
     """
 
@@ -195,14 +195,12 @@ def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
             res1=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
             res2=np.genfromtxt(res_dir+'PlanczosIF_model_space.dat', comments='#')    
             res3=np.genfromtxt(res_dir+'lanczos_control_space.dat', comments='#')
-            diff_list.append(res1[:,3])
-            obj_list.append([res2[:,3],res3[:,3]])
+            diff_list.append(res1[:,column_of_interest])
+            obj_list.append([res2[:,column_of_interest],res3[:,column_of_interest]])
         
         # maybe dirtyish but...
         itot=list(range(len(res1)))
         print("plotting lmp comparision for:\n",out_names[r],"\n")
-        ylabel1=r'$J=J_o+J_b$'
-        ylabel2=r'$J_{B^{1/2}}-J_{B}$'
         x=itot
         xlabel='iterations'
         out_name=out_names[r]
@@ -258,7 +256,9 @@ def lmp_compare(out_names,lmp_to_compare,outer_iterations_list):
 #             except:
 #                 compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
 #                 #print("Error with lmp comparision of:\n",res_dirs,"\n")
-            
+
+
+
 # ################################################################################
 # def diff_plot(out_names,param_list,res_dir_list):
 

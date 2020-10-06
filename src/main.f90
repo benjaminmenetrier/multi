@@ -146,7 +146,7 @@ call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
 
 ! Result file:
 open(42,file='results/lanczos_control_space.dat')
-write(42,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, rho'
+write(42,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
 
 write(*,'(a)') 'Multi-incremental Lanczos in control space'
 do io=1,no
@@ -196,10 +196,10 @@ do io=1,no
 
    ! Result
    do ii=0,ni
-      write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' = ',algo_lanczos(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho(ii)
+      write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' = ',algo_lanczos(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii)
 
       ! Write the results in a file:
-      write(42,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho(ii)
+      write(42,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho_sqrt(ii),' ',algo_lanczos(io)%beta(ii)
 
    end do
 end do
@@ -210,7 +210,7 @@ close(42)
 
 ! Result file:
 open(43,file='results/PlanczosIF_model_space.dat')
-write(43,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, rho'
+write(43,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
 
 write(*,'(a)') 'Multi-incremental PLanczosIF in model space'
 do io=1,no
@@ -263,7 +263,7 @@ do io=1,no
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' = ',algo_planczosif(io)%jb(ii),' + ',algo_planczosif(io)%jo(ii)
       ! Write the results in a file:
-      write(43,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%jb(ii),' ',algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%rho(ii)
+      write(43,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%jb(ii),' ',algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%rho_sqrt(ii),' ',algo_planczosif(io)%beta(ii)
    end do
 end do
 close(43)
@@ -273,7 +273,7 @@ write(*,'(a)') ''
 
 ! Result file:
 open(44,file='results/lanczos_control_vs_PlanczosIF_model.dat')
-write(44,'(a)') '# Outer iteration , resolution , Inner iteration , delta_J , delta_Jb , delta_Jo'
+write(44,'(a)') '# Outer iteration , resolution , Inner iteration , delta_J , delta_Jb , delta_Jo, sqrt(rho), beta'
 
 write(*,'(a)') 'Lanczos-PLanczosIF comparison:'
 do io=1,no
@@ -281,7 +281,7 @@ do io=1,no
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,' J=Jb+Jo:',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii)-(algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii)),' = ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii)
       ! Write the results in a file:
-      write(44,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii)-(algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii)),' ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii)
+      write(44,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii)-(algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii)),' ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii),' ',algo_lanczos(io)%rho_sqrt(ii)-algo_planczosif(io)%rho_sqrt(ii),' ',algo_lanczos(io)%beta(ii)-algo_planczosif(io)%beta(ii)
    end do
 end do
 close(44)
