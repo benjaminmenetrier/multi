@@ -13,7 +13,7 @@ use type_lmp
 
 implicit none
 
-logical,parameter :: gp_from_sp = .true. ! Use spectral interpolation for model space
+logical,parameter :: gp_from_sp = .false. ! Use spectral interpolation for model space
 
 contains
 

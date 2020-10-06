@@ -200,7 +200,7 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
         
         # maybe dirtyish but...
         itot=list(range(len(res1)))
-        print("plotting lmp comparision for:\n",out_names[r],"\n")
+        print("plotting lmp comparision for:\n",out_names[r],"\n for column:", column_of_interest)
         x=itot
         xlabel='iterations'
         out_name=out_names[r]

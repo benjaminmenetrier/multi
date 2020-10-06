@@ -19,7 +19,7 @@ from multi_analysis import *
 from fnmatch import fnmatch
 
 # Default values for the parameters:
-nobs=128
+nres=128
 no=4 # error when no>4 ?
 ni=5
 lmp_mode='ritz'
@@ -30,6 +30,7 @@ full_res='F'
 new_seed='F'
 gp_from_sp='T' # rajouter cette option
 
+n_obs
 
 # if True, the results already existing will be rewritten
 rewrite_results=True
@@ -45,8 +46,8 @@ out_dirs=[]
 code_output='../results'
 out_dirs.append(code_output)
 
-# Global results of the analysis:
-results_dir_root='./analysis_results_dev/'
+# Roots of the results of the analysis:
+results_dir_root='./analysis_results_res2_nogpfromsp/'
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -61,9 +62,13 @@ out_dirs.append(res_dir_lmp_compare_J)
 res_dir_lmp_check=results_dir_root+'check_second_level_lmp/'
 out_dirs.append(res_dir_lmp_check)
 
-# Results for the residue:
+# Results for rho:
 res_dir_lmp_compare_rho=results_dir_root+'lmp_compare_rho/'
 out_dirs.append(res_dir_lmp_compare_rho)
+
+# Results for beta:
+res_dir_lmp_compare_beta=results_dir_root+'lmp_compare_beta/'
+out_dirs.append(res_dir_lmp_compare_beta)
 
 # Results for the evolution of the difference in J vs nobs
 res_dir_diff_vs_nobs=results_dir_root+'diff_vs_nobs/'
@@ -91,14 +96,24 @@ res_dir_list=[]
 outer_iterations_list=[]
 
 
+# # Loop over the parameters and run the code:
+# for lmp_mode in ['ritz','spectral','none']:
+#     for nobs in [128,2048]:
+#         for no in [4,6]:
+#             for ni in [2,6]:
+#                 for sigma_obs in [0.01,0.1]:
+#                     for sigmabvar in [0.01,0.1]:
+#                         for Lb in [0.001,0.1]:
+
 # Loop over the parameters and run the code:
 for lmp_mode in ['ritz','spectral','none']:
-    for nobs in [2048]:
-        for no in [10]:
-            for ni in [5]:
-                for sigma_obs in [0.1]:
-                    for sigmabvar in [0.1]:
-                        for Lb in [0.1]:
+    for nobs in [128]:
+        for no in [4]:
+            for ni in [1,2,6,8]:
+                for sigma_obs in [0.01]:
+                    for sigmabvar in [0.01]:
+                        for Lb in [0.001]:
+
                             # Outer iteraions for plotting:
                             outer_iterations=[]
                             for io in range(no):
@@ -147,6 +162,7 @@ multi_plot(res_dir_list,outer_iterations_list)
 out_names_J=[]
 out_names_check=[]
 out_names_rho=[]
+out_names_beta=[]
 # Store the outer_itertaions:
 outer_iterations_list_tmp=[]
 # Store the results files to compare:
@@ -164,10 +180,11 @@ for r,res_dir in enumerate(res_dir_list):
         out_name_J=res_dir_lmp_compare_J+out_name[:-1]+'.png'
         out_name_check=res_dir_lmp_check+out_name[:-1]+'.png'
         out_name_rho=res_dir_lmp_compare_rho+out_name[:-1]+'.png'
-        
+        out_name_beta=res_dir_lmp_compare_beta+out_name[:-1]+'.png'
         out_names_J.append(out_name_J)
         out_names_check.append(out_name_check)
         out_names_rho.append(out_name_rho)
+        out_names_beta.append(out_name_beta)
         
         # Store the outer iterations:
         outer_iterations_list_tmp.append(outer_iterations_list[r])
@@ -187,11 +204,16 @@ column_of_interest=3
 ylabel1=r'$J=J_o+J_b$'
 ylabel2=r'$J_{B^{1/2}}-J_{B}$'
 lmp_compare(out_names_J,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
-# Plots the comparision of LMP methods according to the residue:
+# Plots the comparision of LMP methods according to rho:
 column_of_interest=6
 ylabel1=r'$\rho$'
 ylabel2=r'$\rho_{B^{1/2}}-\rho_{B}$'
 lmp_compare(out_names_rho,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
+# Plots the comparision of LMP methods according to the beta:
+column_of_interest=7
+ylabel1=r'$\beta$'
+ylabel2=r'$\beta_{B^{1/2}}-\rho_{B}$'
+lmp_compare(out_names_beta,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
 ################################################################################
 
 
@@ -234,31 +256,31 @@ lmp_compare(out_names_rho,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
 
 
 ################################################################################
-# Output filenames:
-out_names=[]
-# Store the outer_itertaions:
-outer_iterations_list_tmp=[]
-# Store the results files to compare:
-diff_vs_nobs=[]
+# # Output filenames:
+# out_names=[]
+# # Store the outer_itertaions:
+# outer_iterations_list_tmp=[]
+# # Store the results files to compare:
+# diff_vs_nobs=[]
 
-for r,res_dir in enumerate(res_dir_list):
-        res_tmp=res_dir.split('nobs')
-        res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
-        # Store the output files names
-        out_name=res_tmp1+'compare'+res_tmp2
-        out_name=out_name.split(res_dir_raw)[1]
-        out_name=res_dir_diff_vs_nobs+out_name[:-1]+'.png'
-        out_names.append(out_name)
-        # Store the outer iterations:
-        outer_iterations_list_tmp.append(outer_iterations_list[r])
-        # Store the results files to compare:
-        diff_vs_nobs_tmp=[]
-        for nobs in [128,2048]:
-            diff_vs_nobs_tmp.append(res_tmp1+str(nobs)+res_tmp2)
-        diff_vs_nobs.append(diff_vs_nobs_tmp)
-        #print(diff_vs_nobs)
-# Plots the comparision of LMP methods:
-#diff_plot(out_names,diff_vs_nobs,outer_iterations_list)        
-################################################################################
+# for r,res_dir in enumerate(res_dir_list):
+#         res_tmp=res_dir.split('nobs')
+#         res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
+#         # Store the output files names
+#         out_name=res_tmp1+'compare'+res_tmp2
+#         out_name=out_name.split(res_dir_raw)[1]
+#         out_name=res_dir_diff_vs_nobs+out_name[:-1]+'.png'
+#         out_names.append(out_name)
+#         # Store the outer iterations:
+#         outer_iterations_list_tmp.append(outer_iterations_list[r])
+#         # Store the results files to compare:
+#         diff_vs_nobs_tmp=[]
+#         for nobs in [128,2048]:
+#             diff_vs_nobs_tmp.append(res_tmp1+str(nobs)+res_tmp2)
+#         diff_vs_nobs.append(diff_vs_nobs_tmp)
+#         #print(diff_vs_nobs)
+# # Plots the comparision of LMP methods:
+# #diff_plot(out_names,diff_vs_nobs,outer_iterations_list)        
+# ################################################################################
 
 

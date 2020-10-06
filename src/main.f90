@@ -72,12 +72,12 @@ call set_seed(new_seed)
 ! FFT test
 call fft_test(n)
 
-nobs = n/2**(no-1)
+nobs = n!/1.5**(no-1)
 write(*,'(a,i4)') 'Number of observations:                 ',nobs
-if (n/=nobs*2**(no-1)) then
-   write(*,'(a)') 'Error: n should be related to the number of outer iterations'
-   stop
-end if
+! if (n/=nobs*1.5**(no-1)) then
+!    write(*,'(a)') 'Error: n should be related to the number of outer iterations'
+!    stop
+! end if
 
 ! Setup full resolution H matrix
 call hmatrix_setup(hmatrix_full,n,nobs)
@@ -98,12 +98,12 @@ call rmatrix_setup(rmatrix,nobs,sigma_obs)
 !    nn(io) = n/fac(io)
 ! end do
 
-
+! Set resolutions
 do io=1,no
    if (full_res) then
       fac(io) = 1
    else
-      fac(io) = 1.2**(no-io)
+      fac(io) = 2**(no-io)
    end if
    nn(io) = n/fac(io)
 end do
