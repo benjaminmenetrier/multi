@@ -52,7 +52,7 @@ code_output='../results'
 out_dirs.append(code_output)
 
 # Roots of the results of the analysis:
-results_dir_root='./analysis_results_res2_more_complex/'
+results_dir_root='./analysis_results_test/'
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 

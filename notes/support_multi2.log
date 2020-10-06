@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2019/dev/Debian) (preloaded format=pdflatex 2019.10.5)  6 OCT 2020 16:40
+This is pdfTeX, Version 3.14159265-2.6-1.40.19 (TeX Live 2019/dev/Debian) (preloaded format=pdflatex 2019.10.5)  6 OCT 2020 16:42
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -962,136 +962,135 @@ LaTeX Info: Redefining \degres on input line 31.
 LaTeX Info: Redefining \dots on input line 31.
 LaTeX Info: Redefining \up on input line 31.
  (./support_multi2.nav)
-LaTeX Font Info:    Try loading font information for OT1+lmss on input line 46.
+LaTeX Font Info:    Try loading font information for OT1+lmss on input line 51.
 
 
 (/usr/share/texmf/tex/latex/lm/ot1lmss.fd
 File: ot1lmss.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OML+lmm on input line 46.
+LaTeX Font Info:    Try loading font information for OML+lmm on input line 51.
 
 (/usr/share/texmf/tex/latex/lm/omllmm.fd
 File: omllmm.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 46.
+LaTeX Font Info:    Try loading font information for OMS+lmsy on input line 51.
 
 
 (/usr/share/texmf/tex/latex/lm/omslmsy.fd
 File: omslmsy.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
-LaTeX Font Info:    Try loading font information for OMX+lmex on input line 46.
+LaTeX Font Info:    Try loading font information for OMX+lmex on input line 51.
 
 
 (/usr/share/texmf/tex/latex/lm/omxlmex.fd
 File: omxlmex.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <10.95> on input line 46.
+(Font)              <10.95> on input line 51.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <8> on input line 46.
+(Font)              <8> on input line 51.
 LaTeX Font Info:    External font `lmex10' loaded for size
-(Font)              <6> on input line 46.
-LaTeX Font Info:    Try loading font information for U+msa on input line 46.
+(Font)              <6> on input line 51.
+LaTeX Font Info:    Try loading font information for U+msa on input line 51.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 46.
+LaTeX Font Info:    Try loading font information for U+msb on input line 51.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 )
 LaTeX Font Info:    Font shape `T1/lmss/m/it' in size <10.95> not available
-(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 46.
+(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 51.
 LaTeX Font Info:    Font shape `T1/lmss/m/it' in size <8> not available
-(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 46.
+(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 51.
 LaTeX Font Info:    Font shape `T1/lmss/m/it' in size <6> not available
-(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 46.
-<./images/im1.png, id=14, 650.43pt x 650.43pt>
-File: ./images/im1.png Graphic file (type png)
-<use ./images/im1.png>
-Package pdftex.def Info: ./images/im1.png  used on input line 46.
-(pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
+(Font)              Font shape `T1/lmss/m/sl' tried instead on input line 51.
  [1
 
-{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./images/im1.png>]
-<./images/im2.png, id=51, 650.43pt x 650.43pt>
-File: ./images/im2.png Graphic file (type png)
-<use ./images/im2.png>
-Package pdftex.def Info: ./images/im2.png  used on input line 53.
+{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}]
+<./images/im1.png, id=56, 650.43pt x 650.43pt>
+File: ./images/im1.png Graphic file (type png)
+<use ./images/im1.png>
+Package pdftex.def Info: ./images/im1.png  used on input line 61.
 (pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
  [2
 
+ <./images/im1.png>]
+<./images/im2.png, id=85, 650.43pt x 650.43pt>
+File: ./images/im2.png Graphic file (type png)
+<use ./images/im2.png>
+Package pdftex.def Info: ./images/im2.png  used on input line 68.
+(pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
+ [3
+
  <./images/im2.png>]
-<./images/im3.png, id=79, 650.43pt x 650.43pt>
+<./images/im3.png, id=113, 650.43pt x 650.43pt>
 File: ./images/im3.png Graphic file (type png)
 <use ./images/im3.png>
-Package pdftex.def Info: ./images/im3.png  used on input line 61.
-(pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
-
-[3
-
- <./images/im3.png>]
-<./images/im3_rho.png, id=107, 650.43pt x 650.43pt>
-File: ./images/im3_rho.png Graphic file (type png)
-<use ./images/im3_rho.png>
-Package pdftex.def Info: ./images/im3_rho.png  used on input line 69.
+Package pdftex.def Info: ./images/im3.png  used on input line 76.
 (pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
  [4
 
- <./images/im3_rho.png>]
-<./images/im3_beta.png, id=136, 650.43pt x 650.43pt>
-File: ./images/im3_beta.png Graphic file (type png)
-<use ./images/im3_beta.png>
-Package pdftex.def Info: ./images/im3_beta.png  used on input line 77.
+ <./images/im3.png>]
+<./images/im3_rho.png, id=142, 650.43pt x 650.43pt>
+File: ./images/im3_rho.png Graphic file (type png)
+<use ./images/im3_rho.png>
+Package pdftex.def Info: ./images/im3_rho.png  used on input line 84.
 (pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
  [5
 
+ <./images/im3_rho.png>]
+<./images/im3_beta.png, id=170, 650.43pt x 650.43pt>
+File: ./images/im3_beta.png Graphic file (type png)
+<use ./images/im3_beta.png>
+Package pdftex.def Info: ./images/im3_beta.png  used on input line 92.
+(pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
+ [6
+
  <./images/im3_beta.png>]
-<./images/im4.png, id=164, 650.43pt x 650.43pt>
+<./images/im4.png, id=198, 650.43pt x 650.43pt>
 File: ./images/im4.png Graphic file (type png)
 <use ./images/im4.png>
-Package pdftex.def Info: ./images/im4.png  used on input line 90.
+Package pdftex.def Info: ./images/im4.png  used on input line 105.
 (pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
-
-[6
+[7
 
  <./images/im4.png>]
-<./images/im4_rho.png, id=192, 650.43pt x 650.43pt>
+<./images/im4_rho.png, id=227, 650.43pt x 650.43pt>
 File: ./images/im4_rho.png Graphic file (type png)
 <use ./images/im4_rho.png>
-Package pdftex.def Info: ./images/im4_rho.png  used on input line 98.
-(pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
- [7
-
- <./images/im4_rho.png>]
-<./images/im5.png, id=221, 650.43pt x 650.43pt>
-File: ./images/im5.png Graphic file (type png)
-<use ./images/im5.png>
-Package pdftex.def Info: ./images/im5.png  used on input line 109.
+Package pdftex.def Info: ./images/im4_rho.png  used on input line 113.
 (pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
  [8
 
+ <./images/im4_rho.png>]
+<./images/im5.png, id=256, 650.43pt x 650.43pt>
+File: ./images/im5.png Graphic file (type png)
+<use ./images/im5.png>
+Package pdftex.def Info: ./images/im5.png  used on input line 124.
+(pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
+ [9
+
  <./images/im5.png>]
-<./images/im5_rho.png, id=250, 650.43pt x 650.43pt>
+<./images/im5_rho.png, id=284, 650.43pt x 650.43pt>
 File: ./images/im5_rho.png Graphic file (type png)
 <use ./images/im5_rho.png>
-Package pdftex.def Info: ./images/im5_rho.png  used on input line 117.
+Package pdftex.def Info: ./images/im5_rho.png  used on input line 132.
 (pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
 
-[9
+[10
 
  <./images/im5_rho.png>]
-<./images/im6.png, id=278, 650.43pt x 650.43pt>
+<./images/im6.png, id=311, 650.43pt x 650.43pt>
 File: ./images/im6.png Graphic file (type png)
 <use ./images/im6.png>
-Package pdftex.def Info: ./images/im6.png  used on input line 126.
+Package pdftex.def Info: ./images/im6.png  used on input line 141.
 (pdftex.def)             Requested size: 195.1305pt x 195.1305pt.
- [10
+ [11
 
- <./images/im6.png>] [11
-
-]
+ <./images/im6.png>]
 \tf@nav=\write6
 \openout6 = `support_multi2.nav'.
 
@@ -1116,17 +1115,17 @@ Here is how much of TeX's memory you used:
  22403 multiletter control sequences out of 15000+600000
  38894 words of font info for 41 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 56i,15n,59p,809b,576s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 56i,15n,59p,809b,578s stack positions out of 5000i,500n,10000p,200000b,80000s
 {/usr/share/texmf/fonts/enc/dvips/lm/lm-mathsy.enc}{/usr/share/texmf/fonts/en
-c/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/s
-hare/texmf/fonts/enc/dvips/lm/lm-ec.enc}</usr/share/texmf/fonts/type1/public/lm
+c/dvips/lm/lm-rm.enc}{/usr/share/texmf/fonts/enc/dvips/lm/lm-ec.enc}{/usr/share
+/texmf/fonts/enc/dvips/lm/lm-mathit.enc}</usr/share/texmf/fonts/type1/public/lm
 /lmmi10.pfb></usr/share/texmf/fonts/type1/public/lm/lmmi8.pfb></usr/share/texmf
 /fonts/type1/public/lm/lmss10.pfb></usr/share/texmf/fonts/type1/public/lm/lmss1
 2.pfb></usr/share/texmf/fonts/type1/public/lm/lmss8.pfb></usr/share/texmf/fonts
 /type1/public/lm/lmsso10.pfb></usr/share/texmf/fonts/type1/public/lm/lmsso8.pfb
 ></usr/share/texmf/fonts/type1/public/lm/lmsy10.pfb></usr/share/texmf/fonts/typ
 e1/public/lm/lmsy8.pfb>
-Output written on support_multi2.pdf (11 pages, 654456 bytes).
+Output written on support_multi2.pdf (11 pages, 654468 bytes).
 PDF statistics:
  381 PDF objects out of 1000 (max. 8388607)
  327 compressed objects within 4 object streams

@@ -36,6 +36,21 @@
 [shadow=false]
 
 
+\begin{frame}{B matrix modeling}
+ \begin{itemize}
+  \item $L_b$: correlation lenght-scale, $var(\sigma^b)$.
+  \item Grid point variance:\\
+  $\sigma^b_i=1+var(\sigma^b)\times \sin(2\pi(i-1)/n), \quad i=1..n$
+  \vspace{+0.5cm}
+  \item Spectral variance:\\
+  $\sigma^{b,spec}_0=1$\\
+  $\sigma^{b,spec}_{2(i-1)}=2 \exp(-2(\pi(i-1)L_b)^2), \quad i=1..n/2$\\
+  $\sigma^{b,spec}_{2(i-1)+1}=\sigma^{b,spec}_{2(i-1)}$\\
+  $\sigma^{b,spec}_{n_{max}}=\exp(-2(\pi n_{max}/2)L_b)^2)$\\
+ \end{itemize}
+\end{frame}
+
+
 
 
 \begin{frame}{Full resolution example}
@@ -124,21 +139,6 @@ $\sigma^o$:0.01, n:128\\
  \includegraphics[scale=0.3]{./images/im6.png}
 \end{center}
 \end{frame}
-
-\begin{frame}{B matrix modeling}
- \begin{itemize}
-  \item $L_b$: correlation lenght-scale, $var(\sigma^b)$.
-  \item Grid point variance:\\
-  $\sigma^b_i=1+var(\sigma^b)\times \sin(2\pi(i-1)/n), \quad i=1..n$
-  \vspace{+0.5cm}
-  \item Spectral variance:\\
-  $\sigma^{b,spec}_0=1$\\
-  $\sigma^{b,spec}_{2(i-1)}=2 \exp(-2(\pi(i-1)L_b)^2), \quad i=1..n/2$\\
-  $\sigma^{b,spec}_{2(i-1)+1}=\sigma^{b,spec}_{2(i-1)}$\\
-  $\sigma^{b,spec}_{n_{max}}=\exp(-2(\pi n_{max}/2)L_b)^2)$\\
- \end{itemize}
-\end{frame}
-
 
 
 
