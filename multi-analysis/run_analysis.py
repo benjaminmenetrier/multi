@@ -30,7 +30,12 @@ full_res='F'
 new_seed='F'
 gp_from_sp='T' # rajouter cette option
 
-n_obs
+# not applied yet:
+nobs=nres
+gp_from_sp='T'
+res_changing=2
+
+
 
 # if True, the results already existing will be rewritten
 rewrite_results=True
@@ -70,9 +75,9 @@ out_dirs.append(res_dir_lmp_compare_rho)
 res_dir_lmp_compare_beta=results_dir_root+'lmp_compare_beta/'
 out_dirs.append(res_dir_lmp_compare_beta)
 
-# Results for the evolution of the difference in J vs nobs
-res_dir_diff_vs_nobs=results_dir_root+'diff_vs_nobs/'
-out_dirs.append(res_dir_diff_vs_nobs)
+# Results for the evolution of the difference in J vs nres
+res_dir_diff_vs_nres=results_dir_root+'diff_vs_nres/'
+out_dirs.append(res_dir_diff_vs_nres)
 
 # Creates the results directories:
 for dir in out_dirs:
@@ -98,7 +103,7 @@ outer_iterations_list=[]
 
 # # Loop over the parameters and run the code:
 # for lmp_mode in ['ritz','spectral','none']:
-#     for nobs in [128,2048]:
+#     for nres in [128,2048]:
 #         for no in [4,6]:
 #             for ni in [2,6]:
 #                 for sigma_obs in [0.01,0.1]:
@@ -107,7 +112,7 @@ outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
 for lmp_mode in ['ritz','spectral','none']:
-    for nobs in [128]:
+    for nres in [128]:
         for no in [4]:
             for ni in [1,2,6,8]:
                 for sigma_obs in [0.01]:
@@ -121,10 +126,10 @@ for lmp_mode in ['ritz','spectral','none']:
                             outer_iterations_list.append(outer_iterations)
 
                             # parameters of the code:
-                            parameters=[nobs, no, ni, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed]
+                            parameters=[nres, no, ni, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed]
 
                             # Create the results directory:
-                            res_dir=res_dir_raw+'res_nobs{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(nobs,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
+                            res_dir=res_dir_raw+'res_nres{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(nres,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
                             res_dir_list.append(res_dir)
 
                             if not rewrite_results and os.path.exists(res_dir):
@@ -261,26 +266,26 @@ lmp_compare(out_names_beta,lmp_to_compare,column_of_interest,ylabel1,ylabel2,out
 # # Store the outer_itertaions:
 # outer_iterations_list_tmp=[]
 # # Store the results files to compare:
-# diff_vs_nobs=[]
+# diff_vs_nres=[]
 
 # for r,res_dir in enumerate(res_dir_list):
-#         res_tmp=res_dir.split('nobs')
+#         res_tmp=res_dir.split('nres')
 #         res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
 #         # Store the output files names
 #         out_name=res_tmp1+'compare'+res_tmp2
 #         out_name=out_name.split(res_dir_raw)[1]
-#         out_name=res_dir_diff_vs_nobs+out_name[:-1]+'.png'
+#         out_name=res_dir_diff_vs_nres+out_name[:-1]+'.png'
 #         out_names.append(out_name)
 #         # Store the outer iterations:
 #         outer_iterations_list_tmp.append(outer_iterations_list[r])
 #         # Store the results files to compare:
-#         diff_vs_nobs_tmp=[]
-#         for nobs in [128,2048]:
-#             diff_vs_nobs_tmp.append(res_tmp1+str(nobs)+res_tmp2)
-#         diff_vs_nobs.append(diff_vs_nobs_tmp)
-#         #print(diff_vs_nobs)
+#         diff_vs_nres_tmp=[]
+#         for nres in [128,2048]:
+#             diff_vs_nres_tmp.append(res_tmp1+str(nres)+res_tmp2)
+#         diff_vs_nres.append(diff_vs_nres_tmp)
+#         #print(diff_vs_nres)
 # # Plots the comparision of LMP methods:
-# #diff_plot(out_names,diff_vs_nobs,outer_iterations_list)        
+# #diff_plot(out_names,diff_vs_nres,outer_iterations_list)        
 # ################################################################################
 
 
