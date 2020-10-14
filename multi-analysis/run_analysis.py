@@ -52,7 +52,7 @@ code_output='../results'
 out_dirs.append(code_output)
 
 # Roots of the results of the analysis:
-results_dir_root='./analysis_results_test/'
+results_dir_root='./analysis_results_sigmao/'
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -114,9 +114,9 @@ outer_iterations_list=[]
 for lmp_mode in ['ritz','spectral','none']:
     for nres in [2048]:
         for no in [4]:
-            for ni in [1,2,6,8]:
-                for sigma_obs in [0.01]:
-                    for sigmabvar in [0.1]:
+            for ni in [6]:
+                for sigma_obs in [0.01]:#,0.1,0.2,0.3]:
+                    for sigmabvar in [0.01]:
                         for Lb in [0.001]:
 
                             # Outer iteraions for plotting:
@@ -260,7 +260,7 @@ lmp_compare(out_names_beta,lmp_to_compare,column_of_interest,ylabel1,ylabel2,out
 # ################################################################################
 
 
-################################################################################
+
 # # Output filenames:
 # out_names=[]
 # # Store the outer_itertaions:
