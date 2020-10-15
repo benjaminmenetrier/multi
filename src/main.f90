@@ -2,7 +2,6 @@ program main
 
 use fft
 use interp
-use netcdf
 use rand
 use type_algo
 use type_bmatrix
@@ -17,13 +16,13 @@ implicit none
 integer             :: n                             ! Full resolution
 integer             :: no                            ! Number of outer iterations
 integer             :: ni                            ! Number of inner iterations
+integer             :: obsdist                       ! Distance in grid points between observations
 character(len=1024) :: lmp_mode                      ! LMP mode ('none', 'spectral', 'ritz')
+real(8)             :: sigma_obs                     ! Observation Error standard error
+real(8)             :: sigmabvar                     ! Grid-point standard deviation variations amplitude
+real(8)             :: Lb                            ! Correlation length-scale
 logical             :: new_seed                      ! New random seed
 logical             :: full_res                      ! All outer iterations at full resolution if true
-! Other parameters used in modules
-real(8)             :: sigma_obs                     ! Observation Error standard error
-real(8)             :: Lb                            ! Correlation length-scale
-real(8)             :: sigmabvar                     ! Grid-point standard deviation variations amplitude
 
 ! Local variables
 integer                        :: nobs,io,jo,ii,iii
@@ -41,21 +40,7 @@ type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
 
 
 ! Read the parameters from the standard input
-read(*,*) n, no, ni, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed
-
-! ! Read the parameters from the file 'parameters.dat'
-! open(111,file='parameters.dat', action ='read')
-! read(111,*) n
-! read(111,*) no
-! read(111,*) ni
-! read(111,*) lmp_mode
-! read(111,*) full_res
-! read(111,*) new_seed
-! ! Other parameters used in modules
-! read(111,*) sigma_obs
-! read(111,*) sigmabvar
-! read(111,*) Lb
-! close(111)
+read(*,*) n, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed
 
 ! Allocations of tables
 allocate(fac(no),nn(no))
@@ -72,12 +57,23 @@ call set_seed(new_seed)
 ! FFT test
 call fft_test(n)
 
-nobs = n!/1.5**(no-1)
-write(*,'(a,i4)') 'Number of observations:                 ',nobs
-! if (n/=nobs*1.5**(no-1)) then
-!    write(*,'(a)') 'Error: n should be related to the number of outer iterations'
-!    stop
-! end if
+! Resolution change factor
+do io=1,no
+   if (full_res) then
+      fac(io) = 1
+   else
+      fac(io) = 2**(no-io)
+   end if
+end do
+
+! Set resolutions
+do io=1,no
+   nn(io) = n/fac(io)
+end do
+
+! Number of observations = number of points on the first outer iteration
+nobs = n/(obsdist*fac(1))
+write(*,'(a,i4)') 'Number of observations:                     ',nobs
 
 ! Setup full resolution H matrix
 call hmatrix_setup(hmatrix_full,n,nobs)
@@ -87,26 +83,6 @@ call hmatrix_test(hmatrix_full,n,nobs)
 
 ! Setup R matrix
 call rmatrix_setup(rmatrix,nobs,sigma_obs)
-
-! Set resolutions
-! do io=1,no
-!    if (full_res) then
-!       fac(io) = 1
-!    else
-!       fac(io) = 2**(no-io)
-!    end if
-!    nn(io) = n/fac(io)
-! end do
-
-! Set resolutions
-do io=1,no
-   if (full_res) then
-      fac(io) = 1
-   else
-      fac(io) = 2**(no-io)
-   end if
-   nn(io) = n/fac(io)
-end do
 
 ! Setup full resolution B matrix
 call bmatrix_setup(bmatrix_full,n,n,sigmabvar,Lb)
@@ -200,7 +176,6 @@ do io=1,no
 
       ! Write the results in a file:
       write(42,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho_sqrt(ii),' ',algo_lanczos(io)%beta(ii)
-
    end do
 end do
 write(*,'(a)') '' 
