@@ -49,6 +49,7 @@ def run_model(path_to_code,code_args):
 n=128
 no=3
 ni=5
+obsdist=4
 lmp_mode='ritz'
 full_res='f'
 new_seed='T'
@@ -56,7 +57,7 @@ sigma_obs=0.1
 sigmabvar=0.
 Lb=0.
 
-code_args=[n,no,ni,lmp_mode,full_res,new_seed,sigma_obs,sigmabvar,Lb]
+code_args=[n,no,ni,obsdist,lmp_mode,full_res,new_seed,sigma_obs,sigmabvar,Lb]
 path_to_code='../run/multi '
 
 a=run_model(path_to_code, code_args)

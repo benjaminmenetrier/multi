@@ -19,7 +19,6 @@ end type bmatrix_type
 !real(8),parameter :: Lb = 5.0e-2     ! Correlation length-scale
 !real(8),parameter :: sigmabvar = 0.0 ! Grid-point standard deviation variations amplitude
 
-
 contains
 
 !----------------------------------------------------------------------
@@ -69,12 +68,15 @@ do i=2,nnmax/2
 end do
 spvar(nnmax) = exp(-2.0*(pi*real(nnmax/2,8)*Lb)**2)
 
+! Set minimum value on spectral variance
+spvar = max(spvar,1.0e-5)
+
 ! Compute normalization
 x = 0.0
 x(1) = 1.0
 call gp2sp(nnmax,x,v)
 v = v*spvar
-call gp2sp_ad(nnmax,v,x)
+call sp2gp(nnmax,v,x)
 spvar = spvar/x(1)
 
 ! Copy spectral variance
@@ -103,7 +105,7 @@ real(8) :: vtmp(nn)
 vtmp = v*sqrt(bmatrix%spvar)
 
 ! Adjoint FFT
-call gp2sp_ad(nn,vtmp,x)
+call sp2gp(nn,vtmp,x)
 
 ! Apply grid-point standard-deviation
 x = x*bmatrix%sigmab
@@ -139,8 +141,64 @@ v = v*sqrt(bmatrix%spvar)
 end subroutine bmatrix_apply_sqrt_ad
 
 !----------------------------------------------------------------------
+! Subroutine: bmatrix_apply_sqrt_inv
+! Purpose: apply inverse square-root of the B matrix
+!----------------------------------------------------------------------
+subroutine bmatrix_apply_sqrt_inv(bmatrix,nn,x,v)
+
+implicit none
+
+! Passed variables
+type(bmatrix_type),intent(in) :: bmatrix
+integer,intent(in) :: nn
+real(8),intent(in) :: x(nn)
+real(8),intent(out) :: v(nn)
+
+! Local variables
+real(8) :: xtmp(nn)
+
+! Apply grid-point standard-deviation
+xtmp = x/bmatrix%sigmab
+
+! FFT
+call gp2sp(nn,xtmp,v)
+
+! Apply spectral standard-deviation
+v = v/sqrt(bmatrix%spvar)
+
+end subroutine bmatrix_apply_sqrt_inv
+
+!----------------------------------------------------------------------
+! Subroutine: bmatrix_apply_sqrt_ad_inv
+! Purpose: apply inverse adjoint of the square-root of the B matrix
+!----------------------------------------------------------------------
+subroutine bmatrix_apply_sqrt_ad_inv(bmatrix,nn,v,x)
+
+implicit none
+
+! Passed variables
+type(bmatrix_type),intent(in) :: bmatrix
+integer,intent(in) :: nn
+real(8),intent(in) :: v(nn)
+real(8),intent(out) :: x(nn)
+
+! Local variables
+real(8) :: vtmp(nn)
+
+! Apply spectral standard-deviation
+vtmp = v/sqrt(bmatrix%spvar)
+
+! Adjoint FFT
+call sp2gp(nn,vtmp,x)
+
+! Apply grid-point standard-deviation
+x = x/bmatrix%sigmab
+
+end subroutine bmatrix_apply_sqrt_ad_inv
+
+!----------------------------------------------------------------------
 ! Subroutine: bmatrix_apply
-! Purpose: bmatrix_apply B matrix
+! Purpose: apply B matrix
 !----------------------------------------------------------------------
 subroutine bmatrix_apply(bmatrix,nn,x,bx)
 
@@ -164,6 +222,31 @@ call bmatrix_apply_sqrt(bmatrix,nn,v,bx)
 end subroutine bmatrix_apply
 
 !----------------------------------------------------------------------
+! Subroutine: bmatrix_apply_inv
+! Purpose: apply B matrix inverse
+!----------------------------------------------------------------------
+subroutine bmatrix_apply_inv(bmatrix,nn,x,binvx)
+
+implicit none
+
+! Passed variables
+type(bmatrix_type),intent(in) :: bmatrix
+integer,intent(in) :: nn
+real(8),intent(in) :: x(nn)
+real(8),intent(out) :: binvx(nn)
+
+! Local variables
+real(8) :: v(nn)
+
+! Apply inverse of the square-root of the B matrix
+call bmatrix_apply_sqrt_inv(bmatrix,nn,x,v)
+
+! Apply inverse adjoint of the square-root of the B matrix
+call bmatrix_apply_sqrt_ad_inv(bmatrix,nn,v,binvx)
+
+end subroutine bmatrix_apply_inv
+
+!----------------------------------------------------------------------
 ! Subroutine: bmatrix_test
 ! Purpose: test B matrix
 !----------------------------------------------------------------------
@@ -178,33 +261,52 @@ integer,intent(in) :: dobs
 
 ! Local variables
 integer :: i
-real(8) :: gp1(nn),gp2(nn)
+real(8) :: gp1(nn),gp2(nn),gp1out(nn),gp2out(nn)
 real(8) :: sp1(nn),sp2(nn)
-real(8) :: sumgp,sumsp
+real(8) :: sumgp,sumsp,sumgpout
 
-! Initialization
+! Direct + inverse test on B
+call random_number(gp1)
+call bmatrix_apply(bmatrix,nn,gp1,gp1out)
+call bmatrix_apply_inv(bmatrix,nn,gp1out,gp2)
+write(*,'(a,e15.8)') 'Direct + inverse test on B:      ',maxval(abs(gp1-gp2))
+
+! Inverse + direct test on B
+call random_number(gp1)
+call bmatrix_apply_inv(bmatrix,nn,gp1,gp1out)
+call bmatrix_apply(bmatrix,nn,gp1out,gp2)
+write(*,'(a,e15.8)') 'Inverse + direct test on B:      ',maxval(abs(gp1-gp2))
+
+! Adjoint test on U
 call random_number(gp1)
 call random_number(gp2)
 call gp2sp(nn,gp2,sp2)
-
-! Direct U + adjoint U test
 call bmatrix_apply_sqrt_ad(bmatrix,nn,gp1,sp1)
 call bmatrix_apply_sqrt(bmatrix,nn,sp2,gp2)
 sumgp = sum(gp1*gp2)
 sumsp = sum(sp1*sp2)
-write(*,'(a,e15.8)') 'Direct U + adjoint U test:               ',sumgp-sumsp
+write(*,'(a,e15.8)') 'Adjoint test on U:               ',sumgp-sumsp
+
+! Adjoint test on B
+call random_number(gp1)
+call random_number(gp2)
+call bmatrix_apply(bmatrix,nn,gp1,gp1out)
+call bmatrix_apply(bmatrix,nn,gp2,gp2out)
+sumgp = sum(gp1*gp2out)
+sumgpout = sum(gp2*gp1out)
+write(*,'(a,e15.8)') 'Auto-adjoint test on B:          ',sumgp-sumgpout
 
 ! Print other parameters
-write(*,'(a,e15.8)') 'Correlation conditioning number:         ',maxval(bmatrix%spvar)/minval(bmatrix%spvar)
-write(*,'(a,e15.8)') 'Correlation at obs separation:           ',gp2(dobs)
-write(*,'(a)',advance='no') 'Correlation shape:                       '
 gp1 = 0.0
 gp1(1) = 1.0
 call bmatrix_apply(bmatrix,nn,gp1,gp2)
 gp2 = gp2/(bmatrix%sigmab(1)*bmatrix%sigmab)
+write(*,'(a,e15.8)') 'Correlation conditioning number: ',maxval(bmatrix%spvar)/minval(bmatrix%spvar)
+write(*,'(a,e15.8)') 'Correlation at obs separation:   ',gp2(dobs+1)
+write(*,'(a)',advance='no') 'Correlation shape:              '
 do i=1,nn/2
    if (abs(gp2(i))<5.0e-3) exit
-   write(*,'(f5.2)',advance='no') gp2(i)
+   write(*,'(f6.2)',advance='no') gp2(i)
 end do
 write(*,'(a)')
 

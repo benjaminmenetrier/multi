@@ -122,7 +122,7 @@ call hmatrix_apply(hmatrix,nn,x1,nobs,y1)
 call hmatrix_apply_ad(hmatrix,nobs,y2,nn,x2)
 sumx = sum(x1*x2)
 sumy = sum(y1*y2)
-write(*,'(a,e15.8)') 'Direct H + adjoint H test:               ',sumx-sumy
+write(*,'(a,e15.8)') 'Direct H + adjoint H test:       ',sumx-sumy
 
 end subroutine hmatrix_test
 

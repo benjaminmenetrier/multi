@@ -102,42 +102,6 @@ gp = gp*norm
 end subroutine sp2gp
 
 !----------------------------------------------------------------------
-! Subroutine: gp2sp_ad
-! Purpose: grid-point to spectral adjoint
-!----------------------------------------------------------------------
-subroutine gp2sp_ad(nn,sp,gp)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: nn
-real(8),intent(in) :: sp(nn)
-real(8),intent(out) :: gp(nn)
-
-! Spectral to grid-point
-call sp2gp(nn,sp,gp)
-
-end subroutine gp2sp_ad
-
-!----------------------------------------------------------------------
-! Subroutine: sp2gp_ad
-! Purpose: spectral to grid-point adjoint
-!----------------------------------------------------------------------
-subroutine sp2gp_ad(nn,gp,sp)
-
-implicit none
-
-! Passed variables
-integer,intent(in) :: nn
-real(8),intent(in) :: gp(nn)
-real(8),intent(out) :: sp(nn)
-
-! Grid-point to spectral
-call gp2sp(nn,gp,sp)
-
-end subroutine sp2gp_ad
-
-!----------------------------------------------------------------------
 ! Subroutine: fft_test
 ! Purpose: test FFT direct, inverse and adjoint
 !----------------------------------------------------------------------
@@ -156,49 +120,27 @@ real(8) :: spsave(nn),sp(nn),sp1(nn),sp2(nn),sumsp
 call random_number(gpsave)
 call gp2sp(nn,gpsave,spsave)
 
-! Direct FFT + inverse FFT test
+! Direct + inverse test
 gp = gpsave
 call gp2sp(nn,gp,sp)
 call sp2gp(nn,sp,gp)
-write(*,'(a,e15.8)') 'Direct FFT + inverse FFT test:           ',maxval(abs(gp-gpsave))
+write(*,'(a,e15.8)') 'Direct + inverse test:           ',maxval(abs(gp-gpsave))
 
-! Inverse FFT + direct FFT test
+! Inverse + direct test
 sp = spsave
 call sp2gp(nn,sp,gp)
 call gp2sp(nn,gp,sp)
-write(*,'(a,e15.8)') 'Inverse FFT + direct FFT test:           ',maxval(abs(sp-spsave))
+write(*,'(a,e15.8)') 'Inverse + direct test:           ',maxval(abs(sp-spsave))
 
-! Direct FFT + inverse FFT test (adjoint)
-sp = spsave
-call gp2sp_ad(nn,sp,gp)
-call sp2gp_ad(nn,gp,sp)
-write(*,'(a,e15.8)') 'Direct FFT + inverse FFT test (adjoint): ',maxval(abs(sp-spsave))
-
-! Inverse FFT + direct FFT test (adjoint)
-gp = gpsave
-call sp2gp_ad(nn,gp,sp)
-call gp2sp_ad(nn,sp,gp)
-write(*,'(a,e15.8)') 'Inverse FFT + direct FFT test (adjoint): ',maxval(abs(gp-gpsave))
-
-! Direct FFT + adjoint FFT test
+! Adjoint test
 call random_number(gp1)
 call random_number(gp2)
 call gp2sp(nn,gp2,sp2)
 call gp2sp(nn,gp1,sp1)
-call gp2sp_ad(nn,sp2,gp2)
-sumgp = sum(gp1*gp2)
-sumsp = sum(sp1*sp2)
-write(*,'(a,e15.8)') 'Direct FFT + adjoint FFT test:           ',sumgp-sumsp
-
-! Direct FFT + adjoint FFT test (inverse)
-call random_number(sp1)
-call random_number(sp2)
 call sp2gp(nn,sp2,gp2)
-call sp2gp(nn,sp1,gp1)
-call sp2gp_ad(nn,gp2,sp2)
 sumgp = sum(gp1*gp2)
 sumsp = sum(sp1*sp2)
-write(*,'(a,e15.8)') 'Direct FFT + adjoint FFT test (inverse): ',sumgp-sumsp
+write(*,'(a,e15.8)') 'Adjoint test:                    ',sumgp-sumsp
 
 end subroutine fft_test
 

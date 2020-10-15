@@ -22,6 +22,7 @@ from fnmatch import fnmatch
 nres=128
 no=4 # error when no>4 ?
 ni=5
+obsdist=4
 lmp_mode='ritz'
 sigma_obs=0.1
 sigmabvar=0.0
@@ -100,55 +101,46 @@ res_dir_list=[]
 # Outer iteraions for plotting:
 outer_iterations_list=[]
 
-
-# # Loop over the parameters and run the code:
-# for lmp_mode in ['ritz','spectral','none']:
-#     for nres in [128,2048]:
-#         for no in [4,6]:
-#             for ni in [2,6]:
-#                 for sigma_obs in [0.01,0.1]:
-#                     for sigmabvar in [0.01,0.1]:
-#                         for Lb in [0.001,0.1]:
-
 # Loop over the parameters and run the code:
 for lmp_mode in ['ritz','spectral','none']:
     for nres in [2048]:
         for no in [4]:
             for ni in [6]:
-                for sigma_obs in [0.01]:#,0.1,0.2,0.3]:
-                    for sigmabvar in [0.01]:
-                        for Lb in [0.001]:
+                for obsdist in [4]:
+                    for sigma_obs in [0.01]:#,0.1,0.2,0.3]:
+                        for sigmabvar in [0.01]:
+                            for Lb in [0.001]:
 
-                            # Outer iteraions for plotting:
-                            outer_iterations=[]
-                            for io in range(no):
-                                outer_iterations.append((ni+1)*io)
-                            outer_iterations_list.append(outer_iterations)
+                                # Outer iteraions for plotting:
+                                outer_iterations=[]
+                                for io in range(no):
+                                    outer_iterations.append((ni+1)*io)
+                                outer_iterations_list.append(outer_iterations)
 
-                            # parameters of the code:
-                            parameters=[nres, no, ni, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed]
+                                # parameters of the code:
+                                parameters=[nres, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed]
 
-                            # Create the results directory:
-                            res_dir=res_dir_raw+'res_nres{}_no{}_ni{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(nres,no,ni,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
-                            res_dir_list.append(res_dir)
+                                # Create the results directory:
+                                res_dir=res_dir_raw+'res_nres{}_no{}_ni{}_obsdist{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(nres,no,ni,obsdist,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
+                                res_dir_list.append(res_dir)
 
-                            if not rewrite_results and os.path.exists(res_dir):
-                                continue
-                            if not os.path.exists(res_dir):
-                                os.mkdir(res_dir)
+                                if not rewrite_results and os.path.exists(res_dir):
+                                    continue
+                                if not os.path.exists(res_dir):
+                                    os.mkdir(res_dir)
 
-                            # define the command line to run the code:
-                            arguments=''
-                            for par in parameters:
-                                arguments+=' {} '.format(par)
-                            exec_command ='echo '+ arguments + ' | ' + exec_code
-                            print("\n",exec_command,"\n")
+                                # define the command line to run the code:
+                                arguments=''
+                                for par in parameters:
+                                    arguments+=' {} '.format(par)
+                                exec_command ='echo '+ arguments + ' | ' + exec_code
+                                print("\n",exec_command,"\n")
 
-                            # Run the code and save the results:
-                            os.chdir(path_to_code)
-                            os.system(exec_command)
-                            os.chdir(cwd)
-                            copy_tree(code_output,res_dir)
+                                # Run the code and save the results:
+                                os.chdir(path_to_code)
+                                os.system(exec_command)
+                                os.chdir(cwd)
+                                copy_tree(code_output,res_dir)
 ################################################################################
 
 
