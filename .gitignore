@@ -12,4 +12,4 @@ doc/multi.toc
 *.log
 *.png
 results
-multi_analysis/analysis_results
+multi_analysis/analysis_results*

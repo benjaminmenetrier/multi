@@ -121,6 +121,138 @@ def multi_plot(res_dir_list,outer_iterations):
             #print("Error with directory:",res_dir)
 ################################################################################
 
+################################################################################
+def yo_vs_hxg_plot(res_dir):
+    """Plot the 1D observations versus the result of applying the observation operator to the guess:
+    """
+    try:
+        for name in ['/lanczos_control_space_outer_vectors.dat','/PlanczosIF_model_space_outer_vectors.dat']:
+            results_file=res_dir+name
+            out_name=results_file[:-4]+'_obs_vs_Hxg.png'
+            outer_vectors=np.genfromtxt(results_file, comments='#')
+            
+            io=1
+            hxg=[]
+            yo=[]
+            d=[]
+            indices=[]
+
+            hxg_io=[]
+            yo_io=[]
+            d_io=[]
+            indices_io=[]
+            
+            for i  in range(len(outer_vectors)):
+                if outer_vectors[i,0]==io:
+                    hxg_io.append(outer_vectors[i,-3])
+                    yo_io.append(outer_vectors[i,-2])
+                    d_io.append(outer_vectors[i,-1])
+                    indices_io.append(outer_vectors[i,1])
+                else:
+                    io=io+1
+                    hxg.append(hxg_io)
+                    yo.append(yo_io)
+                    d.append(d_io)
+                    indices.append(indices_io)
+                    hxg_io=[]
+                    yo_io=[]
+                    d_io=[]
+                    indices_io=[]
+                    hxg_io.append(outer_vectors[i,-3])
+                    yo_io.append(outer_vectors[i,-2])
+                    d_io.append(outer_vectors[i,-1])
+                    indices_io.append(outer_vectors[i,1])
+                print(io,outer_vectors[i,0],d,'\n')   
+            # Create figure window to plot data
+            fig = plt.figure(1, figsize=(9,9))
+            gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
+
+            for r in range(len(yo)):
+                # Top plot: yo and hxg
+                ax1 = fig.add_subplot(gs[0])
+                ax1.plot(indices[r][:],hxg[r][:],color='blue',label=r'$H x_g$')
+                ax1.plot(indices[r][:],yo[r][:],color='red',label=r'$y^o$')
+                plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
+                   ncol=2, mode="expand", borderaxespad=0.)
+
+                # Bottom plot: innovation
+                ax2 = fig.add_subplot(gs[1])
+                ax2.plot(indices[r][:],d[r][:],color='black')
+                ax2.set_ylabel(r'Innovation')
+                plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+                plt.savefig(out_name)
+                plt.clf()
+    except:
+        print('Error in yo_vs_hxg for: ',res_dir)
+################################################################################
+
+################################################################################
+def yo_vs_hxg_plot(res_dir):
+    """Plot the 1D observations versus the result of applying the observation operator to the guess:
+    """
+    try:
+        for name in ['/lanczos_control_space_outer_vectors.dat','/PlanczosIF_model_space_outer_vectors.dat']:
+            results_file=res_dir+name
+            out_name=results_file[:-4]+'_obs_vs_Hxg.png'
+            outer_vectors=np.genfromtxt(results_file, comments='#')
+            
+            io=1
+            hxg=[]
+            yo=[]
+            d=[]
+            indices=[]
+
+            hxg_io=[]
+            yo_io=[]
+            d_io=[]
+            indices_io=[]
+            
+            for i  in range(len(outer_vectors)):
+                if outer_vectors[i,0]==io:
+                    hxg_io.append(outer_vectors[i,-3])
+                    yo_io.append(outer_vectors[i,-2])
+                    d_io.append(outer_vectors[i,-1])
+                    indices_io.append(outer_vectors[i,1])
+                else:
+                    io=io+1
+                    hxg.append(hxg_io)
+                    yo.append(yo_io)
+                    d.append(d_io)
+                    indices.append(indices_io)
+                    hxg_io=[]
+                    yo_io=[]
+                    d_io=[]
+                    indices_io=[]
+                    hxg_io.append(outer_vectors[i,-3])
+                    yo_io.append(outer_vectors[i,-2])
+                    d_io.append(outer_vectors[i,-1])
+                    indices_io.append(outer_vectors[i,1])
+                print(io,outer_vectors[i,0],d,'\n')   
+            # Create figure window to plot data
+            fig = plt.figure(1, figsize=(9,9))
+            gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
+
+            for r in range(len(yo)):
+                # Top plot: yo and hxg
+                ax1 = fig.add_subplot(gs[0])
+                ax1.plot(indices[r][:],hxg[r][:],color='blue',label=r'$H x_g$')
+                ax1.plot(indices[r][:],yo[r][:],color='red',label=r'$y^o$')
+                plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
+                   ncol=2, mode="expand", borderaxespad=0.)
+
+                # Bottom plot: innovation
+                ax2 = fig.add_subplot(gs[1])
+                ax2.plot(indices[r][:],d[r][:],color='black')
+                ax2.set_ylabel(r'Innovation')
+                plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+                plt.savefig(out_name)
+                plt.clf()
+    except:
+        print('Error in yo_vs_hxg for: ',res_dir)
+################################################################################
+        
+
+        
 
 ################################################################################
 def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,legend):
@@ -182,34 +314,32 @@ def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,leg
 def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list):
     """Compare spectral and ritz lmp modes:
     """
+    try:
+        legend=[]
+        for lmp_mode in ['ritz','spectral','none']:
+            legend.append([lmp_mode+'-model',lmp_mode+'-control'])
 
-    legend=[]
-    for lmp_mode in ['ritz','spectral','none']:
-        legend.append([lmp_mode+'-model',lmp_mode+'-control'])
-        
 
-    for r,res_dirs in enumerate(lmp_to_compare):
-        diff_list=[]
-        obj_list=[]
-        for res_dir in res_dirs:
-            res1=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
-            res2=np.genfromtxt(res_dir+'PlanczosIF_model_space.dat', comments='#')    
-            res3=np.genfromtxt(res_dir+'lanczos_control_space.dat', comments='#')
-            diff_list.append(res1[:,column_of_interest])
-            obj_list.append([res2[:,column_of_interest],res3[:,column_of_interest]])
-        
-        # maybe dirtyish but...
-        itot=list(range(len(res1)))
-        print("plotting lmp comparision for:\n",out_names[r],"\n for column:", column_of_interest)
-        x=itot
-        xlabel='iterations'
-        out_name=out_names[r]
-        outer_iterations=outer_iterations_list[r]
-        try:
+        for r,res_dirs in enumerate(lmp_to_compare):
+            diff_list=[]
+            obj_list=[]
+            for res_dir in res_dirs:
+                res1=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+                res2=np.genfromtxt(res_dir+'PlanczosIF_model_space.dat', comments='#')    
+                res3=np.genfromtxt(res_dir+'lanczos_control_space.dat', comments='#')
+                diff_list.append(res1[:,column_of_interest])
+                obj_list.append([res2[:,column_of_interest],res3[:,column_of_interest]])
+
+            # maybe dirtyish but...
+            itot=list(range(len(res1)))
+            print("plotting lmp comparision for:\n",out_names[r],"\n for column:", column_of_interest)
+            x=itot
+            xlabel='iterations'
+            out_name=out_names[r]
+            outer_iterations=outer_iterations_list[r]
             compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
-        except:
-            compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
-            #print("Error with lmp comparision of:\n",res_dirs,"\n")
+    except:
+        print("Error with lmp comparision of:\n",res_dirs,"\n")
 ################################################################################
 
 

@@ -25,7 +25,7 @@ logical             :: new_seed                      ! New random seed
 logical             :: full_res                      ! All outer iterations at full resolution if true
 
 ! Local variables
-integer                        :: nobs,io,jo,ii,iii
+integer                        :: nobs,io,jo,ii,iii,id
 integer,allocatable            :: fac(:),nn(:)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:,:),dxabar(:,:),dxabar_interp(:)
 real(8),allocatable            :: vb(:),dvb(:,:),dva(:,:),dva_interp(:)
@@ -119,10 +119,13 @@ call rand_normal(n,vb)
 call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
 
 ! Multi-incremental Lanczos in control space
-
-! Result file:
+!--------------------------------------------------------------------------------
+! Results files:
 open(42,file='results/lanczos_control_space.dat')
 write(42,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
+
+open(52,file='results/lanczos_control_space_outer_vectors.dat')
+write(52,'(a)') '# outer iteration, indices, dva_interp, dvb, dxb, xb, xg, hxg, yo, d'
 
 write(*,'(a)') 'Multi-incremental Lanczos in control space'
 do io=1,no
@@ -146,6 +149,11 @@ do io=1,no
    ! Compute innovation
    call hmatrix_apply(hmatrix(io),nn(io),xg(1:nn(io)),nobs,hxg)
    d = yo-hxg
+
+   ! Save the "outer vectors":
+   do id=1,nn(io)
+      write(52,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',dva_interp(id),' ',dvb(id,io),' ',dxb(id),' ',xb(id),' ',xg(id),' ',hxg(id),' ',yo(id),' ',d(id)    
+   end do
 
    if (io>1) then
       ! Copy preconditioning vectors
@@ -180,12 +188,17 @@ do io=1,no
 end do
 write(*,'(a)') '' 
 close(42)
+close(52)
 
 ! Multi-incremental PLanczosIF in model space
+!--------------------------------------------------------------------------------
 
-! Result file:
+! Results files:
 open(43,file='results/PlanczosIF_model_space.dat')
 write(43,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
+
+open(53,file='results/PlanczosIF_model_space_outer_vectors.dat')
+write(53,'(a)') '# outer iteration, indices, dxabar_interp, dxbbar, xb, dxb, xg, hxg, yo, d'
 
 write(*,'(a)') 'Multi-incremental PLanczosIF in model space'
 do io=1,no
@@ -212,6 +225,11 @@ do io=1,no
    call hmatrix_apply(hmatrix(io),nn(io),xg(1:nn(io)),nobs,hxg)
    d = yo-hxg
 
+   ! Save the "outer vectors":
+   do id=1,nn(io)
+      write(53,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',dxabar_interp(id),' ',dxbbar(id,io),' ',xb(id),' ',xg(id),' ',hxg(id),' ',yo(id),' ',d(id)    
+   end do
+   
    if (io>1) then
       ! Copy preconditioning vectors
       select case (trim(lmp_mode))
@@ -242,6 +260,7 @@ do io=1,no
    end do
 end do
 close(43)
+close(53)
 write(*,'(a)') '' 
 
 ! Lanczos-PLanczosIF comparison

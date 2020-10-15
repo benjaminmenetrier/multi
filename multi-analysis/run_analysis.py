@@ -53,7 +53,7 @@ code_output='../results'
 out_dirs.append(code_output)
 
 # Roots of the results of the analysis:
-results_dir_root='./analysis_results_sigmao/'
+results_dir_root='./analysis_results_dev/'
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -75,6 +75,10 @@ out_dirs.append(res_dir_lmp_compare_rho)
 # Results for beta:
 res_dir_lmp_compare_beta=results_dir_root+'lmp_compare_beta/'
 out_dirs.append(res_dir_lmp_compare_beta)
+
+# Results for the innovation:
+res_dir_outer_vectors=results_dir_root+'outer_vectors/'
+out_dirs.append(res_dir_outer_vectors)
 
 # Results for the evolution of the difference in J vs nres
 res_dir_diff_vs_nres=results_dir_root+'diff_vs_nres/'
@@ -102,12 +106,12 @@ res_dir_list=[]
 outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
-for lmp_mode in ['ritz','spectral','none']:
-    for nres in [2048]:
+for lmp_mode in ['ritz']:#,'spectral','none']:
+    for nres in [128]:
         for no in [4]:
             for ni in [6]:
                 for obsdist in [4]:
-                    for sigma_obs in [0.01]:#,0.1,0.2,0.3]:
+                    for sigma_obs in [0.01]:
                         for sigmabvar in [0.01]:
                             for Lb in [0.001]:
 
@@ -147,8 +151,17 @@ for lmp_mode in ['ritz','spectral','none']:
 
 ################################################################################
 # Plot the results of the code:
-multi_plot(res_dir_list,outer_iterations_list)
+#multi_plot(res_dir_list,outer_iterations_list)
 ################################################################################
+
+
+
+# ################################################################################
+# Plots the outer vectors for each outer loop:
+for res_dir in res_dir_list:
+    yo_vs_hxg_plot(res_dir)
+
+# ################################################################################
 
 
 
@@ -213,46 +226,16 @@ ylabel2=r'$\beta_{B^{1/2}}-\rho_{B}$'
 lmp_compare(out_names_beta,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
 ################################################################################
 
-
-
 # Check that the difference between the second level preconditionners:
 #check_second_level_lmp(out_names_check,check_second_level_lmp_dirs,outer_iterations_list)
 
 
 
-# ################################################################################
-# # Comparision of LMP methods:
-
-# # Output filenames:
-# out_names=[]
-# # Store the outer_itertaions:
-# outer_iterations_list_tmp=[]
-# # Store the results files to compare:
-# lmp_to_compare=[]
-
-# for r,res_dir in enumerate(res_dir_list):
-#     if 'ritz' in res_dir:
-#         res_tmp=res_dir.split('ritz')
-#         res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
-#         # Store the output files names
-#         out_name=res_tmp1+'compare'+res_tmp2
-#         out_name=out_name.split(res_dir_raw)[1]
-#         out_name=res_dir_lmp_compare+out_name[:-1]+'.png'
-#         out_names.append(out_name)
-#         # Store the outer iterations:
-#         outer_iterations_list_tmp.append(outer_iterations_list[r])
-#         # Store the results files to compare:
-#         lmp_to_compare_tmp=[]
-#         for lmp in ['ritz','spectral','none']:
-#             lmp_to_compare_tmp.append(res_tmp1+lmp+res_tmp2)
-#         lmp_to_compare.append(lmp_to_compare_tmp)
-
-# # Plots the comparision of LMP methods:
-# lmp_compare(out_names,lmp_to_compare,outer_iterations_list)
-# ################################################################################
 
 
 
+################################################################################
+# Plot the differences as a function of the resolution, see later.
 # # Output filenames:
 # out_names=[]
 # # Store the outer_itertaions:
