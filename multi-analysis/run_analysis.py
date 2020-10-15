@@ -158,8 +158,14 @@ for lmp_mode in ['ritz']:#,'spectral','none']:
 
 # ################################################################################
 # Plots the outer vectors for each outer loop:
+
+# Plots the innovation:
 for res_dir in res_dir_list:
     yo_vs_hxg_plot(res_dir)
+
+# Plots the guess:
+for res_dir in res_dir_list:
+    xg_plot(res_dir)
 
 # ################################################################################
 

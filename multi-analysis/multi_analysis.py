@@ -121,70 +121,6 @@ def multi_plot(res_dir_list,outer_iterations):
             #print("Error with directory:",res_dir)
 ################################################################################
 
-################################################################################
-def yo_vs_hxg_plot(res_dir):
-    """Plot the 1D observations versus the result of applying the observation operator to the guess:
-    """
-    try:
-        for name in ['/lanczos_control_space_outer_vectors.dat','/PlanczosIF_model_space_outer_vectors.dat']:
-            results_file=res_dir+name
-            out_name=results_file[:-4]+'_obs_vs_Hxg.png'
-            outer_vectors=np.genfromtxt(results_file, comments='#')
-            
-            io=1
-            hxg=[]
-            yo=[]
-            d=[]
-            indices=[]
-
-            hxg_io=[]
-            yo_io=[]
-            d_io=[]
-            indices_io=[]
-            
-            for i  in range(len(outer_vectors)):
-                if outer_vectors[i,0]==io:
-                    hxg_io.append(outer_vectors[i,-3])
-                    yo_io.append(outer_vectors[i,-2])
-                    d_io.append(outer_vectors[i,-1])
-                    indices_io.append(outer_vectors[i,1])
-                else:
-                    io=io+1
-                    hxg.append(hxg_io)
-                    yo.append(yo_io)
-                    d.append(d_io)
-                    indices.append(indices_io)
-                    hxg_io=[]
-                    yo_io=[]
-                    d_io=[]
-                    indices_io=[]
-                    hxg_io.append(outer_vectors[i,-3])
-                    yo_io.append(outer_vectors[i,-2])
-                    d_io.append(outer_vectors[i,-1])
-                    indices_io.append(outer_vectors[i,1])
-                print(io,outer_vectors[i,0],d,'\n')   
-            # Create figure window to plot data
-            fig = plt.figure(1, figsize=(9,9))
-            gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
-
-            for r in range(len(yo)):
-                # Top plot: yo and hxg
-                ax1 = fig.add_subplot(gs[0])
-                ax1.plot(indices[r][:],hxg[r][:],color='blue',label=r'$H x_g$')
-                ax1.plot(indices[r][:],yo[r][:],color='red',label=r'$y^o$')
-                plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-                   ncol=2, mode="expand", borderaxespad=0.)
-
-                # Bottom plot: innovation
-                ax2 = fig.add_subplot(gs[1])
-                ax2.plot(indices[r][:],d[r][:],color='black')
-                ax2.set_ylabel(r'Innovation')
-                plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-                plt.savefig(out_name)
-                plt.clf()
-    except:
-        print('Error in yo_vs_hxg for: ',res_dir)
-################################################################################
 
 ################################################################################
 def yo_vs_hxg_plot(res_dir):
@@ -227,7 +163,7 @@ def yo_vs_hxg_plot(res_dir):
                     yo_io.append(outer_vectors[i,-2])
                     d_io.append(outer_vectors[i,-1])
                     indices_io.append(outer_vectors[i,1])
-                print(io,outer_vectors[i,0],d,'\n')   
+            print('Plotting the innovation for :', results_file)   
             # Create figure window to plot data
             fig = plt.figure(1, figsize=(9,9))
             gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
@@ -250,9 +186,59 @@ def yo_vs_hxg_plot(res_dir):
     except:
         print('Error in yo_vs_hxg for: ',res_dir)
 ################################################################################
-        
 
-        
+
+################################################################################
+def xg_plot(res_dir):
+    """Plot the 1D observations versus the result of applying the observation operator to the guess:
+    """
+    for name in ['lanczos_control_space_outer_vectors.dat','PlanczosIF_model_space_outer_vectors.dat']:
+        results_file=res_dir+'/'+name
+        out_name=results_file[:-4]+'_xg.png'
+        # Get the data:
+        outer_vectors=np.genfromtxt(results_file, comments='#')
+
+        io=1
+        xg=[]
+        indices=[]
+
+        xg_io=[]
+        indices_io=[]
+
+        for i  in range(len(outer_vectors)):
+            if outer_vectors[i,0]==io:
+                xg_io.append(outer_vectors[i,-4])
+                indices_io.append(outer_vectors[i,1])
+            else:
+                io=io+1
+                xg.append(xg_io)
+                indices.append(indices_io)
+                xg_io=[]
+                indices_io=[]
+                xg_io.append(outer_vectors[i,-4])
+                indices_io.append(outer_vectors[i,1])
+
+        print('Plotting the guess for :', results_file)        
+        if not len(xg)==1:
+            fig, subplots = plt.subplots(len(xg),1)    
+            for i, ax in enumerate(subplots):
+                print(i)
+                ax.plot(indices[i][:],xg[i][:],color='blue',label=r'$H x_g$')
+                ax.set_ylabel(r'$x^g_{}$'.format(i))
+                # at = AnchoredText(r"io={}".format(i),
+                #           prop=dict(size=15), frameon=True,loc='upper left',)
+                # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
+                # ax.add_artist(at)
+                plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+            #fig.text(0., 0.5, r'$x_g$', va='center', rotation='vertical')
+        else:
+            ax.plot(indices[0][:],xg[0][:],color='blue',label=r'$H x_g$')
+            ax.set_ylabel(r'$x^g_{}$'.format(0))
+        plt.subplots_adjust(hspace=0.5)
+        plt.savefig(out_name)
+        plt.clf()
+################################################################################
+
 
 ################################################################################
 def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,legend):
