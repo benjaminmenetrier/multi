@@ -111,7 +111,7 @@ for lmp_mode in ['ritz','spectral','none']:
     for nres in [128]:
         for no in [2]:
             for ni in [4]:
-                for obsdist in [1,4,12]:
+                for obsdist in [4]:
                     for sigma_obs in [0.01]:
                         for sigmabvar in [0.1]:
                             for Lb in [0.005]:
@@ -158,7 +158,7 @@ for lmp_mode in ['ritz','spectral','none']:
 
 ################################################################################
 # Plot the results of the code:
-multi_plot(res_dir_list,outer_iterations_list)
+#multi_plot(res_dir_list,outer_iterations_list)
 ################################################################################
 
 
@@ -293,8 +293,8 @@ lmp_compare(out_names_beta,lmp_to_compare,column_of_interest,ylabel1,ylabel2,out
 
 ################################################################################
 # B-matrix representation:
-
-
+for res_dir in res_dir_list:
+    b_matrix_monitoring(res_dir)
 ################################################################################
 
 

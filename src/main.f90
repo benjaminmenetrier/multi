@@ -186,7 +186,7 @@ do io=1,no
    end do
    do ib=1,nn(io)
       call bmatrix_apply(bmatrix(io),nn(io),delta,bdelta)
-      write(11,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
+      write(11,'(i2,a,i4,a,e15.8)', advance='no') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
       write(111,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',bdelta(ib,id), id=1,nn(io))
    end do
    deallocate(delta)

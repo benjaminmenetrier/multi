@@ -423,3 +423,26 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
 #     plt.savefig(out_name)
 #     plt.clf()
 # ################################################################################
+
+################################################################################
+# B matrix monitoring
+def b_matrix_monitoring(res_dir):
+    """Draw the B matrix in color code
+    """
+    res_file=res_dir+'/Bdelta_test.dat'
+    bmatrix=np.genfromtxt(res_file,comments='#')
+
+    bmatrices=[]
+    id_old=1
+    for b in bmatrix:
+        io_new=b[0]
+        id_new=b[1]
+        if id_new==id_old:
+            b_vec.append(b[2])
+        else:
+            id_old=id_new
+        print(np.shape(b_vec))
+    # fig, ax = plt.subplots()
+    # ax.matshow(bmatrix, cmap=plt.cm.Blues)
+    # plt.savefig(res_dir+'Bdelta_test.png')
+################################################################################
