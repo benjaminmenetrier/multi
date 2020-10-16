@@ -111,7 +111,7 @@ for lmp_mode in ['ritz','spectral','none']:
     for nres in [128]:
         for no in [2]:
             for ni in [4]:
-                for obsdist in [4]:
+                for obsdist in [1,4,12]:
                     for sigma_obs in [0.01]:
                         for sigmabvar in [0.1]:
                             for Lb in [0.005]:

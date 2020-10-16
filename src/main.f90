@@ -26,7 +26,7 @@ logical             :: full_res                      ! All outer iterations at f
 integer             :: shutoff_type                  ! stop criterion according :1-Jb, 2-beta, (else: no criterion)
 real(8)             :: shutoff_value
 ! Local variables
-integer                        :: nobs,io,jo,ii,iii,id
+integer                        :: nobs,io,jo,ii,iii
 integer,allocatable            :: fac(:),nn(:)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:,:),dxabar(:,:),dxabar_interp(:)
 real(8),allocatable            :: vb(:),dvb(:,:),dva(:,:),dva_interp(:)
@@ -39,6 +39,9 @@ type(rmatrix_type)             :: rmatrix
 type(algo_type),allocatable    :: algo_lanczos(:),algo_planczosif(:)
 type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
 
+integer                        :: ib,id
+real(8),allocatable            :: delta(:,:)
+real(8),allocatable            :: bdelta(:,:)
 
 ! Read the parameters from the standard input
 read(*,*) n, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed, shutoff_type, shutoff_value
@@ -119,7 +122,33 @@ call rmatrix_apply_sqrt(rmatrix,nobs,nu,yo)
 call rand_normal(n,vb)
 call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
 
+!--------------------------------------------------------------------------------
+! Apply B-matrix square root to delta for monitoring:
+
+! Creates the deltas:
+
+! allocate(deltas(no))
+
+! do io=1,no
+!    allocate(delta(nn(io),nn(io)))
+!    delta=0.0
+!    do ib=1,nn(io)
+!       delta(ib,ib)=1
+!    end do   
+!    deltas(io)=delta
+!    deallocate(delta)
+! end do
+
+! Write the delta used to monitor the B-matrix
+open(11,file='results/delta_test.dat')
+open(111,file='results/Bdelta_test.dat')
+
+!--------------------------------------------------------------------------------        
+
+
 ! Multi-incremental Lanczos in control space
+
+
 !--------------------------------------------------------------------------------
 ! Results files:
 open(42,file='results/lanczos_control_space.dat')
@@ -147,6 +176,22 @@ do io=1,no
    call bmatrix_apply_sqrt(bmatrix(io),nn(io),dvb(1:nn(io),io),dxb(1:nn(io)))
    xg(1:nn(io)) = xb(1:nn(io))-dxb(1:nn(io))
 
+   ! Monitoring the B-matrix with deltas:
+   allocate(delta(nn(io),nn(io)))
+   allocate(bdelta(nn(io),nn(io)))
+   delta=0.0
+   bdelta=0.0
+   do ib=1,nn(io)
+      delta(ib,ib)=1
+   end do
+   do ib=1,nn(io)
+      call bmatrix_apply(bmatrix(io),nn(io),delta,bdelta)
+      write(11,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
+      write(111,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',bdelta(ib,id), id=1,nn(io))
+   end do
+   deallocate(delta)
+   deallocate(bdelta)
+   
    ! Compute innovation
    call hmatrix_apply(hmatrix(io),nn(io),xg(1:nn(io)),nobs,hxg)
    d = yo-hxg
@@ -190,7 +235,8 @@ end do
 write(*,'(a)') '' 
 close(42)
 close(52)
-
+close(11)
+close(111)
 ! Multi-incremental PLanczosIF in model space
 !--------------------------------------------------------------------------------
 

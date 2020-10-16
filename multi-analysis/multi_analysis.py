@@ -318,14 +318,22 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
             diff_list=[]
             obj_list=[]
             for res_dir in res_dirs:
-                res1=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
-                res2=np.genfromtxt(res_dir+'PlanczosIF_model_space.dat', comments='#')    
-                res3=np.genfromtxt(res_dir+'lanczos_control_space.dat', comments='#')
-                diff_list.append(res1[:,column_of_interest])
-                obj_list.append([res2[:,column_of_interest],res3[:,column_of_interest]])
+                #diff=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+                res1=np.genfromtxt(res_dir+'PlanczosIF_model_space.dat', comments='#')    
+                res2=np.genfromtxt(res_dir+'lanczos_control_space.dat', comments='#')
+                diff=[]
+                l_iter=min(len(res1[0]),len(res2[0]))
+                for c in range(len(res1)):
+                    diff_col=[]
+                    for l in range(l_iter):
+                        diff_col.append(res1[c,l]-res2[c,l]) 
+                    diff.append(diff_col)
+                diff=np.array(diff)
+                diff_list.append(diff[:,column_of_interest])
+                obj_list.append([res1[:,column_of_interest],res2[:,column_of_interest]])
 
             # maybe dirtyish but...
-            itot=list(range(len(res1)))
+            itot=list(range(len(diff)))
             print("plotting lmp comparision for:\n",out_names[r],"\n for column:", column_of_interest)
             x=itot
             xlabel='iterations'
