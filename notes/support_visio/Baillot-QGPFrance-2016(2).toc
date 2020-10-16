@@ -1,0 +1,5 @@
+\beamer@endinputifotherversion {3.24pt}
+\select@language {french}
+\beamer@sectionintoc {1}{Intro:}{2}{0}{1}
+\beamer@sectionintoc {2}{EoS:}{12}{0}{2}
+\beamer@sectionintoc {3}{Observations of NS:}{19}{0}{3}
