@@ -217,7 +217,7 @@ do io=1,no
       dxbbar(1:nn(io),io) = dxbbar(1:nn(io),io)-dxabar_interp(1:nn(io))
    end do
 
-   ! Compute guess
+   ! Compute guessx
    call bmatrix_apply(bmatrix(io),nn(io),dxbbar(1:nn(io),io),dxb(1:nn(io)))
    xg(1:nn(io)) = xb(1:nn(io))-dxb(1:nn(io))
 
@@ -227,7 +227,7 @@ do io=1,no
 
    ! Save the "outer vectors":
    do id=1,nn(io)
-      write(53,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',dxabar_interp(id),' ',dxbbar(id,io),' ',xb(id),' ',xg(id),' ',hxg(id),' ',yo(id),' ',d(id)    
+      write(53,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',dxabar_interp(id),' ',dxbbar(id,io),' ',dxb(id),' ', xb(id),' ',xg(id),' ',hxg(id),' ',yo(id),' ',d(id)    
    end do
    
    if (io>1) then

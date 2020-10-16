@@ -163,12 +163,61 @@ for lmp_mode in ['ritz']:#,'spectral','none']:
 for res_dir in res_dir_list:
     yo_vs_hxg_plot(res_dir)
 
-# Plots the guess:
-for res_dir in res_dir_list:
-    xg_plot(res_dir)
+res_file_names=['/lanczos_control_space_outer_vectors.dat','/PlanczosIF_model_space_outer_vectors.dat']
+for f,res_file_name in enumerate(res_file_names):
+    
+    # Plots the guess:
+    out_name='_guess.png'
+    label=r'$x^g'
+    column_of_interest=-4
+    for res_dir in res_dir_list:
+        results_file=res_dir+'/'+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,label,out_file_name)
 
-# ################################################################################
+    # Plots the background:
+    out_name='_background.png'
+    label=r'$x^b'
+    column_of_interest=5
+    for res_dir in res_dir_list:
+        results_file=res_dir+'/'+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,label,out_file_name)
 
+    # Plots the increment:
+    out_name='_increment.png'
+    label=r'$\delta x^b'
+    column_of_interest=4
+    for res_dir in res_dir_list:
+        results_file=res_dir+'/'+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,label,out_file_name)
+
+    # Plots the preconditionned vectors:
+    # Lanczos:
+    column_of_interest=2
+    if f==0:
+        out_name='_dva_interp.png'
+        label=r'$\Pi \delta v^{a}'
+    elif f==1:
+        out_name='_dxabar_interp.png'
+        label=r'$\Pi \delta \bar{x^{a}}'
+    for res_dir in res_dir_list:
+        results_file=res_dir+'/'+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,label,out_file_name)
+    # PlanczosIF:
+    column_of_interest=3
+    if f==0:
+        out_name='_dvb.png'
+        label=r'$\delta v^b'
+    elif f==1:
+        out_name='_dxbbar.png'
+        label=r'$\delta \bar{x^b}'
+    for res_dir in res_dir_list:
+        results_file=res_dir+'/'+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,label,out_file_name)
 
 
 ################################################################################

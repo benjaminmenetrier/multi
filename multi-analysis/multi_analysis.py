@@ -189,54 +189,55 @@ def yo_vs_hxg_plot(res_dir):
 
 
 ################################################################################
-def xg_plot(res_dir):
-    """Plot the 1D observations versus the result of applying the observation operator to the guess:
+def vec_plot(results_file,column_of_interest,label,out_file_name):
+    """Plot the outer vectors:
     """
-    for name in ['lanczos_control_space_outer_vectors.dat','PlanczosIF_model_space_outer_vectors.dat']:
-        results_file=res_dir+'/'+name
-        out_name=results_file[:-4]+'_xg.png'
-        # Get the data:
-        outer_vectors=np.genfromtxt(results_file, comments='#')
+    # Get the data:
+    outer_vectors=np.genfromtxt(results_file, comments='#')
 
-        io=1
-        xg=[]
-        indices=[]
+    io=1
+    vec=[]
+    indices=[]
 
-        xg_io=[]
-        indices_io=[]
+    vec_io=[]
+    indices_io=[]
 
-        for i  in range(len(outer_vectors)):
-            if outer_vectors[i,0]==io:
-                xg_io.append(outer_vectors[i,-4])
-                indices_io.append(outer_vectors[i,1])
-            else:
-                io=io+1
-                xg.append(xg_io)
-                indices.append(indices_io)
-                xg_io=[]
-                indices_io=[]
-                xg_io.append(outer_vectors[i,-4])
-                indices_io.append(outer_vectors[i,1])
-
-        print('Plotting the guess for :', results_file)        
-        if not len(xg)==1:
-            fig, subplots = plt.subplots(len(xg),1)    
-            for i, ax in enumerate(subplots):
-                print(i)
-                ax.plot(indices[i][:],xg[i][:],color='blue',label=r'$H x_g$')
-                ax.set_ylabel(r'$x^g_{}$'.format(i))
-                # at = AnchoredText(r"io={}".format(i),
-                #           prop=dict(size=15), frameon=True,loc='upper left',)
-                # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
-                # ax.add_artist(at)
-                plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-            #fig.text(0., 0.5, r'$x_g$', va='center', rotation='vertical')
+    for i  in range(len(outer_vectors)):
+        if outer_vectors[i,0]==io:
+            vec_io.append(outer_vectors[i,column_of_interest])
+            indices_io.append(outer_vectors[i,1])
         else:
-            ax.plot(indices[0][:],xg[0][:],color='blue',label=r'$H x_g$')
-            ax.set_ylabel(r'$x^g_{}$'.format(0))
+            io=io+1
+            vec.append(vec_io)
+            indices.append(indices_io)
+            vec_io=[]
+            indices_io=[]
+            vec_io.append(outer_vectors[i,-4])
+            indices_io.append(outer_vectors[i,1])
+
+    if not len(vec)==1:
+        fig, subplots = plt.subplots(len(vec),1)    
+        for i, ax in enumerate(subplots):
+            ax.plot(indices[i][:],vec[i][:],color='blue')
+            print(label+'_{}$'.format(i))
+            ax.set_ylabel(label+'_{}$'.format(i))
+            # at = AnchoredText(r"io={}".format(i),
+            #           prop=dict(size=15), frameon=True,loc='upper left',)
+            # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
+            # ax.add_artist(at)
+            plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+        plt.tight_layout()  
+        fig.align_ylabels(subplots[:])    
         plt.subplots_adjust(hspace=0.5)
-        plt.savefig(out_name)
-        plt.clf()
+        #fig.text(0., 0.5, r'$x_g$', va='center', rotation='vertical')
+    else:
+        fig=plt.figure()
+        plt.plot(indices[0][:],vec[0][:],color='blue')
+        plt.ylabel(label+r'_{}$'.format(0))
+        plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+
+    plt.savefig(out_file_name)
+    plt.clf()
 ################################################################################
 
 
