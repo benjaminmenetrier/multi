@@ -20,17 +20,18 @@ from fnmatch import fnmatch
 
 # Default values for the parameters:
 nres=128
-no=4 # error when no>4 ?
-ni=5
+no=2
+ni=6
 obsdist=4
 lmp_mode='ritz'
-sigma_obs=0.1
-sigmabvar=0.0
+sigma_obs=0.01
+sigmabvar=0.1
 Lb=0.005
 full_res='F'
 new_seed='F'
 gp_from_sp='T' # rajouter cette option
-
+shutoff_type=10 # stop criterion: 1-Jb, 2-beta, (else: no stop criterion)
+shutoff_value=0.9 # stop criterion value: if Jb: close to 1, if beta: close to 0
 # not applied yet:
 nobs=nres
 gp_from_sp='T'
@@ -106,14 +107,14 @@ res_dir_list=[]
 outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
-for lmp_mode in ['ritz']:#,'spectral','none']:
+for lmp_mode in ['ritz','spectral','none']:
     for nres in [128]:
-        for no in [4]:
-            for ni in [6]:
+        for no in [2]:
+            for ni in [4]:
                 for obsdist in [4]:
                     for sigma_obs in [0.01]:
-                        for sigmabvar in [0.01]:
-                            for Lb in [0.001]:
+                        for sigmabvar in [0.1]:
+                            for Lb in [0.005]:
 
                                 # Outer iteraions for plotting:
                                 outer_iterations=[]
@@ -122,10 +123,16 @@ for lmp_mode in ['ritz']:#,'spectral','none']:
                                 outer_iterations_list.append(outer_iterations)
 
                                 # parameters of the code:
-                                parameters=[nres, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed]
+                                parameters=[nres, no, ni, obsdist, lmp_mode, sigma_obs,
+                                            sigmabvar, Lb, full_res, new_seed,
+                                            shutoff_type,shutoff_value]
 
                                 # Create the results directory:
-                                res_dir=res_dir_raw+'res_nres{}_no{}_ni{}_obsdist{}_lmp-{}_sigmao{}_sigmab{}_Lb{}_reso-{}/'.format(nres,no,ni,obsdist,lmp_mode,sigma_obs,sigmabvar,Lb,full_res)
+                                name_string='res_reso{}_no{}_ni{}_obsdist{}_lmp-{}'
+                                name_string=name_string.format(nres,no,ni,obsdist,lmp_mode)
+                                name_string2='_sigmao{}_sigmab{}_Lb{}_reso-{}/'
+                                name_string2=name_string2.format(sigma_obs,sigmabvar,Lb,full_res)
+                                res_dir=res_dir_raw+name_string+name_string2
                                 res_dir_list.append(res_dir)
 
                                 if not rewrite_results and os.path.exists(res_dir):
@@ -151,7 +158,7 @@ for lmp_mode in ['ritz']:#,'spectral','none']:
 
 ################################################################################
 # Plot the results of the code:
-#multi_plot(res_dir_list,outer_iterations_list)
+multi_plot(res_dir_list,outer_iterations_list)
 ################################################################################
 
 
@@ -284,11 +291,15 @@ lmp_compare(out_names_beta,lmp_to_compare,column_of_interest,ylabel1,ylabel2,out
 # Check that the difference between the second level preconditionners:
 #check_second_level_lmp(out_names_check,check_second_level_lmp_dirs,outer_iterations_list)
 
+################################################################################
+# B-matrix representation:
+
+
+################################################################################
 
 
 
-
-
+# See later the diff_plots:
 ################################################################################
 # Plot the differences as a function of the resolution, see later.
 # # Output filenames:

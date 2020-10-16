@@ -79,8 +79,16 @@ def evolution_plot(results_directory,io):
     # Get the results files from the results directory and store them in lists:
     lanczos=np.genfromtxt(results_directory+'lanczos_control_space.dat', comments='#')
     PlanczosIF=np.genfromtxt(results_directory+'PlanczosIF_model_space.dat', comments='#')
-    diff=np.genfromtxt(results_directory+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
-
+    #diff=np.genfromtxt(results_directory+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+    diff=[]
+    l_iter=min(len(lanczos[0]),len(PlanczosIF[0]))
+    for c in range(len(lanczos)):
+        diff_col=[]
+        for l in range(l_iter):
+            diff_col.append(lanczos[c,l]-PlanczosIF[c,l]) 
+        diff.append(diff_col)
+    diff=np.array(diff)
+    
     # lanczos=np.atleast_2d(np.genfromtxt(results_directory+'/lanczos_control_space.dat', comments='#'))
     # PlanczosIF=np.atleast_2d(np.genfromtxt(results_directory+'/PlanczosIF_model_space.dat', comments='#'))
     # diff=np.atleast_2d(np.genfromtxt(results_directory+'/lanczos_control_vs_PlanczosIF_model.dat', comments='#'))
@@ -219,7 +227,6 @@ def vec_plot(results_file,column_of_interest,label,out_file_name):
         fig, subplots = plt.subplots(len(vec),1)    
         for i, ax in enumerate(subplots):
             ax.plot(indices[i][:],vec[i][:],color='blue')
-            print(label+'_{}$'.format(i))
             ax.set_ylabel(label+'_{}$'.format(i))
             # at = AnchoredText(r"io={}".format(i),
             #           prop=dict(size=15), frameon=True,loc='upper left',)

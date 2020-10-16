@@ -23,7 +23,8 @@ real(8)             :: sigmabvar                     ! Grid-point standard devia
 real(8)             :: Lb                            ! Correlation length-scale
 logical             :: new_seed                      ! New random seed
 logical             :: full_res                      ! All outer iterations at full resolution if true
-
+integer             :: shutoff_type                  ! stop criterion according :1-Jb, 2-beta, (else: no criterion)
+real(8)             :: shutoff_value
 ! Local variables
 integer                        :: nobs,io,jo,ii,iii,id
 integer,allocatable            :: fac(:),nn(:)
@@ -40,7 +41,7 @@ type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
 
 
 ! Read the parameters from the standard input
-read(*,*) n, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed
+read(*,*) n, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed, shutoff_type, shutoff_value
 
 ! Allocations of tables
 allocate(fac(no),nn(no))
@@ -175,7 +176,7 @@ do io=1,no
    end if
 
    ! Minimization
-   call algo_apply_lanczos(algo_lanczos(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dvb(1:nn(io),io),nobs,d,ni,lmp_lanczos(io),dva(1:nn(io),io))
+   call algo_apply_lanczos(algo_lanczos(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dvb(1:nn(io),io),nobs,d,ni,lmp_lanczos(io),dva(1:nn(io),io),shutoff_type,shutoff_value)
 
 
    ! Result
@@ -250,7 +251,7 @@ do io=1,no
    end if
 
    ! Minimization
-   call algo_apply_planczosif(algo_planczosif(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dxbbar(1:nn(io),io),nobs,d,ni,lmp_planczosif(io),dxabar(1:nn(io),io))
+   call algo_apply_planczosif(algo_planczosif(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dxbbar(1:nn(io),io),nobs,d,ni,lmp_planczosif(io),dxabar(1:nn(io),io),shutoff_type,shutoff_value)
 
    ! Result
    do ii=0,ni

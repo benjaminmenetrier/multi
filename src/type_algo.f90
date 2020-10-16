@@ -70,7 +70,7 @@ end subroutine algo_alloc
 ! Subroutine: algo_apply_lanczos
 ! Purpose: Lanczos algorithm in control space
 !----------------------------------------------------------------------
-subroutine algo_apply_lanczos(algo,nn,bmatrix,hmatrix,rmatrix,dvb,nobs,d,ni,lmp,dva)
+subroutine algo_apply_lanczos(algo,nn,bmatrix,hmatrix,rmatrix,dvb,nobs,d,ni,lmp,dva,shutoff_type,shutoff_value)
 
 implicit none
 
@@ -86,6 +86,8 @@ real(8),intent(in) :: d(nobs)
 integer,intent(in) :: ni
 type(lmp_type),intent(in) :: lmp
 real(8),intent(out) :: dva(nn)
+integer,intent(in)  :: shutoff_type
+real(8),intent(in)  :: shutoff_value
 
 ! Local variables
 integer :: ii,info
@@ -129,6 +131,14 @@ do ii=1,ni
    beta(ii+1) = sqrt(sum(w(:,ii)**2))
    v(:,ii+1) = w(:,ii)/beta(ii+1)
 
+   ! Stop criterion:
+   if (shutoff_type==2) then
+      if (beta(ii+1)<shutoff_value) then
+         write(*,'(a)') 'Convergence reached'         
+         stop
+      end if   
+   end if
+   
    ! Compute eigenpairs
    if (ii==1) then
       algo%eigenval(1) = alpha(1)
@@ -156,6 +166,13 @@ do ii=1,ni
    call rmatrix_apply_inv(rmatrix,nobs,(d-ytmp),ytmp2)
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
 
+   ! Stop criterion:
+   if (shutoff_type==1) then
+      if (algo%jb(ii)/algo%jb(ii-1)<shutoff_value) then
+         write(*,'(a)') 'Convergence reached'
+         stop
+      end if   
+   end if      
    ! Check cost function
    ! if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
    !    write(*,'(a)') 'ERROR: increasing cost function in Lanczos'
@@ -202,7 +219,7 @@ end subroutine algo_apply_lanczos
 ! Subroutine: algo_apply_planczosif
 ! Purpose: PLanczosIF algorithm in linear space
 !----------------------------------------------------------------------
-subroutine algo_apply_planczosif(algo,nn,bmatrix,hmatrix,rmatrix,dxbbar,nobs,d,ni,lmp,dxabar)
+subroutine algo_apply_planczosif(algo,nn,bmatrix,hmatrix,rmatrix,dxbbar,nobs,d,ni,lmp,dxabar,shutoff_type,shutoff_value)
 
 implicit none
 
@@ -218,6 +235,8 @@ real(8),intent(in) :: d(nobs)
 integer,intent(in) :: ni
 type(lmp_type),intent(in) :: lmp
 real(8),intent(out) :: dxabar(nn)
+integer,intent(in)  :: shutoff_type
+real(8),intent(in)  ::shutoff_value
 
 ! Local variables
 integer :: ii,info
@@ -262,6 +281,14 @@ do ii=1,ni
    zbar(:,ii+1) = tbar(:,ii)/beta(ii+1)
    z(:,ii+1) = t(:,ii)/beta(ii+1)
 
+   ! Stop criterion:
+   if (shutoff_type==2) then
+      if (beta(ii+1)<shutoff_value) then
+         write(*,'(a)') 'Convergence reached'
+         stop
+      end if   
+   end if
+   
    ! Compute eigenpairs
    if (ii==1) then
       algo%eigenval(1) = alpha(1)
@@ -288,6 +315,14 @@ do ii=1,ni
    call hmatrix_apply(hmatrix,nn,algo%dx(:,ii),nobs,ytmp)
    call rmatrix_apply_inv(rmatrix,nobs,d-ytmp,ytmp2)
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
+
+   ! Stop criterion:
+   if (shutoff_type==1) then
+      if (algo%jb(ii)/algo%jb(ii-1)<shutoff_value) then
+         write(*,'(a)') 'Convergence reached'
+         stop
+      end if   
+   end if   
 
    ! Check cost function
    ! if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
