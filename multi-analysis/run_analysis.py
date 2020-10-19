@@ -21,13 +21,13 @@ from fnmatch import fnmatch
 # Default values for the parameters:
 nres=128
 no=2
-ni=6
+ni=4
 obsdist=4
 lmp_mode='ritz'
 sigma_obs=0.01
 sigmabvar=0.1
 Lb=0.005
-full_res='F'
+full_res='T'
 new_seed='F'
 gp_from_sp='T' # rajouter cette option
 shutoff_type=10 # stop criterion: 1-Jb, 2-beta, (else: no stop criterion)
@@ -107,14 +107,14 @@ res_dir_list=[]
 outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
-for lmp_mode in ['ritz','spectral','none']:
-    for nres in [128]:
+for lmp_mode in ['ritz']:#,'spectral','none']:
+    for nres in [6]:
         for no in [2]:
             for ni in [4]:
                 for obsdist in [4]:
-                    for sigma_obs in [0.01]:
+                    for sigma_obs in [0.1]:
                         for sigmabvar in [0.1]:
-                            for Lb in [0.005]:
+                            for Lb in [0.25]:
 
                                 # Outer iteraions for plotting:
                                 outer_iterations=[]
@@ -167,126 +167,158 @@ for lmp_mode in ['ritz','spectral','none']:
 # Plots the outer vectors for each outer loop:
 
 # Plots the innovation:
-for res_dir in res_dir_list:
-    yo_vs_hxg_plot(res_dir)
+#for res_dir in res_dir_list:
+#    yo_vs_hxg_plot(res_dir)
 
-res_file_names=['/lanczos_control_space_outer_vectors.dat','/PlanczosIF_model_space_outer_vectors.dat']
-for f,res_file_name in enumerate(res_file_names):
-    
-    # Plots the guess:
-    out_name='_guess.png'
-    label=r'$x^g'
-    column_of_interest=-4
-    for res_dir in res_dir_list:
-        results_file=res_dir+'/'+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
+# res_file_names=['lanczos_control_space_outer_vectors.dat','PlanczosIF_model_space_outer_vectors.dat']
+# for f,res_file_name in enumerate(res_file_names):
+#     # Plots the guess:
+#     out_name='_guess.png'
+#     label=r'$x^g'
+#     column_of_interest=-4
+#     for res_dir in res_dir_list:
+#         results_file=res_dir+res_file_name
+#         out_file_name=results_file[:-4]+out_name
+#         print('out_file',out_file_name)
+#         vec_plot(results_file,column_of_interest,label,out_file_name)
 
-    # Plots the background:
-    out_name='_background.png'
-    label=r'$x^b'
-    column_of_interest=5
-    for res_dir in res_dir_list:
-        results_file=res_dir+'/'+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
+#     # Plots the background:
+#     out_name='_background.png'
+#     label=r'$x^b'
+#     column_of_interest=5
+#     for res_dir in res_dir_list:
+#         results_file=res_dir+'/'+res_file_name
+#         out_file_name=results_file[:-4]+out_name
+#         vec_plot(results_file,column_of_interest,label,out_file_name)
 
-    # Plots the increment:
-    out_name='_increment.png'
-    label=r'$\delta x^b'
-    column_of_interest=4
-    for res_dir in res_dir_list:
-        results_file=res_dir+'/'+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
-
-    # Plots the preconditionned vectors:
-    # Lanczos:
-    column_of_interest=2
-    if f==0:
-        out_name='_dva_interp.png'
-        label=r'$\Pi \delta v^{a}'
-    elif f==1:
-        out_name='_dxabar_interp.png'
-        label=r'$\Pi \delta \bar{x^{a}}'
-    for res_dir in res_dir_list:
-        results_file=res_dir+'/'+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
-    # PlanczosIF:
-    column_of_interest=3
-    if f==0:
-        out_name='_dvb.png'
-        label=r'$\delta v^b'
-    elif f==1:
-        out_name='_dxbbar.png'
-        label=r'$\delta \bar{x^b}'
-    for res_dir in res_dir_list:
-        results_file=res_dir+'/'+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
+#     # Plots the increment:
+#     out_name='_increment.png'
+#     label=r'$\delta x^b'
+#     column_of_interest=4
+#     for res_dir in res_dir_list:
+#         results_file=res_dir+'/'+res_file_name
+#         out_file_name=results_file[:-4]+out_name
+#         vec_plot(results_file,column_of_interest,label,out_file_name)
 
 
-################################################################################
-# Comparision of LMP methods:
+#     # Plots the obs:
+#     out_name='_obs.png'
+#     label=r'$y^o'
+#     column_of_interest=-2
+#     for res_dir in res_dir_list:
+#         results_file=res_dir+res_file_name
+#         out_file_name=results_file[:-4]+out_name
+#         vec_plot(results_file,column_of_interest,label,out_file_name)
 
-# Output filenames:
-out_names_J=[]
-out_names_check=[]
-out_names_rho=[]
-out_names_beta=[]
-# Store the outer_itertaions:
-outer_iterations_list_tmp=[]
-# Store the results files to compare:
-lmp_to_compare=[]
-check_second_level_lmp_dirs=[]
 
-for r,res_dir in enumerate(res_dir_list):
-    if 'ritz' in res_dir:
-        res_tmp=res_dir.split('ritz')
-        res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
-        # Store the output files names
-        out_name=res_tmp1+'compare'+res_tmp2
-        out_name=out_name.split(res_dir_raw)[1]
+#     # Plots Hxg:
+#     out_name='_hxg.png'
+#     label=r'$H x^g'
+#     column_of_interest=-3
+#     for res_dir in res_dir_list:
+#         results_file=res_dir+'/'+res_file_name
+#         out_file_name=results_file[:-4]+out_name
+#         vec_plot(results_file,column_of_interest,label,out_file_name)
 
-        out_name_J=res_dir_lmp_compare_J+out_name[:-1]+'.png'
-        out_name_check=res_dir_lmp_check+out_name[:-1]+'.png'
-        out_name_rho=res_dir_lmp_compare_rho+out_name[:-1]+'.png'
-        out_name_beta=res_dir_lmp_compare_beta+out_name[:-1]+'.png'
-        out_names_J.append(out_name_J)
-        out_names_check.append(out_name_check)
-        out_names_rho.append(out_name_rho)
-        out_names_beta.append(out_name_beta)
+
+#     # Plots the innovation:
+#     out_name='_innovation.png'
+#     #label=r'$y^o_{}-H x^g'
+#     label=r'$d'
+#     column_of_interest=-1
+#     for res_dir in res_dir_list:
+#         results_file=res_dir+'/'+res_file_name
+#         out_file_name=results_file[:-4]+out_name
+#         vec_plot(results_file,column_of_interest,label,out_file_name)
+
+#     # Plots the preconditionned vectors:
+#     # Lanczos:
+#     column_of_interest=2
+#     if f==0:
+#         out_name='_dva_interp.png'
+#         label=r'$\Pi \delta v^{a}'
+#     elif f==1:
+#         out_name='_dxabar_interp.png'
+#         label=r'$\Pi \delta \bar{x^{a}}'
+#     for res_dir in res_dir_list:
+#         results_file=res_dir+'/'+res_file_name
+#         out_file_name=results_file[:-4]+out_name
+#         vec_plot(results_file,column_of_interest,label,out_file_name)
+
+#     # PlanczosIF:
+#     column_of_interest=3
+#     if f==0:
+#         out_name='_dvb.png'
+#         label=r'$\delta v^b'
+#     elif f==1:
+#         out_name='_dxbbar.png'
+#         label=r'$\delta \bar{x^b}'
+#     for res_dir in res_dir_list:
+#         results_file=res_dir+'/'+res_file_name
+#         out_file_name=results_file[:-4]+out_name
+#         vec_plot(results_file,column_of_interest,label,out_file_name)
+
+
+# ################################################################################
+# # Comparision of LMP methods:
+
+# # Output filenames:
+# out_names_J=[]
+# out_names_check=[]
+# out_names_rho=[]
+# out_names_beta=[]
+# # Store the outer_itertaions:
+# outer_iterations_list_tmp=[]
+# # Store the results files to compare:
+# lmp_to_compare=[]
+# check_second_level_lmp_dirs=[]
+
+# for r,res_dir in enumerate(res_dir_list):
+#     if 'ritz' in res_dir:
+#         res_tmp=res_dir.split('ritz')
+#         res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
+#         # Store the output files names
+#         out_name=res_tmp1+'compare'+res_tmp2
+#         out_name=out_name.split(res_dir_raw)[1]
+
+#         out_name_J=res_dir_lmp_compare_J+out_name[:-1]+'.png'
+#         out_name_check=res_dir_lmp_check+out_name[:-1]+'.png'
+#         out_name_rho=res_dir_lmp_compare_rho+out_name[:-1]+'.png'
+#         out_name_beta=res_dir_lmp_compare_beta+out_name[:-1]+'.png'
+#         out_names_J.append(out_name_J)
+#         out_names_check.append(out_name_check)
+#         out_names_rho.append(out_name_rho)
+#         out_names_beta.append(out_name_beta)
         
-        # Store the outer iterations:
-        outer_iterations_list_tmp.append(outer_iterations_list[r])
+#         # Store the outer iterations:
+#         outer_iterations_list_tmp.append(outer_iterations_list[r])
 
-        # Store the results files to compare:
-        lmp_to_compare_tmp=[]
-        check_second_level_lmp_tmp=[]
-        for lmp in ['ritz','spectral','none']:
-            lmp_to_compare_tmp.append(res_tmp1+lmp+res_tmp2)
-            if not lmp=='none':
-                check_second_level_lmp_tmp.append(res_tmp1+lmp+res_tmp2)
-        lmp_to_compare.append(lmp_to_compare_tmp)
-        check_second_level_lmp_dirs.append(check_second_level_lmp_tmp)
+#         # Store the results files to compare:
+#         lmp_to_compare_tmp=[]
+#         check_second_level_lmp_tmp=[]
+#         for lmp in ['ritz','spectral','none']:
+#             lmp_to_compare_tmp.append(res_tmp1+lmp+res_tmp2)
+#             if not lmp=='none':
+#                 check_second_level_lmp_tmp.append(res_tmp1+lmp+res_tmp2)
+#         lmp_to_compare.append(lmp_to_compare_tmp)
+#         check_second_level_lmp_dirs.append(check_second_level_lmp_tmp)
         
-# Plots the comparision of LMP methods according to J:
-column_of_interest=3
-ylabel1=r'$J=J_o+J_b$'
-ylabel2=r'$J_{B^{1/2}}-J_{B}$'
-lmp_compare(out_names_J,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
-# Plots the comparision of LMP methods according to rho:
-column_of_interest=6
-ylabel1=r'$\rho$'
-ylabel2=r'$\rho_{B^{1/2}}-\rho_{B}$'
-lmp_compare(out_names_rho,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
-# Plots the comparision of LMP methods according to the beta:
-column_of_interest=7
-ylabel1=r'$\beta$'
-ylabel2=r'$\beta_{B^{1/2}}-\rho_{B}$'
-lmp_compare(out_names_beta,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
-################################################################################
+# # Plots the comparision of LMP methods according to J:
+# column_of_interest=3
+# ylabel1=r'$J=J_o+J_b$'
+# ylabel2=r'$J_{B^{1/2}}-J_{B}$'
+# lmp_compare(out_names_J,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
+# # Plots the comparision of LMP methods according to rho:
+# column_of_interest=6
+# ylabel1=r'$\rho$'
+# ylabel2=r'$\rho_{B^{1/2}}-\rho_{B}$'
+# lmp_compare(out_names_rho,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
+# # Plots the comparision of LMP methods according to the beta:
+# column_of_interest=7
+# ylabel1=r'$\beta$'
+# ylabel2=r'$\beta_{B^{1/2}}-\rho_{B}$'
+# lmp_compare(out_names_beta,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list)
+# ################################################################################
 
 # Check that the difference between the second level preconditionners:
 #check_second_level_lmp(out_names_check,check_second_level_lmp_dirs,outer_iterations_list)

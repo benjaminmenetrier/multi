@@ -41,6 +41,7 @@ type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
 
 integer                        :: ib,id
 real(8),allocatable            :: delta(:,:)
+!real(8),allocatable            :: delta_ib(:)
 real(8),allocatable            :: bdelta(:,:)
 
 ! Read the parameters from the standard input
@@ -184,9 +185,13 @@ do io=1,no
    do ib=1,nn(io)
       delta(ib,ib)=1
    end do
+   
    do ib=1,nn(io)
       call bmatrix_apply(bmatrix(io),nn(io),delta,bdelta)
-      write(11,'(i2,a,i4,a,e15.8)', advance='no') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
+      !delta_ib=(/(delta(ib,id), id=1,nn(io))/)
+      !write(11,'(i2,a,i4,a,e15.8)', advance='no') io,' ',ib,' ',delta_ib
+      write(11,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
+      write(*,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
       write(111,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',bdelta(ib,id), id=1,nn(io))
    end do
    deallocate(delta)

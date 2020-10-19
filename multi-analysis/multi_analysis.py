@@ -135,7 +135,7 @@ def yo_vs_hxg_plot(res_dir):
     """Plot the 1D observations versus the result of applying the observation operator to the guess:
     """
     try:
-        for name in ['/lanczos_control_space_outer_vectors.dat','/PlanczosIF_model_space_outer_vectors.dat']:
+        for name in ['lanczos_control_space_outer_vectors.dat','PlanczosIF_model_space_outer_vectors.dat']:
             results_file=res_dir+name
             out_name=results_file[:-4]+'_obs_vs_Hxg.png'
             outer_vectors=np.genfromtxt(results_file, comments='#')
@@ -209,31 +209,36 @@ def vec_plot(results_file,column_of_interest,label,out_file_name):
 
     vec_io=[]
     indices_io=[]
-
     for i  in range(len(outer_vectors)):
-        if outer_vectors[i,0]==io:
+        # Add the elemnts of the outer vector for iteration io:
+        if int(outer_vectors[i,0])==io:
             vec_io.append(outer_vectors[i,column_of_interest])
             indices_io.append(outer_vectors[i,1])
+        # Add the outer vector for outer iteration io to vec:    
         else:
             io=io+1
             vec.append(vec_io)
             indices.append(indices_io)
             vec_io=[]
             indices_io=[]
-            vec_io.append(outer_vectors[i,-4])
+            vec_io.append(outer_vectors[i,column_of_interest])
             indices_io.append(outer_vectors[i,1])
-
+    # Add the last outer vector.
+    vec.append(vec_io)
+    indices.append(indices_io)
+        
     if not len(vec)==1:
-        fig, subplots = plt.subplots(len(vec),1)    
+        fig, subplots = plt.subplots(len(vec),1)
         for i, ax in enumerate(subplots):
+            plt.ticklabel_format(axis="y", style="sci", scilimits=(-3,3))
             ax.plot(indices[i][:],vec[i][:],color='blue')
             ax.set_ylabel(label+'_{}$'.format(i))
             # at = AnchoredText(r"io={}".format(i),
             #           prop=dict(size=15), frameon=True,loc='upper left',)
             # at.patch.set_boxstyle("round,pad=0.,rounding_size=0.1")
             # ax.add_artist(at)
-            plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-        plt.tight_layout()  
+            
+        plt.tight_layout()
         fig.align_ylabels(subplots[:])    
         plt.subplots_adjust(hspace=0.5)
         #fig.text(0., 0.5, r'$x_g$', va='center', rotation='vertical')
@@ -429,19 +434,56 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
 def b_matrix_monitoring(res_dir):
     """Draw the B matrix in color code
     """
-    res_file=res_dir+'/Bdelta_test.dat'
+    res_file=res_dir+'/delta_test.dat'
     bmatrix=np.genfromtxt(res_file,comments='#')
 
+    b_vec=[]
+    b_mat=[]
     bmatrices=[]
-    id_old=1
+    io_old=1
+    ib_old=1
+
+    io_min=bmatrix[0][0]
+    io_max=bmatrix[-1][0]
+    ib_min=bmatrix[0][1]
+    ib_max=bmatrix[-1][1]
+
     for b in bmatrix:
-        io_new=b[0]
-        id_new=b[1]
-        if id_new==id_old:
-            b_vec.append(b[2])
+        io=b[0]
+        ib=b[1]
+        elem=b[2]
+        print(b)
+        if io==io_old:
+            if ib==ib_old:
+                b_vec.append(elem)
+                #np.append(b_vec,elem,axis=-1)
+            else:
+                print('vec',b_vec)
+                ib_old=ib
+                b_mat.append(np.array(b_vec))
+                #np.append((b_vec,b_vec) axis=-1)
+                b_vec=[]
+                b_vec.append(elem)
         else:
-            id_old=id_new
-        print(np.shape(b_vec))
+            print('matrix',b_mat)
+            io_old=io
+            bmatrices.append(np.array(b_mat))
+            b_mat=[]
+            b_vec=[]
+            b_vec.append(elem)
+        #print(b_mat)
+        
+    bmatrices=np.array(bmatrices)
+    #print(bmatrices)
+    #print(np.shape(bmatrices))
+    
+    for b,bmat in enumerate(bmatrices):
+        print(np.array(b_mat))
+        fig=plt.figure()
+        outname=res_dir+'/testmatrix_io{}.png'.format(b+1)
+        plt.matshow(np.array(bmat))
+        plt.savefig(outname)
+    
     # fig, ax = plt.subplots()
     # ax.matshow(bmatrix, cmap=plt.cm.Blues)
     # plt.savefig(res_dir+'Bdelta_test.png')
