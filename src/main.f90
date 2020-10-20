@@ -44,6 +44,9 @@ real(8),allocatable            :: delta(:,:)
 !real(8),allocatable            :: delta_ib(:)
 real(8),allocatable            :: bdelta(:,:)
 real(8),allocatable            :: hdelta(:,:)
+real(8),allocatable            :: rhs_compare(:,:)
+
+
 ! Read the parameters from the standard input
 read(*,*) n, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed, shutoff_type, shutoff_value
 
@@ -55,6 +58,7 @@ allocate(algo_lanczos(no),algo_planczosif(no))
 allocate(bmatrix(no))
 allocate(hmatrix(no))
 allocate(lmp_lanczos(no),lmp_planczosif(no))
+allocate(rhs_compare(ni,2))
 
 ! Set seed
 call set_seed(new_seed)
@@ -77,8 +81,7 @@ do io=1,no
 end do
 
 ! Number of observations = number of points on the first outer iteration
-! Changed the fac(1) -> fac(no) in the following line:
-nobs = n/(obsdist*fac(no))
+nobs = n/(obsdist*fac(1))
 
 write(*,'(a,i4)') 'Number of observations:                     ',nobs
 
@@ -126,33 +129,14 @@ call rand_normal(n,vb)
 call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
 
 !--------------------------------------------------------------------------------
-! Apply B-matrix square root to delta for monitoring:
-
-! Creates the deltas:
-
-! allocate(deltas(no))
-
-! do io=1,no
-!    allocate(delta(nn(io),nn(io)))
-!    delta=0.0
-!    do ib=1,nn(io)
-!       delta(ib,ib)=1
-!    end do   
-!    deltas(io)=delta
-!    deallocate(delta)
-! end do
-
 ! Write the B matrix product with deltas:
 open(111,file='results/Bdelta_test.dat')
 write(11,'(a)') 'B matrix: 1:outer_loop 2:line 3:column 4:element value'
-
 ! Write the H matrix product with deltas:
 open(112,file='results/Hdelta_test.dat')
 write(11,'(a)') 'H matrix: 1:outer_loop 2:line 3:column 4:element value'
-
 ! Write the delta used to monitor the B-matrix
 open(11,file='results/delta_test.dat')
-
 !--------------------------------------------------------------------------------        
 
 
@@ -176,7 +160,6 @@ do io=1,no
 
    ! Compute background increment
    dvb(1:nn(io),io) = 0.0
-   
    do jo=1,io-1
       call interp_incr_control(nn(jo),dva(1:nn(jo),jo),nn(io),dva_interp(1:nn(io)))
       dvb(1:nn(io),io) = dvb(1:nn(io),io)-dva_interp(1:nn(io))
@@ -239,7 +222,7 @@ do io=1,no
    end if
 
    ! Minimization
-   call algo_apply_lanczos(algo_lanczos(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dvb(1:nn(io),io),nobs,d,ni,lmp_lanczos(io),dva(1:nn(io),io),shutoff_type,shutoff_value)
+   call algo_apply_lanczos(algo_lanczos(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dvb(1:nn(io),io),nobs,d,ni,lmp_lanczos(io),dva(1:nn(io),io),shutoff_type,shutoff_value,rhs_compare)
 
 
    ! Result
