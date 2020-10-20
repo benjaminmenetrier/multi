@@ -430,11 +430,11 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
 # ################################################################################
 
 ################################################################################
-# B matrix monitoring
-def b_matrix_monitoring(res_dir):
+# matrix monitoring
+def matrix_monitoring(res_dir,results_file_name,out_file_name):
     """Draw the B matrix in color code
     """
-    res_file=res_dir+'/Bdelta_test.dat'
+    res_file=res_dir+results_file_name
     bmatrix=np.genfromtxt(res_file,comments='#')
 
     b_vec=[]
@@ -477,9 +477,10 @@ def b_matrix_monitoring(res_dir):
     #print(np.shape(bmatrices))
     
     for b,bmat in enumerate(bmatrices):
-        print('final',np.array(b_mat))
+        #print('final',np.array(b_mat))
         fig=plt.figure()
-        outname=res_dir+'/bmatrix_io{}.png'.format(b+1)
-        plt.matshow(np.array(bmat))
+        outname=res_dir+out_file_name+'_io{}.png'.format(b+1)
+        plt.matshow(np.array(bmat),cmap=plt.get_cmap('copper'))
+        plt.colorbar()
         plt.savefig(outname)
 ################################################################################

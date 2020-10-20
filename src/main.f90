@@ -43,7 +43,7 @@ integer                        :: ib,id
 real(8),allocatable            :: delta(:,:)
 !real(8),allocatable            :: delta_ib(:)
 real(8),allocatable            :: bdelta(:,:)
-
+real(8),allocatable            :: hdelta(:,:)
 ! Read the parameters from the standard input
 read(*,*) n, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed, shutoff_type, shutoff_value
 
@@ -77,7 +77,9 @@ do io=1,no
 end do
 
 ! Number of observations = number of points on the first outer iteration
-nobs = n/(obsdist*fac(1))
+! Changed the fac(1) -> fac(no) in the following line:
+nobs = n/(obsdist*fac(no))
+
 write(*,'(a,i4)') 'Number of observations:                     ',nobs
 
 ! Setup full resolution H matrix
@@ -140,9 +142,16 @@ call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
 !    deallocate(delta)
 ! end do
 
+! Write the B matrix product with deltas:
+open(111,file='results/Bdelta_test.dat')
+write(11,'(a)') 'B matrix: 1:outer_loop 2:line 3:column 4:element value'
+
+! Write the H matrix product with deltas:
+open(112,file='results/Hdelta_test.dat')
+write(11,'(a)') 'H matrix: 1:outer_loop 2:line 3:column 4:element value'
+
 ! Write the delta used to monitor the B-matrix
 open(11,file='results/delta_test.dat')
-open(111,file='results/Bdelta_test.dat')
 
 !--------------------------------------------------------------------------------        
 
@@ -180,22 +189,26 @@ do io=1,no
    ! Monitoring the B-matrix with deltas:
    allocate(delta(nn(io),nn(io)))
    allocate(bdelta(nn(io),nn(io)))
+   allocate(hdelta(nn(io),nn(io)))
    delta=0.0
    bdelta=0.0
+   hdelta=0.0
    do ib=1,nn(io)
       delta(ib,ib)=1
    end do
    
    do ib=1,nn(io)
-      call bmatrix_apply(bmatrix(io),nn(io),delta,bdelta)
-      !delta_ib=(/(delta(ib,id), id=1,nn(io))/)
+      call bmatrix_apply(bmatrix(io),nn(io),delta(ib,:),bdelta(ib,:))
+      call hmatrix_apply(hmatrix(io),nn(io),delta(ib,:),nobs,hdelta(ib,:))
       !write(11,'(i2,a,i4,a,e15.8)', advance='no') io,' ',ib,' ',delta_ib
       write(11,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
       !write(*,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
       write(111,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',bdelta(ib,id), id=1,nn(io))
+      write(112,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',hdelta(ib,id), id=1,nn(io))      
    end do
    deallocate(delta)
    deallocate(bdelta)
+   deallocate(hdelta)
    
    ! Compute innovation
    call hmatrix_apply(hmatrix(io),nn(io),xg(1:nn(io)),nobs,hxg)
@@ -242,6 +255,7 @@ close(42)
 close(52)
 close(11)
 close(111)
+close(112)
 ! Multi-incremental PLanczosIF in model space
 !--------------------------------------------------------------------------------
 
