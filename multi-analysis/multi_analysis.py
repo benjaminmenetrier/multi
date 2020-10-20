@@ -434,7 +434,7 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
 def b_matrix_monitoring(res_dir):
     """Draw the B matrix in color code
     """
-    res_file=res_dir+'/delta_test.dat'
+    res_file=res_dir+'/Bdelta_test.dat'
     bmatrix=np.genfromtxt(res_file,comments='#')
 
     b_vec=[]
@@ -443,48 +443,43 @@ def b_matrix_monitoring(res_dir):
     io_old=1
     ib_old=1
 
-    io_min=bmatrix[0][0]
-    io_max=bmatrix[-1][0]
-    ib_min=bmatrix[0][1]
-    ib_max=bmatrix[-1][1]
-
     for b in bmatrix:
         io=b[0]
         ib=b[1]
         elem=b[2]
-        print(b)
+        #print(b)
         if io==io_old:
             if ib==ib_old:
                 b_vec.append(elem)
-                #np.append(b_vec,elem,axis=-1)
+                #print('vec1',b_vec,io,io_old,ib,ib_old)
             else:
-                print('vec',b_vec)
+                #print('vec21',b_vec,io,io_old,ib,ib_old)
                 ib_old=ib
                 b_mat.append(np.array(b_vec))
-                #np.append((b_vec,b_vec) axis=-1)
                 b_vec=[]
                 b_vec.append(elem)
+                #print('vec22',b_vec,io,io_old,ib,ib_old)
+                #print('mat1',b_mat)
         else:
-            print('matrix',b_mat)
+            #print('matrix',b_mat,io,io_old,ib,ib_old)
             io_old=io
+            ib_old=1
+            b_mat.append(np.array(b_vec))
+            #print('mat',b_mat,io,io_old,ib,ib_old)
             bmatrices.append(np.array(b_mat))
             b_mat=[]
             b_vec=[]
             b_vec.append(elem)
-        #print(b_mat)
-        
+    b_mat.append(b_vec)        
+    bmatrices.append(b_mat)  
     bmatrices=np.array(bmatrices)
     #print(bmatrices)
     #print(np.shape(bmatrices))
     
     for b,bmat in enumerate(bmatrices):
-        print(np.array(b_mat))
+        print('final',np.array(b_mat))
         fig=plt.figure()
-        outname=res_dir+'/testmatrix_io{}.png'.format(b+1)
+        outname=res_dir+'/bmatrix_io{}.png'.format(b+1)
         plt.matshow(np.array(bmat))
         plt.savefig(outname)
-    
-    # fig, ax = plt.subplots()
-    # ax.matshow(bmatrix, cmap=plt.cm.Blues)
-    # plt.savefig(res_dir+'Bdelta_test.png')
 ################################################################################

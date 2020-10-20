@@ -27,7 +27,7 @@ lmp_mode='ritz'
 sigma_obs=0.01
 sigmabvar=0.1
 Lb=0.005
-full_res='T'
+full_res='F'
 new_seed='F'
 gp_from_sp='T' # rajouter cette option
 shutoff_type=10 # stop criterion: 1-Jb, 2-beta, (else: no stop criterion)
@@ -108,7 +108,7 @@ outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
 for lmp_mode in ['ritz']:#,'spectral','none']:
-    for nres in [6]:
+    for nres in [16]:
         for no in [2]:
             for ni in [4]:
                 for obsdist in [4]:

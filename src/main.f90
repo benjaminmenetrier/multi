@@ -191,7 +191,7 @@ do io=1,no
       !delta_ib=(/(delta(ib,id), id=1,nn(io))/)
       !write(11,'(i2,a,i4,a,e15.8)', advance='no') io,' ',ib,' ',delta_ib
       write(11,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
-      write(*,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
+      !write(*,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
       write(111,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',bdelta(ib,id), id=1,nn(io))
    end do
    deallocate(delta)
