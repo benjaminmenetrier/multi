@@ -23,14 +23,29 @@ real(8)             :: sigmabvar                     ! Grid-point standard devia
 real(8)             :: Lb                            ! Correlation length-scale
 logical             :: new_seed                      ! New random seed
 logical             :: full_res                      ! All outer iterations at full resolution if true
-integer             :: shutoff_type                  ! stop criterion according :1-Jb, 2-beta, (else: no criterion)
-real(8)             :: shutoff_value
+integer             :: shutoff_type                  ! Stop criterion according: 1-Jb, 2-beta, (else: no criterion)
+real(8)             :: shutoff_value                 ! Stop criterion threshold
+
+! Output files units
+integer,parameter :: delta_test_unit = 10
+integer,parameter :: Bdelta_test_unit = 11
+integer,parameter :: Hdelta_test_unit = 12
+integer,parameter :: lanczos_control_space_unit = 13
+integer,parameter :: lanczos_control_space_outer_grid_unit = 14
+integer,parameter :: lanczos_control_space_outer_obs_unit = 15
+integer,parameter :: PlanczosIF_model_space_unit = 16
+integer,parameter :: PlanczosIF_model_space_outer_grid_unit = 17
+integer,parameter :: PlanczosIF_model_space_outer_obs_unit = 18
+integer,parameter :: lanczos_control_vs_PlanczosIF_model_unit = 19
+
 ! Local variables
-integer                        :: nobs,io,jo,ii,iii
+integer                        :: nobs,i,iobs,io,jo,ii,iii
 integer,allocatable            :: fac(:),nn(:)
+real(8),parameter              :: pi = acos(-1.0)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:,:),dxabar(:,:),dxabar_interp(:)
 real(8),allocatable            :: vb(:),dvb(:,:),dva(:,:),dva_interp(:)
 real(8),allocatable            :: nu(:),yo(:),d(:),hxg(:)
+real(8),allocatable            :: grid_coord(:,:),obs_coord(:)
 type(bmatrix_type),allocatable :: bmatrix(:)
 type(hmatrix_type),allocatable :: hmatrix(:)
 type(bmatrix_type)             :: bmatrix_full
@@ -45,7 +60,7 @@ real(8),allocatable            :: delta(:,:)
 real(8),allocatable            :: bdelta(:,:)
 real(8),allocatable            :: hdelta(:,:)
 real(8),allocatable            :: rhs_compare(:,:)
-
+character(len=1024)            :: filename
 
 ! Read the parameters from the standard input
 read(*,*) n, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed, shutoff_type, shutoff_value
@@ -59,6 +74,7 @@ allocate(bmatrix(no))
 allocate(hmatrix(no))
 allocate(lmp_lanczos(no),lmp_planczosif(no))
 allocate(rhs_compare(ni,2))
+allocate(grid_coord(n,no))
 
 ! Set seed
 call set_seed(new_seed)
@@ -82,8 +98,19 @@ end do
 
 ! Number of observations = number of points on the first outer iteration
 nobs = n/(obsdist*fac(1))
-
 write(*,'(a,i4)') 'Number of observations:                     ',nobs
+
+! Grid and observation coordinates on a circle or radius 1
+grid_coord = -1.0
+do io=1,no
+   do i=1,nn(io)
+      grid_coord(i,io) = real(i-1,8)/real(nn(io),8)*2.0*pi
+   end do
+end do
+allocate(obs_coord(nobs))
+do iobs=1,nobs
+   obs_coord(iobs) = real(iobs-1,8)/real(nobs,8)*2.0*pi
+end do
 
 ! Setup full resolution H matrix
 call hmatrix_setup(hmatrix_full,n,nobs)
@@ -128,29 +155,35 @@ call rmatrix_apply_sqrt(rmatrix,nobs,nu,yo)
 call rand_normal(n,vb)
 call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
 
+! Open files
+open(delta_test_unit,file='results/delta_test.dat')
+open(Bdelta_test_unit,file='results/Bdelta_test.dat')
+open(Hdelta_test_unit,file='results/Hdelta_test.dat')
+open(lanczos_control_space_unit,file='results/lanczos_control_space.dat')
+open(lanczos_control_space_outer_grid_unit,file='results/lanczos_control_space_outer_grid.dat')
+open(lanczos_control_space_outer_obs_unit,file='results/lanczos_control_space_outer_obs.dat')
+open(PlanczosIF_model_space_unit,file='results/PlanczosIF_model_space.dat')
+open(PlanczosIF_model_space_outer_grid_unit,file='results/PlanczosIF_model_space_outer_grid.dat')
+open(PlanczosIF_model_space_outer_obs_unit,file='results/PlanczosIF_model_space_outer_obs.dat')
+open(lanczos_control_vs_PlanczosIF_model_unit,file='results/lanczos_control_vs_PlanczosIF_model.dat')
+
+! Write headers
+write(Bdelta_test_unit,'(a)') 'B matrix: 1:outer_loop 2:line 3:column 4:element value'
+write(Hdelta_test_unit,'(a)') 'H matrix: 1:outer_loop 2:line 3:column 4:element value'
+write(lanczos_control_space_unit,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
+write(lanczos_control_space_outer_grid_unit,'(a)') '# outer iteration, indices, coord, dva_interp, dvb, dxb, xb, xg'
+write(lanczos_control_space_outer_obs_unit,'(a)') '# outer iteration, indices, coord, hxg, yo, d'
+write(PlanczosIF_model_space_unit,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
+write(PlanczosIF_model_space_outer_grid_unit,'(a)') '# outer iteration, indices, coord, dxabar_interp, dxbbar, xb, dxb, xg'
+write(PlanczosIF_model_space_outer_obs_unit,'(a)') '# outer iteration, indices, coord, hxg, yo, d'
+write(lanczos_control_vs_PlanczosIF_model_unit,'(a)') '# Outer iteration , resolution , Inner iteration , delta_J , delta_Jb , delta_Jo, sqrt(rho), beta'
 !--------------------------------------------------------------------------------
-! Write the B matrix product with deltas:
-open(111,file='results/Bdelta_test.dat')
-write(11,'(a)') 'B matrix: 1:outer_loop 2:line 3:column 4:element value'
-! Write the H matrix product with deltas:
-open(112,file='results/Hdelta_test.dat')
-write(11,'(a)') 'H matrix: 1:outer_loop 2:line 3:column 4:element value'
-! Write the delta used to monitor the B-matrix
-open(11,file='results/delta_test.dat')
-!--------------------------------------------------------------------------------        
 
 
 ! Multi-incremental Lanczos in control space
 
 
 !--------------------------------------------------------------------------------
-! Results files:
-open(42,file='results/lanczos_control_space.dat')
-write(42,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
-
-open(52,file='results/lanczos_control_space_outer_vectors.dat')
-write(52,'(a)') '# outer iteration, indices, dva_interp, dvb, dxb, xb, xg, hxg, yo, d'
-
 write(*,'(a)') 'Multi-incremental Lanczos in control space'
 do io=1,no
    write(*,'(a,i2,a,i2)') '   Outer iteration ',io,', resolution: ',fac(io)
@@ -179,27 +212,28 @@ do io=1,no
    do ib=1,nn(io)
       delta(ib,ib)=1
    end do
-   
+
    do ib=1,nn(io)
       call bmatrix_apply(bmatrix(io),nn(io),delta(ib,:),bdelta(ib,:))
       call hmatrix_apply(hmatrix(io),nn(io),delta(ib,:),nobs,hdelta(ib,:))
-      !write(11,'(i2,a,i4,a,e15.8)', advance='no') io,' ',ib,' ',delta_ib
-      write(11,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
-      !write(*,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
-      write(111,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',bdelta(ib,id), id=1,nn(io))
-      write(112,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',hdelta(ib,id), id=1,nn(io))      
+      write(delta_test_unit,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',delta(ib,id), id=1,nn(io))
+      write(Bdelta_test_unit,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',bdelta(ib,id), id=1,nn(io))
+      write(Hdelta_test_unit,'(i2,a,i4,a,e15.8)') (io,' ',ib,' ',hdelta(ib,id), id=1,nn(io))
    end do
    deallocate(delta)
    deallocate(bdelta)
    deallocate(hdelta)
-   
+
    ! Compute innovation
    call hmatrix_apply(hmatrix(io),nn(io),xg(1:nn(io)),nobs,hxg)
    d = yo-hxg
 
    ! Save the "outer vectors":
    do id=1,nn(io)
-      write(52,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',dva_interp(id),' ',dvb(id,io),' ',dxb(id),' ',xb(id),' ',xg(id),' ',hxg(id),' ',yo(id),' ',d(id)    
+      write(lanczos_control_space_outer_grid_unit,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',grid_coord(id,io),' ',dva_interp(id),' ',dvb(id,io),' ',dxb(id),' ',xb(id),' ',xg(id)
+   end do
+   do id=1,nobs
+      write(lanczos_control_space_outer_obs_unit,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',obs_coord(id),' ',hxg(id),' ',yo(id),' ',d(id)
    end do
 
    if (io>1) then
@@ -230,25 +264,17 @@ do io=1,no
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' = ',algo_lanczos(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii)
 
       ! Write the results in a file:
-      write(42,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho_sqrt(ii),' ',algo_lanczos(io)%beta(ii)
+      write(lanczos_control_space_unit,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho_sqrt(ii),' ',algo_lanczos(io)%beta(ii)
    end do
 end do
-write(*,'(a)') '' 
-close(42)
-close(52)
-close(11)
-close(111)
-close(112)
-! Multi-incremental PLanczosIF in model space
+write(*,'(a)') ''
 !--------------------------------------------------------------------------------
 
-! Results files:
-open(43,file='results/PlanczosIF_model_space.dat')
-write(43,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
 
-open(53,file='results/PlanczosIF_model_space_outer_vectors.dat')
-write(53,'(a)') '# outer iteration, indices, dxabar_interp, dxbbar, xb, dxb, xg, hxg, yo, d'
+! Multi-incremental PLanczosIF in model space
 
+
+!--------------------------------------------------------------------------------
 write(*,'(a)') 'Multi-incremental PLanczosIF in model space'
 do io=1,no
    write(*,'(a,i2,a,i2)') '   Outer iteration ',io,' resolution: ',fac(io)
@@ -276,9 +302,12 @@ do io=1,no
 
    ! Save the "outer vectors":
    do id=1,nn(io)
-      write(53,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',dxabar_interp(id),' ',dxbbar(id,io),' ',dxb(id),' ', xb(id),' ',xg(id),' ',hxg(id),' ',yo(id),' ',d(id)    
+      write(PlanczosIF_model_space_outer_grid_unit,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',grid_coord(id,io),' ',dxabar_interp(id),' ',dxbbar(id,io),' ',dxb(id),' ',xb(id),' ',xg(id)
    end do
-   
+   do id=1,nobs
+      write(PlanczosIF_model_space_outer_obs_unit,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',obs_coord(id),' ',hxg(id),' ',yo(id),' ',d(id)
+   end do
+
    if (io>1) then
       ! Copy preconditioning vectors
       select case (trim(lmp_mode))
@@ -305,28 +334,37 @@ do io=1,no
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,', J=Jb+Jo: ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' = ',algo_planczosif(io)%jb(ii),' + ',algo_planczosif(io)%jo(ii)
       ! Write the results in a file:
-      write(43,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%jb(ii),' ',algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%rho_sqrt(ii),' ',algo_planczosif(io)%beta(ii)
+      write(PlanczosIF_model_space_unit,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%jb(ii),' ',algo_planczosif(io)%jo(ii),' ',algo_planczosif(io)%rho_sqrt(ii),' ',algo_planczosif(io)%beta(ii)
    end do
 end do
-close(43)
-close(53)
-write(*,'(a)') '' 
+write(*,'(a)') ''
+!--------------------------------------------------------------------------------
+
 
 ! Lanczos-PLanczosIF comparison
 
-! Result file:
-open(44,file='results/lanczos_control_vs_PlanczosIF_model.dat')
-write(44,'(a)') '# Outer iteration , resolution , Inner iteration , delta_J , delta_Jb , delta_Jo, sqrt(rho), beta'
 
+!--------------------------------------------------------------------------------
 write(*,'(a)') 'Lanczos-PLanczosIF comparison:'
 do io=1,no
    write(*,'(a,i2,a,i2)') '   Outer iteration ',io,' resolution: ',fac(io)
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Inner iteration ',ii,' J=Jb+Jo:',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii)-(algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii)),' = ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii)
       ! Write the results in a file:
-      write(44,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii)-(algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii)),' ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii),' ',algo_lanczos(io)%rho_sqrt(ii)-algo_planczosif(io)%rho_sqrt(ii),' ',algo_lanczos(io)%beta(ii)-algo_planczosif(io)%beta(ii)
+      write(lanczos_control_vs_PlanczosIF_model_unit,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii)-(algo_planczosif(io)%jb(ii)+algo_planczosif(io)%jo(ii)),' ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii),' ',algo_lanczos(io)%rho_sqrt(ii)-algo_planczosif(io)%rho_sqrt(ii),' ',algo_lanczos(io)%beta(ii)-algo_planczosif(io)%beta(ii)
    end do
 end do
-close(44)
+
+! Close files
+close(delta_test_unit)
+close(Bdelta_test_unit)
+close(Hdelta_test_unit)
+close(lanczos_control_space_unit)
+close(lanczos_control_space_outer_grid_unit)
+close(lanczos_control_space_outer_obs_unit)
+close(PlanczosIF_model_space_unit)
+close(PlanczosIF_model_space_outer_grid_unit)
+close(PlanczosIF_model_space_outer_obs_unit)
+close(lanczos_control_vs_PlanczosIF_model_unit)
 
 end program main

@@ -48,7 +48,6 @@ if (allocated(algo%jo)) deallocate(algo%jo)
 if (allocated(algo%eigenval)) deallocate(algo%eigenval)
 if (allocated(algo%eigenvec)) deallocate(algo%eigenvec)
 if (allocated(algo%lancvec)) deallocate(algo%lancvec)
-
 if (allocated(algo%rho_sqrt)) deallocate(algo%rho_sqrt)
 if (allocated(algo%beta)) deallocate(algo%beta)
 
@@ -59,13 +58,11 @@ allocate(algo%jo(0:ni))
 allocate(algo%eigenval(ni))
 allocate(algo%eigenvec(ni,ni))
 allocate(algo%lancvec(nn,ni+1))
-
 allocate(algo%rho_sqrt(0:ni))
 allocate(algo%beta(0:ni))
 
 end subroutine algo_alloc
 
-        
 !----------------------------------------------------------------------
 ! Subroutine: algo_apply_lanczos
 ! Purpose: Lanczos algorithm in control space
@@ -97,8 +94,6 @@ real(8) :: alpha(0:ni),beta(0:ni+1),rho(0:ni)
 real(8) :: vtmp(nn),vtmp2(nn)
 real(8) :: p(nn,0:ni),q(nn,0:ni),r(nn,0:ni),s(nn,0:ni),rhs(ni),u(nn,ni),v(nn,0:ni+1),w(nn,0:ni)
 real(8) :: accuracy
-
-
 
 ! Initialization
 s(:,0) = 0.0
@@ -138,11 +133,11 @@ do ii=1,ni
    ! Stop criterion:
    if (shutoff_type==2) then
       if (beta(ii+1)<shutoff_value) then
-         write(*,'(a)') 'Convergence reached'         
+         write(*,'(a)') 'Convergence reached'
          stop
-      end if   
+      end if
    end if
-   
+
    ! Compute eigenpairs
    if (ii==1) then
       algo%eigenval(1) = alpha(1)
@@ -157,7 +152,7 @@ do ii=1,ni
       end if
       algo%eigenval(1:ii) = max(algo%eigenval(1:ii),1.0)
    end if
-   
+
    ! Update increment
    y(1:ii,ii) = matmul(algo%eigenvec(1:ii,1:ii),matmul(transpose(algo%eigenvec(1:ii,1:ii)),rhs(1:ii))/algo%eigenval(1:ii))
    s(:,ii) = matmul(v(:,1:ii),y(1:ii,ii))
@@ -165,7 +160,7 @@ do ii=1,ni
    call bmatrix_apply_sqrt(bmatrix,nn,u(:,ii),algo%dx(:,ii))
 
    ! rhs check:
-   
+
    ! Stop criterion on the Ritz pairs approximation:
    if (shutoff_type==3) then
       do iii=1,ii
@@ -175,9 +170,9 @@ do ii=1,ni
             !write(*,'(a,e15.8)') 'Unacceptable Ritz pair, with accuracy: ',
             !stop
          end if
-      end do 
+      end do
    end if
-   
+
    ! Compute cost function
    algo%jb(ii) = 0.5*sum((u(:,ii)-dvb)**2)
    call hmatrix_apply(hmatrix,nn,algo%dx(:,ii),nobs,ytmp)
@@ -189,8 +184,8 @@ do ii=1,ni
       if (algo%jb(ii)/algo%jb(ii-1)<shutoff_value) then
          write(*,'(a)') 'Convergence reached'
          stop
-      end if   
-   end if      
+      end if
+   end if
    ! Check cost function
    ! if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
    !    write(*,'(a)') 'ERROR: increasing cost function in Lanczos'
@@ -200,9 +195,8 @@ end do
 
 do ii=1,ni
    rhs_compare(ii,1)=rhs(ii)
-   rhs_compare(ii,2)=rhs_binv(ii)
+!   rhs_compare(ii,2)=rhs_binv(ii)
 end do
-
 
 ! Final update
 dva = u(:,ni)
@@ -217,20 +211,15 @@ algo%lastbeta = beta(ni+1)
 beta(0) = sqrt(sum(r(:,0)**2))
 p(:,0) = r(:,0)
 rho(0) = sum(r(:,0)**2)
-
 algo%rho_sqrt(0) = sqrt(rho(0))
 algo%beta(0) = beta(0)
 
 do ii=1,ni
    r(:,ii) = -beta(ii+1)*y(ii,ii)*v(:,ii+1)
    rho(ii) = sum(r(:,ii)**2)
-   
    algo%rho_sqrt(ii)=sqrt(rho(ii))
-   
    beta(ii) = rho(ii)/rho(ii-1)
-
    algo%beta(ii) = beta(ii)
-   
    p(:,ii) = r(:,ii)+beta(ii)*p(:,ii-1)
    alpha(ii-1) = sqrt(sum((s(:,ii)-s(:,ii-1))**2)/sum(p(:,ii-1)**2))
    q(:,ii-1) = -(r(:,ii)-r(:,ii-1))/alpha(ii-1)
@@ -309,9 +298,9 @@ do ii=1,ni
       if (beta(ii+1)<shutoff_value) then
          write(*,'(a)') 'Convergence reached'
          stop
-      end if   
+      end if
    end if
-   
+
    ! Compute eigenpairs
    if (ii==1) then
       algo%eigenval(1) = alpha(1)
@@ -344,8 +333,8 @@ do ii=1,ni
       if (algo%jb(ii)/algo%jb(ii-1)<shutoff_value) then
          write(*,'(a)') 'Convergence reached'
          stop
-      end if   
-   end if   
+      end if
+   end if
 
    ! Check cost function
    ! if (algo%jb(ii)+algo%jo(ii)>algo%jb(ii-1)+algo%jo(ii-1)) then
@@ -381,13 +370,9 @@ do ii=1,ni
    call lmp_apply(lmp,nn,ni,lmp%io,r(:,ii),zbar(:,ii))
    call lmp_apply_ad(lmp,nn,ni,lmp%io,l(:,ii),z(:,ii))
    rho(ii) = sum(r(:,ii)*z(:,ii))
-
    algo%rho_sqrt(ii)=sqrt(rho(ii))
-
    beta(ii) = rho(ii)/rho(ii-1)
-
    algo%beta(ii) = beta(ii)
-   
    pbar(:,ii) = zbar(:,ii)+beta(ii)*pbar(:,ii-1)
    p(:,ii) = z(:,ii)+beta(ii)*p(:,ii-1)
    alpha(ii-1) = sqrt(sum((s(:,ii)-s(:,ii-1))**2)/sum(p(:,ii-1)**2))
