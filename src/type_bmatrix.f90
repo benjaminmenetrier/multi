@@ -12,12 +12,10 @@ use fft
 implicit none
 
 type bmatrix_type
+   real(8) :: Lb
    real(8),allocatable :: sigmab(:)
    real(8),allocatable :: spvar(:)
 end type bmatrix_type
-
-!real(8),parameter :: Lb = 5.0e-2     ! Correlation length-scale
-!real(8),parameter :: sigmabvar = 0.0 ! Grid-point standard deviation variations amplitude
 
 contains
 
@@ -61,12 +59,13 @@ do i=1,nn
 end do
 
 ! Compute spectral variance
+bmatrix%Lb = Lb
 spvar(1) = 1.0
 do i=2,nnmax/2
-   spvar(2*(i-1)) = 2.0*exp(-2.0*(pi*real(i-1,8)*Lb)**2)
+   spvar(2*(i-1)) = exp(-0.5*(real(i-1,8)*bmatrix%Lb)**2)
    spvar(2*(i-1)+1) = spvar(2*(i-1))
 end do
-spvar(nnmax) = exp(-2.0*(pi*real(nnmax/2,8)*Lb)**2)
+spvar(nnmax) = exp(-0.5*(real(nnmax/2,8)*bmatrix%Lb)**2)
 
 ! Set minimum value on spectral variance
 spvar = max(spvar,1.0e-5)
@@ -250,7 +249,7 @@ end subroutine bmatrix_apply_inv
 ! Subroutine: bmatrix_test
 ! Purpose: test B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_test(bmatrix,nn,dobs)
+subroutine bmatrix_test(bmatrix,nn,dobs,grid_coord)
 
 implicit none
 
@@ -258,6 +257,7 @@ implicit none
 type(bmatrix_type),intent(in) :: bmatrix
 integer,intent(in) :: nn
 integer,intent(in) :: dobs
+real,intent(in) :: grid_coord(nn)
 
 ! Local variables
 integer :: i
@@ -269,13 +269,13 @@ real(8) :: sumgp,sumsp,sumgpout
 call random_number(gp1)
 call bmatrix_apply(bmatrix,nn,gp1,gp1out)
 call bmatrix_apply_inv(bmatrix,nn,gp1out,gp2)
-write(*,'(a,e15.8)') 'Direct + inverse test on B:      ',maxval(abs(gp1-gp2))
+write(*,'(a,e15.8)') 'Direct + inverse test on B:          ',maxval(abs(gp1-gp2))
 
 ! Inverse + direct test on B
 call random_number(gp1)
 call bmatrix_apply_inv(bmatrix,nn,gp1,gp1out)
 call bmatrix_apply(bmatrix,nn,gp1out,gp2)
-write(*,'(a,e15.8)') 'Inverse + direct test on B:      ',maxval(abs(gp1-gp2))
+write(*,'(a,e15.8)') 'Inverse + direct test on B:          ',maxval(abs(gp1-gp2))
 
 ! Adjoint test on U
 call random_number(gp1)
@@ -285,7 +285,7 @@ call bmatrix_apply_sqrt_ad(bmatrix,nn,gp1,sp1)
 call bmatrix_apply_sqrt(bmatrix,nn,sp2,gp2)
 sumgp = sum(gp1*gp2)
 sumsp = sum(sp1*sp2)
-write(*,'(a,e15.8)') 'Adjoint test on U:               ',sumgp-sumsp
+write(*,'(a,e15.8)') 'Adjoint test on U:                   ',sumgp-sumsp
 
 ! Adjoint test on B
 call random_number(gp1)
@@ -294,18 +294,30 @@ call bmatrix_apply(bmatrix,nn,gp1,gp1out)
 call bmatrix_apply(bmatrix,nn,gp2,gp2out)
 sumgp = sum(gp1*gp2out)
 sumgpout = sum(gp2*gp1out)
-write(*,'(a,e15.8)') 'Auto-adjoint test on B:          ',sumgp-sumgpout
+write(*,'(a,e15.8)') 'Auto-adjoint test on B:              ',sumgp-sumgpout
 
 ! Print other parameters
 gp1 = 0.0
 gp1(1) = 1.0
 call bmatrix_apply(bmatrix,nn,gp1,gp2)
 gp2 = gp2/(bmatrix%sigmab(1)*bmatrix%sigmab)
-write(*,'(a,e15.8)') 'Correlation conditioning number: ',maxval(bmatrix%spvar)/minval(bmatrix%spvar)
-write(*,'(a,e15.8)') 'Correlation at obs separation:   ',gp2(dobs+1)
-write(*,'(a)',advance='no') 'Correlation shape:              '
+write(*,'(a,e15.8)') 'Correlation conditioning number:     ',maxval(bmatrix%spvar)/minval(bmatrix%spvar)
+write(*,'(a,e15.8)') 'Correlation at obs separation:       ',gp2(dobs+1)
+write(*,'(a)',advance='no') 'Coordinate:                         '
 do i=1,nn/2
-   if (abs(gp2(i))<5.0e-3) exit
+   if (abs(gp2(i))<1.0e-3) exit
+   write(*,'(f6.2)',advance='no') grid_coord(i)
+end do
+write(*,'(a)')
+write(*,'(a)',advance='no') 'Theoretical correlation shape:      '
+do i=1,nn/2
+   if (abs(gp2(i))<1.0e-3) exit
+   write(*,'(f6.2)',advance='no') exp(-0.5*(grid_coord(i)/bmatrix%Lb)**2)
+end do
+write(*,'(a)')
+write(*,'(a)',advance='no') 'Effective correlation shape:        '
+do i=1,nn/2
+   if (abs(gp2(i))<1.0e-3) exit
    write(*,'(f6.2)',advance='no') gp2(i)
 end do
 write(*,'(a)')

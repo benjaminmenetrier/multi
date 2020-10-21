@@ -124,13 +124,13 @@ call gp2sp(nn,gpsave,spsave)
 gp = gpsave
 call gp2sp(nn,gp,sp)
 call sp2gp(nn,sp,gp)
-write(*,'(a,e15.8)') 'Direct + inverse test:           ',maxval(abs(gp-gpsave))
+write(*,'(a,e15.8)') 'Direct + inverse test:               ',maxval(abs(gp-gpsave))
 
 ! Inverse + direct test
 sp = spsave
 call sp2gp(nn,sp,gp)
 call gp2sp(nn,gp,sp)
-write(*,'(a,e15.8)') 'Inverse + direct test:           ',maxval(abs(sp-spsave))
+write(*,'(a,e15.8)') 'Inverse + direct test:               ',maxval(abs(sp-spsave))
 
 ! Adjoint test
 call random_number(gp1)
@@ -140,7 +140,7 @@ call gp2sp(nn,gp1,sp1)
 call sp2gp(nn,sp2,gp2)
 sumgp = sum(gp1*gp2)
 sumsp = sum(sp1*sp2)
-write(*,'(a,e15.8)') 'Adjoint test:                    ',sumgp-sumsp
+write(*,'(a,e15.8)') 'Adjoint test:                        ',sumgp-sumsp
 
 end subroutine fft_test
 

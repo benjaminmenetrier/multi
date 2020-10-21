@@ -84,9 +84,9 @@ do i=1,n
    else
       gasdev=gset
       iset=0
-   end if                        
+   end if
    rand(i) = gasdev
-end do  
+end do
 
 end subroutine rand_normal
 
