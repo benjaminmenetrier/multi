@@ -125,7 +125,7 @@ call rmatrix_setup(rmatrix,nobs,sigma_obs)
 call bmatrix_setup(bmatrix_full,n,n,sigmabvar,Lb)
 
 ! Test full resolution B matrix test
-call bmatrix_test(bmatrix_full,n,n/nobs)
+call bmatrix_test(bmatrix_full,n,n/nobs,grid_coord(:,no))
 
 do io=1,no
    ! Setup other resolutions B matrix
