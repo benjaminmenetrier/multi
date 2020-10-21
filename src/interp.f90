@@ -36,8 +36,8 @@ if (nntrunc==nn) then
 elseif (nntrunc<nn) then
    ! Initialize
    sp = 0.0
-   
-   ! Copy 
+
+   ! Copy
    sp(1:nntrunc) = sptrunc
 end if
 
@@ -76,7 +76,7 @@ else
    elseif (nntrunc<nn) then
       ! Initialize
       rat = nn/nntrunc
-   
+
       ! Interpolate
       do itrunc=1,nntrunc
          do j=0,rat-1
@@ -108,7 +108,7 @@ real(8),intent(in) :: sptrunc(nntrunc)
 integer,intent(in) :: nn
 real(8),intent(out) :: sp(nn)
 
-! Spectral interpolation 
+! Spectral interpolation
 call interp_sp(nntrunc,sptrunc,nn,sp)
 
 end subroutine interp_incr_control
@@ -135,7 +135,7 @@ if (io==1) then
    write(*,'(a)') 'ERROR: interpolation of LMP should not be called for io=1'
    stop
 end if
-   
+
 select case (trim(lmp_lanczos(1)%mode))
 case ('spectral','ritz')
    do jo=2,io
@@ -143,7 +143,7 @@ case ('spectral','ritz')
       lmp_lanczos(io)%outer(jo)%eigenval = lmp_lanczos(jo)%outer(jo)%eigenval
       lmp_lanczos(io)%outer(jo)%eigenvec = lmp_lanczos(jo)%outer(jo)%eigenvec
       lmp_lanczos(io)%outer(jo)%omega = lmp_lanczos(jo)%outer(jo)%omega
- 
+
       do ii=1,ni+1
          ! Interpolation of Lanczos vectors
          call interp_sp(nn(jo-1),lmp_lanczos(jo)%outer(jo)%lancvec_trunc(1:nn(jo-1),ii),nn(io),lmp_lanczos(io)%outer(jo)%lancvec(1:nn(io),ii))
