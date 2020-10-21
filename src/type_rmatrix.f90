@@ -13,9 +13,6 @@ type rmatrix_type
    real(8),allocatable :: sigmao(:)
 end type rmatrix_type
 
-! Changed it since sigmao should not be two objects of different types.
-!real(8),parameter :: sigmao = 0.1 ! Observation error standard-error
-
 contains
 
 !----------------------------------------------------------------------

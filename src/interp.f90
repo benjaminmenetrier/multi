@@ -292,7 +292,7 @@ do io=1,no
       call bmatrix_apply_sqrt_ad(bmatrix(io),nn(io),gp,sp2)
 
       ! Compute difference
-      write(*,'(a,i4,a,i4,a,e15.8)') 'Interpolation test for ',nn(jo),' ~> ',nn(io),':     ',maxval(abs(sp2-sp1))
+      write(*,'(a,i4,a,i4,a,e15.8)') 'Interpolation test for ',nn(jo),' ~> ',nn(io),': ',maxval(abs(sp2-sp1))
 
       ! Release memory
       deallocate(gptrunc)

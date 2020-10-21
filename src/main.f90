@@ -98,7 +98,7 @@ end do
 
 ! Number of observations = number of points on the first outer iteration
 nobs = n/(obsdist*fac(1))
-write(*,'(a,i4)') 'Number of observations:                     ',nobs
+write(*,'(a,i4)') 'Number of observations:                         ',nobs
 
 ! Grid and observation coordinates on a circle or radius 1
 grid_coord = -1.0
