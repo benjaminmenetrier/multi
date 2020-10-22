@@ -101,14 +101,14 @@ res_dir_list=[]
 outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
-for lmp_mode in ['ritz']:#,'spectral','none']:
+for lmp_mode in ['ritz','spectral','none']:
     for nres in [128]:
         for no in [3]:
             for ni in [4]:
-                for obsdist in [0,1,6,12]:
-                    for sigma_obs in [0,0.1,12]:
+                for obsdist in [4]:
+                    for sigma_obs in [0.1]:
                         for sigmabvar in [0.1]:
-                            for Lb in [0,0.01,0.5,12]:
+                            for Lb in [1]:
 
                                 # Outer iteraions for plotting:
                                 outer_iterations=[]
@@ -152,7 +152,7 @@ for lmp_mode in ['ritz']:#,'spectral','none']:
 
 ################################################################################
 # Plot the results of the code:
-#multi_plot(res_dir_list,outer_iterations_list)
+multi_plot(res_dir_list,outer_iterations_list)
 ################################################################################
 
 
@@ -161,86 +161,44 @@ for lmp_mode in ['ritz']:#,'spectral','none']:
 # Plots the outer vectors for each outer loop:
 
 # Plots the innovation:
-for res_dir in res_dir_list:
-   yo_vs_hxg_plot(res_dir)
+#for res_dir in res_dir_list:
+#   yo_vs_hxg_plot(res_dir)
 
-res_file_names=['lanczos_control_space_outer_vectors.dat','PlanczosIF_model_space_outer_vectors.dat']
+# Plots vectors on the grid points:
+res_file_names=['lanczos_control_space_outer_grid.dat','PlanczosIF_model_space_outer_grid.dat']
 for f,res_file_name in enumerate(res_file_names):
+
+    coord_column=2
     # Plots the guess:
     out_name='_guess.png'
     label=r'$x^g'
-    column_of_interest=-4
+    column_of_interest=-1
     for res_dir in res_dir_list:
         results_file=res_dir+res_file_name
         out_file_name=results_file[:-4]+out_name
         print('out_file',out_file_name)
-        vec_plot(results_file,column_of_interest,label,out_file_name)
+        vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
 
     # Plots the background:
     out_name='_background.png'
     label=r'$x^b'
-    column_of_interest=5
+    column_of_interest=-2
     for res_dir in res_dir_list:
         results_file=res_dir+'/'+res_file_name
         out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
+        vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
 
     # Plots the increment:
     out_name='_increment.png'
     label=r'$\delta x^b'
-    column_of_interest=4
-    for res_dir in res_dir_list:
-        results_file=res_dir+'/'+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
-
-
-    # Plots the obs:
-    out_name='_obs.png'
-    label=r'$y^o'
-    column_of_interest=-2
-    for res_dir in res_dir_list:
-        results_file=res_dir+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
-
-
-    # Plots Hxg:
-    out_name='_hxg.png'
-    label=r'$H x^g'
     column_of_interest=-3
     for res_dir in res_dir_list:
         results_file=res_dir+'/'+res_file_name
         out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
-
-
-    # Plots the innovation:
-    out_name='_innovation.png'
-    #label=r'$y^o_{}-H x^g'
-    label=r'$d'
-    column_of_interest=-1
-    for res_dir in res_dir_list:
-        results_file=res_dir+'/'+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
+        vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
 
     # Plots the preconditionned vectors:
-    # Lanczos:
-    column_of_interest=2
-    if f==0:
-        out_name='_dva_interp.png'
-        label=r'$\Pi \delta v^{a}'
-    elif f==1:
-        out_name='_dxabar_interp.png'
-        label=r'$\Pi \delta \bar{x^{a}}'
-    for res_dir in res_dir_list:
-        results_file=res_dir+'/'+res_file_name
-        out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
-
-    # PlanczosIF:
-    column_of_interest=3
+    column_of_interest=-4
     if f==0:
         out_name='_dvb.png'
         label=r'$\delta v^b'
@@ -250,8 +208,53 @@ for f,res_file_name in enumerate(res_file_names):
     for res_dir in res_dir_list:
         results_file=res_dir+'/'+res_file_name
         out_file_name=results_file[:-4]+out_name
-        vec_plot(results_file,column_of_interest,label,out_file_name)
+        vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
 
+
+    column_of_interest=-5
+    if f==0:
+        out_name='_dva_interp.png'
+        label=r'$\Pi \delta v^{a}'
+    elif f==1:
+        out_name='_dxabar_interp.png'
+        label=r'$\Pi \delta \bar{x^{a}}'
+    for res_dir in res_dir_list:
+        results_file=res_dir+'/'+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
+
+
+# Plots vectors in the obs space:
+res_file_names=['lanczos_control_space_outer_obs.dat','PlanczosIF_model_space_outer_obs.dat']
+for f,res_file_name in enumerate(res_file_names):
+
+    # Plots Hxg:
+    out_name='_hxg.png'
+    label=r'$H x^g'
+    column_of_interest=-3
+    for res_dir in res_dir_list:
+        results_file=res_dir+'/'+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
+
+    # Plots the innovation:
+    out_name='_innovation.png'
+    #label=r'$y^o_{}-H x^g'
+    label=r'$d'
+    column_of_interest=-1
+    for res_dir in res_dir_list:
+        results_file=res_dir+'/'+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
+
+    # Plots the obs:
+    out_name='_obs.png'
+    label=r'$y^o'
+    column_of_interest=-2
+    for res_dir in res_dir_list:
+        results_file=res_dir+res_file_name
+        out_file_name=results_file[:-4]+out_name
+        vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
 
 ################################################################################
 # Comparision of LMP methods:

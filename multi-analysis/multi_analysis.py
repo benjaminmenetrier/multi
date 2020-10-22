@@ -197,7 +197,7 @@ def yo_vs_hxg_plot(res_dir):
 
 
 ################################################################################
-def vec_plot(results_file,column_of_interest,label,out_file_name):
+def vec_plot(results_file,column_of_interest,coord_column,label,out_file_name):
     """Plot the outer vectors:
     """
     # Get the data:
@@ -205,33 +205,33 @@ def vec_plot(results_file,column_of_interest,label,out_file_name):
 
     io=1
     vec=[]
-    indices=[]
+    coord=[]
 
     vec_io=[]
-    indices_io=[]
+    coord_io=[]
     for i  in range(len(outer_vectors)):
         # Add the elemnts of the outer vector for iteration io:
         if int(outer_vectors[i,0])==io:
             vec_io.append(outer_vectors[i,column_of_interest])
-            indices_io.append(outer_vectors[i,1])
+            coord_io.append(outer_vectors[i,coord_column])
         # Add the outer vector for outer iteration io to vec:    
         else:
             io=io+1
             vec.append(vec_io)
-            indices.append(indices_io)
+            coord.append(coord_io)
             vec_io=[]
-            indices_io=[]
+            coord_io=[]
             vec_io.append(outer_vectors[i,column_of_interest])
-            indices_io.append(outer_vectors[i,1])
+            coord_io.append(outer_vectors[i,coord_column])
     # Add the last outer vector.
     vec.append(vec_io)
-    indices.append(indices_io)
+    coord.append(coord_io)
         
     if not len(vec)==1:
         fig, subplots = plt.subplots(len(vec),1)
         for i, ax in enumerate(subplots):
             plt.ticklabel_format(axis="y", style="sci", scilimits=(-3,3))
-            ax.plot(indices[i][:],vec[i][:],color='blue')
+            ax.plot(coord[i][:],vec[i][:],color='blue')
             ax.set_ylabel(label+'_{}$'.format(i))
             # at = AnchoredText(r"io={}".format(i),
             #           prop=dict(size=15), frameon=True,loc='upper left',)
@@ -244,7 +244,7 @@ def vec_plot(results_file,column_of_interest,label,out_file_name):
         #fig.text(0., 0.5, r'$x_g$', va='center', rotation='vertical')
     else:
         fig=plt.figure()
-        plt.plot(indices[0][:],vec[0][:],color='blue')
+        plt.plot(coord[0][:],vec[0][:],color='blue')
         plt.ylabel(label+r'_{}$'.format(0))
         plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
 

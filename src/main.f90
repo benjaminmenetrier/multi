@@ -100,7 +100,7 @@ end do
 nobs = n/(obsdist*fac(1))
 write(*,'(a,i4)') 'Number of observations:                         ',nobs
 
-! Grid and observation coordinates on a circle or radius 1
+! Grid and observation coordinates on a circle of radius 1
 grid_coord = -1.0
 do io=1,no
    do i=1,nn(io)
@@ -168,13 +168,13 @@ open(PlanczosIF_model_space_outer_obs_unit,file='results/PlanczosIF_model_space_
 open(lanczos_control_vs_PlanczosIF_model_unit,file='results/lanczos_control_vs_PlanczosIF_model.dat')
 
 ! Write headers
-write(Bdelta_test_unit,'(a)') 'B matrix: 1:outer_loop 2:line 3:column 4:element value'
-write(Hdelta_test_unit,'(a)') 'H matrix: 1:outer_loop 2:line 3:column 4:element value'
+write(Bdelta_test_unit,'(a)') '# B matrix: 1:outer_loop 2:line 3:column 4:element value'
+write(Hdelta_test_unit,'(a)') '# H matrix: 1:outer_loop 2:line 3:column 4:element value'
 write(lanczos_control_space_unit,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
 write(lanczos_control_space_outer_grid_unit,'(a)') '# outer iteration, indices, coord, dva_interp, dvb, dxb, xb, xg'
 write(lanczos_control_space_outer_obs_unit,'(a)') '# outer iteration, indices, coord, hxg, yo, d'
 write(PlanczosIF_model_space_unit,'(a)') '# Outer iteration , resolution , Inner iteration , J=Jb+Jo , Jb , Jo, sqrt(rho), beta'
-write(PlanczosIF_model_space_outer_grid_unit,'(a)') '# outer iteration, indices, coord, dxabar_interp, dxbbar, xb, dxb, xg'
+write(PlanczosIF_model_space_outer_grid_unit,'(a)') '# outer iteration, indices, coord, dxabar_interp, dxbbar, dxb, xb, xg'
 write(PlanczosIF_model_space_outer_obs_unit,'(a)') '# outer iteration, indices, coord, hxg, yo, d'
 write(lanczos_control_vs_PlanczosIF_model_unit,'(a)') '# Outer iteration , resolution , Inner iteration , delta_J , delta_Jb , delta_Jo, sqrt(rho), beta'
 !--------------------------------------------------------------------------------
@@ -202,7 +202,7 @@ do io=1,no
    call bmatrix_apply_sqrt(bmatrix(io),nn(io),dvb(1:nn(io),io),dxb(1:nn(io)))
    xg(1:nn(io)) = xb(1:nn(io))-dxb(1:nn(io))
 
-   ! Monitoring the B-matrix with deltas:
+   ! Monitoring the B and H matrix with deltas:
    allocate(delta(nn(io),nn(io)))
    allocate(bdelta(nn(io),nn(io)))
    allocate(hdelta(nn(io),nn(io)))
