@@ -54,13 +54,15 @@ type(rmatrix_type)             :: rmatrix
 type(algo_type),allocatable    :: algo_lanczos(:),algo_planczosif(:)
 type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
 
+
 integer                        :: ib,id
 real(8),allocatable            :: delta(:,:)
-!real(8),allocatable            :: delta_ib(:)
 real(8),allocatable            :: bdelta(:,:)
 real(8),allocatable            :: hdelta(:,:)
-real(8),allocatable            :: rhs_compare(:,:)
+real(8),allocatable            :: rhs(:),binvdxb(:)
 character(len=1024)            :: filename
+real(8),allocatable            :: xtmp1(:),xtmp2(:),ytmp1(:),ytmp2(:),axg(:)
+real(8)                        :: rhs_norm 
 
 ! Read the parameters from the standard input
 read(*,*) n, no, ni, obsdist, lmp_mode, sigma_obs, sigmabvar, Lb, full_res, new_seed, shutoff_type, shutoff_value
@@ -73,7 +75,6 @@ allocate(algo_lanczos(no),algo_planczosif(no))
 allocate(bmatrix(no))
 allocate(hmatrix(no))
 allocate(lmp_lanczos(no),lmp_planczosif(no))
-allocate(rhs_compare(ni,2))
 allocate(grid_coord(n,no))
 
 ! Set seed
@@ -212,7 +213,6 @@ do io=1,no
    do ib=1,nn(io)
       delta(ib,ib)=1
    end do
-
    do ib=1,nn(io)
       call bmatrix_apply(bmatrix(io),nn(io),delta(ib,:),bdelta(ib,:))
       call hmatrix_apply(hmatrix(io),nn(io),delta(ib,:),nobs,hdelta(ib,:))
@@ -228,6 +228,23 @@ do io=1,no
    call hmatrix_apply(hmatrix(io),nn(io),xg(1:nn(io)),nobs,hxg)
    d = yo-hxg
 
+   ! Check the rhs:
+   
+   ! allocate(xtmp1(nn(io)),xtmp2(nn(io)),axg(nn(io))
+   ! allocate(ytmp1(nobs),ytmp2(nobs))
+   ! call bmatrix_apply_inv(bmatrix(io),nn(io),xg,binvxg)
+   
+   ! call hmatrix_apply(hmatrix(io),nn(io),xg,nobs,ytmp1)
+   ! call rmatrix_apply_inv(rmatrix,nobs,ytmp1,ytmp2)
+   ! call hmatrix_apply_ad(hmatrix(io),nobs,ytmp2,nn(io),xtmp)
+
+   ! axg(:)=xtmp1(:)+xtmp2(:)
+   ! call bmatrix_apply_inv(bmatrix(io),nn(io),xb,xbtmp1)
+
+   ! deallocate(xtmp1,xtmp2,ytmp1,ytmp2,axg)
+
+
+   
    ! Save the "outer vectors":
    do id=1,nn(io)
       write(lanczos_control_space_outer_grid_unit,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',grid_coord(id,io),' ',dva_interp(id),' ',dvb(id,io),' ',dxb(id),' ',xb(id),' ',xg(id)
@@ -256,7 +273,7 @@ do io=1,no
    end if
 
    ! Minimization
-   call algo_apply_lanczos(algo_lanczos(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dvb(1:nn(io),io),nobs,d,ni,lmp_lanczos(io),dva(1:nn(io),io),shutoff_type,shutoff_value,rhs_compare)
+   call algo_apply_lanczos(algo_lanczos(io),nn(io),bmatrix(io),hmatrix(io),rmatrix,dvb(1:nn(io),io),nobs,d,ni,lmp_lanczos(io),dva(1:nn(io),io),shutoff_type,shutoff_value)
 
 
    ! Result
@@ -267,6 +284,7 @@ do io=1,no
       write(lanczos_control_space_unit,'(i2,a,i2,a,i3,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',fac(io),' ',ii,' ',algo_lanczos(io)%jb(ii)+algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%jb(ii),' ',algo_lanczos(io)%jo(ii),' ',algo_lanczos(io)%rho_sqrt(ii),' ',algo_lanczos(io)%beta(ii)
    end do
 end do
+
 write(*,'(a)') ''
 !--------------------------------------------------------------------------------
 
@@ -292,14 +310,32 @@ do io=1,no
       dxbbar(1:nn(io),io) = dxbbar(1:nn(io),io)-dxabar_interp(1:nn(io))
    end do
 
+   ! Check the rhs:
+   allocate(rhs(nn(io)),binvdxb(nn(io)))
+   call bmatrix_apply_inv(bmatrix(io),nn(io),dxb,binvdxb)
+   rhs(1:nn(io-1))=dxbbar(1:nn(io-1),io)-binvdxb(1:nn(io-1))
+   rhs_norm=sqrt(sum(rhs(:)**2))
+   write(*,'(a, e15.8)') 'rhs: ', rhs_norm
+   deallocate(rhs,binvdxb)
+   
    ! Compute guessx
    call bmatrix_apply(bmatrix(io),nn(io),dxbbar(1:nn(io),io),dxb(1:nn(io)))
    xg(1:nn(io)) = xb(1:nn(io))-dxb(1:nn(io))
 
+
+   ! ! Check the rhs:
+   ! allocate(rhs(nn(io)),binvdxb(nn(io)))
+   ! call bmatrix_apply_inv(bmatrix(io),nn(io),dxb,binvdxb)
+   ! rhs(1:nn(io))=dxbbar(1:nn(io),io)-binvdxb(1:nn(io))
+   ! rhs_norm=sqrt(sum(rhs(:)**2))
+   ! write(*,'(a, e15.8)') 'rhs: ', rhs_norm
+   ! deallocate(rhs,binvdxb)
+
+   
    ! Compute innovation
    call hmatrix_apply(hmatrix(io),nn(io),xg(1:nn(io)),nobs,hxg)
    d = yo-hxg
-
+   
    ! Save the "outer vectors":
    do id=1,nn(io)
       write(PlanczosIF_model_space_outer_grid_unit,'(i2,a,i5,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8,a,e15.8)') io,' ',id,' ',grid_coord(id,io),' ',dxabar_interp(id),' ',dxbbar(id,io),' ',dxb(id),' ',xb(id),' ',xg(id)

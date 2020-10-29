@@ -67,7 +67,7 @@ end subroutine algo_alloc
 ! Subroutine: algo_apply_lanczos
 ! Purpose: Lanczos algorithm in control space
 !----------------------------------------------------------------------
-subroutine algo_apply_lanczos(algo,nn,bmatrix,hmatrix,rmatrix,dvb,nobs,d,ni,lmp,dva,shutoff_type,shutoff_value,rhs_compare)
+subroutine algo_apply_lanczos(algo,nn,bmatrix,hmatrix,rmatrix,dvb,nobs,d,ni,lmp,dva,shutoff_type,shutoff_value)
 
 implicit none
 
@@ -85,7 +85,7 @@ type(lmp_type),intent(in) :: lmp
 real(8),intent(out) :: dva(nn)
 integer,intent(in)  :: shutoff_type
 real(8),intent(in)  :: shutoff_value
-real(8),intent(out) :: rhs_compare(ni,2)
+
 
 ! Local variables
 integer :: ii,iii,info
@@ -159,12 +159,10 @@ do ii=1,ni
    call lmp_apply_sqrt(lmp,nn,ni,lmp%io,s(:,ii),u(:,ii))
    call bmatrix_apply_sqrt(bmatrix,nn,u(:,ii),algo%dx(:,ii))
 
-   ! rhs check:
-
    ! Stop criterion on the Ritz pairs approximation:
    if (shutoff_type==3) then
       do iii=1,ii
-         accuracy=beta(ii+1)*s(iii,ii)/algo%eigenval(iii)
+         accuracy=abs(beta(ii+1)*s(iii,ii))/algo%eigenval(iii)
          write(*,'(a,e15.8,a,e15.8,a,e15.8,a,e15.8)') 'acc check:',accuracy,' ',beta(ii+1),' ',s(iii,ii),' ',algo%eigenval(iii)
          if (accuracy > shutoff_value) then
             !write(*,'(a,e15.8)') 'Unacceptable Ritz pair, with accuracy: ',
@@ -193,10 +191,6 @@ do ii=1,ni
    ! end if
 end do
 
-do ii=1,ni
-   rhs_compare(ii,1)=rhs(ii)
-!   rhs_compare(ii,2)=rhs_binv(ii)
-end do
 
 ! Final update
 dva = u(:,ni)
@@ -248,13 +242,15 @@ integer,intent(in) :: ni
 type(lmp_type),intent(in) :: lmp
 real(8),intent(out) :: dxabar(nn)
 integer,intent(in)  :: shutoff_type
-real(8),intent(in)  ::shutoff_value
+real(8),intent(in)  :: shutoff_value
 
 ! Local variables
-integer :: ii,info
+integer :: ii,iii,info
 real(8) :: xtmp(nn),ytmp(nobs),ytmp2(nobs),y(ni,ni),rhs(ni),subdiag(ni-1),work(max(1,2*ni-2))
 real(8) :: alpha(0:ni),beta(0:ni+1),rho(0:ni)
 real(8) :: dxb(nn),dxbar(nn,ni),l(nn,0:ni),p(nn,0:ni),pbar(nn,0:ni),q(nn,0:ni),r(nn,0:ni),s(nn,0:ni),tbar(nn,0:ni),t(nn,0:ni),v(nn,0:ni+1),w(nn,0:ni),zbar(nn,0:ni+1),z(nn,0:ni+1)
+real(8) :: accuracy
+
 
 ! Initialization
 s(:,0) = 0.0
@@ -321,6 +317,18 @@ do ii=1,ni
    s(:,ii) = matmul(z(:,1:ii),y(1:ii,ii))
    dxbar(:,ii) = matmul(zbar(:,1:ii),y(1:ii,ii))
    algo%dx(:,ii) = s(:,ii)
+
+   ! Stop criterion on the Ritz pairs approximation:
+   if (shutoff_type==3) then
+      do iii=1,ii
+         accuracy=abs(beta(ii+1)*s(iii,ii))/algo%eigenval(iii)
+         write(*,'(a,e15.8,a,e15.8,a,e15.8,a,e15.8)') 'acc check:',accuracy,' ',beta(ii+1),' ',s(iii,ii),' ',algo%eigenval(iii)
+         if (accuracy > shutoff_value) then
+            !write(*,'(a,e15.8)') 'Unacceptable Ritz pair, with accuracy: ',
+            !stop
+         end if
+      end do
+   end if
 
    ! Compute cost function
    algo%jb(ii) = 0.5*sum((algo%dx(:,ii)-dxb)*(dxbar(:,ii)-dxbbar))

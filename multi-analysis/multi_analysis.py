@@ -85,7 +85,7 @@ def evolution_plot(results_directory,io):
     for c in range(len(lanczos)):
         diff_col=[]
         for l in range(l_iter):
-            diff_col.append(lanczos[c,l]-PlanczosIF[c,l]) 
+            diff_col.append(lanczos[c,l]-PlanczosIF[c,l])
         diff.append(diff_col)
     diff=np.array(diff)
     
@@ -125,8 +125,8 @@ def multi_plot(res_dir_list,outer_iterations):
         try:
             evolution_plot(res_dir,outer_iterations[r])
         except:
-            evolution_plot(res_dir,outer_iterations[r])
-            #print("Error with directory:",res_dir)
+            #evolution_plot(res_dir,outer_iterations[r])
+            print("Error with directory:",res_dir)
 ################################################################################
 
 
@@ -212,7 +212,7 @@ def vec_plot(results_file,column_of_interest,coord_column,label,out_file_name):
     for i  in range(len(outer_vectors)):
         # Add the elemnts of the outer vector for iteration io:
         if int(outer_vectors[i,0])==io:
-            vec_io.append(outer_vectors[i,column_of_interest])
+            vec_io.append(outer_vectors[i,column_of_interest])#-outer_vectors[i,-3])
             coord_io.append(outer_vectors[i,coord_column])
         # Add the outer vector for outer iteration io to vec:    
         else:
@@ -221,7 +221,7 @@ def vec_plot(results_file,column_of_interest,coord_column,label,out_file_name):
             coord.append(coord_io)
             vec_io=[]
             coord_io=[]
-            vec_io.append(outer_vectors[i,column_of_interest])
+            vec_io.append(outer_vectors[i,column_of_interest])#-outer_vectors[i,-3])
             coord_io.append(outer_vectors[i,coord_column])
     # Add the last outer vector.
     vec.append(vec_io)

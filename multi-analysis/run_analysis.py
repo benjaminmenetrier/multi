@@ -27,7 +27,7 @@ lmp_mode='ritz'
 sigma_obs=0.01
 sigmabvar=0.1
 Lb=0.005
-full_res='F'
+full_res='T'
 new_seed='F'
 gp_from_sp='T' # rajouter cette option
 shutoff_type=10 # stop criterion: 1-Jb, 2-beta, (else: no stop criterion)
@@ -48,7 +48,7 @@ code_output='../results'
 out_dirs.append(code_output)
 
 # Roots of the results of the analysis:
-results_dir_root='./analysis_results_dev/'
+results_dir_root='./analysis_results_dev_test2/'
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -107,7 +107,7 @@ for lmp_mode in ['ritz','spectral','none']:
             for ni in [4]:
                 for obsdist in [4]:
                     for sigma_obs in [0.1]:
-                        for sigmabvar in [0.1]:
+                        for sigmabvar in [0.001]:
                             for Lb in [1]:
 
                                 # Outer iteraions for plotting:
@@ -179,6 +179,7 @@ for f,res_file_name in enumerate(res_file_names):
         print('out_file',out_file_name)
         vec_plot(results_file,column_of_interest,coord_column,label,out_file_name)
 
+   
     # Plots the background:
     out_name='_background.png'
     label=r'$x^b'
@@ -268,7 +269,7 @@ out_names_beta=[]
 outer_iterations_list_tmp=[]
 # Store the results files to compare:
 lmp_to_compare=[]
-check_second_level_lmp_dirs=[]
+#check_second_level_lmp_dirs=[]
 
 for r,res_dir in enumerate(res_dir_list):
     if 'ritz' in res_dir:
@@ -298,7 +299,7 @@ for r,res_dir in enumerate(res_dir_list):
             if not lmp=='none':
                 check_second_level_lmp_tmp.append(res_tmp1+lmp+res_tmp2)
         lmp_to_compare.append(lmp_to_compare_tmp)
-        check_second_level_lmp_dirs.append(check_second_level_lmp_tmp)
+        #check_second_level_lmp_dirs.append(check_second_level_lmp_tmp)
         
 # Plots the comparision of LMP methods according to J:
 column_of_interest=3
