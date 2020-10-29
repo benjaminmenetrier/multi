@@ -1,0 +1,248 @@
+\documentclass[francais]{beamer}
+\usepackage[francais]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsfonts}
+
+
+
+
+%CHOIX DU THEME et/ou DE SA COULEUR
+% => essayer différents thèmes (en décommantant une des trois lignes suivantes)
+%\usetheme{PaloAlto}
+\usetheme{Madrid}
+
+% => il est possible, pour un thème donné, de modifier seulement la couleur
+\usecolortheme{default}
+%\usecolortheme{whale}
+
+%\useoutertheme[left]{sidebar}
+
+
+%Pour le TITLEPAGE
+
+
+\title[Nicolas Baillot d'Etivaux]{Constraining the equation of state for dense matter through thermal emission of neutron stars}
+
+
+%Debut de la presentation :
+
+\begin{document}
+
+
+%Présentation:
+\setbeamertemplate{blocks}[rounded]%
+[shadow=false]
+
+
+\begin{frame}{Problem solved}
+\begin{itemize}
+ \item $J$ can have fully converged before the last inner iteration (this is not a plotting artefact).\\
+ \item observation coordinates versus grid points (problem of the NaN values on the observation vector).\\
+ \item $J$ quadratic ?\\
+ We plot: $J_{b,i}=\frac{1}{2}(u_i-\delta v_b)^2$.\\
+ and $J_o=\frac{1}{2}(d-H \delta x_i)^T R^{-1} (d-H \delta x_i).$ 
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Monitoring the B Matrix, changing the resolution: io=1}
+\begin{center}
+$\sigma^b_{var}=0.1 , L_b=1$.\\
+ \includegraphics[scale=0.5]{images/b1.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the B Matrix, changing the resolution: io=2}
+\begin{center}
+$\sigma^b_{var}=0.1 , L_b=1$.\\
+ \includegraphics[scale=0.5]{images/b2.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the B Matrix, changing the resolution: io=3 (full resolution)}
+\begin{center}
+$\sigma^b_{var}=0.1 , L_b=1$.\\
+ \includegraphics[scale=0.5]{images/b3.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the B Matrix, full resolution}
+\begin{center}
+$\sigma^b_{var}=0.1 , L_b=0.5$.\\
+ \includegraphics[scale=0.5]{images/b3-0-5.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the B Matrix, full resolution}
+\begin{center}
+$\sigma^b_{var}=0.1 , L_b=2$.\\
+ \includegraphics[scale=0.5]{images/b3-2.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Monitoring the H Matrix, full resolution}
+\begin{center}
+$obsdist=4,\sigma^o=0.1$.\\
+ \includegraphics[scale=0.5]{images/hfull.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Monitoring the H Matrix, changing the resolution: io=1}
+\begin{center}
+$obsdist=4,\sigma^o=0.1$.\\
+ \includegraphics[scale=0.5]{images/h1.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the H Matrix, changing the resolution: io=2}
+\begin{center}
+$obsdist=4,\sigma^o=0.1$.\\
+ \includegraphics[scale=0.5]{images/h2.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the H Matrix, changing the resolution: io=3}
+\begin{center}
+$obsdist=4,\sigma^o=0.1$.\\
+ \includegraphics[scale=0.5]{images/h3.png}
+\end{center}
+\end{frame}
+
+%-------------------------------------------------------
+\begin{frame}{Monitoring the observations, full resolution -> OK!}
+\begin{center}
+$obsdist=4,\sigma^o=0.1$.\\
+ \includegraphics[scale=0.5]{images/full/obs.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the background (lanczos-spectral example), full resolution}
+\begin{center}
+$obsdist=4, ni=4, \sigma^o=\sigma^b_{var}=0.1, L_b=1$.\\
+ \includegraphics[scale=0.5]{images/full/lback.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Monitoring the increment (lanczos-spectral example), full resolution}
+\begin{center}
+ \includegraphics[scale=0.5]{images/full/linc.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the guess (lanczos-spectral example), full resolution}
+\begin{center}
+ \includegraphics[scale=0.5]{images/full/lguess.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring $H x^g$ (lanczos-spectral example), full resolution }
+\begin{center}
+ \includegraphics[scale=0.5]{images/full/lhxg.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the innovation (lanczos-spectral example), full resolution}
+\begin{center}
+ \includegraphics[scale=0.5]{images/full/linnov.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Monitoring the interpolated preconditionned analysis (lanczos-spectral example), full resolution}
+\begin{center}
+ \includegraphics[scale=0.5]{images/full/dva_i.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the preconditionned increment (lanczos-spectral example)}
+\begin{center}
+ \includegraphics[scale=0.5]{images/full/dvb.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the interpolated preconditionned analysis (PlanczosIF-spectral), full resolution}
+\begin{center}
+ \includegraphics[scale=0.5]{images/full/dxabar_i.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the preconditionned increment (PlanczosIF-spectral), full resolution}
+\begin{center}
+ \includegraphics[scale=0.5]{images/full/dxbbar.png}
+\end{center}
+\end{frame}
+
+\begin{frame}
+\begin{center}
+\huge{Changing the resolution}:
+\end{center}
+\end{frame}
+
+%-----------------------------------------------------------------------
+\begin{frame}{Monitoring the observations}
+\begin{center}
+$obsdist=4,\sigma^o=0.1$.\\
+ \includegraphics[scale=0.5]{images/obs.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the background (lanczos-spectral example), io=1}
+\begin{center}
+$obsdist=4, ni=4, \sigma^o=\sigma^b_{var}=0.1, L_b=1$.\\
+ \includegraphics[scale=0.5]{images/lback.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Monitoring the increment (lanczos-spectral example)}
+\begin{center}
+ \includegraphics[scale=0.5]{images/linc.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the guess (lanczos-spectral example)}
+\begin{center}
+ \includegraphics[scale=0.5]{images/lguess.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring $H x^g$ (lanczos-spectral example)}
+\begin{center}
+ \includegraphics[scale=0.5]{images/lhxg.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the innovation}
+\begin{center}
+ \includegraphics[scale=0.5]{images/linnov.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Monitoring the interpolated preconditionned analysis (lanczos-spectral)}
+\begin{center}
+ \includegraphics[scale=0.5]{images/dva_i.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the preconditionned increment (lanczos-spectral)}
+\begin{center}
+ \includegraphics[scale=0.5]{images/dvb.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the interpolated preconditionned analysis (PlanczosIF-spectral)}
+\begin{center}
+ \includegraphics[scale=0.5]{images/dxabar_i.png}
+\end{center}
+\end{frame}
+\begin{frame}{Monitoring the preconditionned increment (PlanczosIF-spectral)}
+\begin{center}
+ \includegraphics[scale=0.5]{images/dxbbar.png}
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Stop Criteria implemented at inner iteration i}
+\begin{itemize}
+ \item On $J_{b,i}/J_{b,i-1} < \epsilon_J$.\\
+ \item On the norm of the preconditionned residue: $\beta_{i+1} < \epsilon_\beta$ (?).
+ \item On the Ritz pairs approximation: $\frac{\|\beta_{i+1} s_{k,i}\|}{\lambda_k}, k=1,..,i.$
+\end{itemize}
+\end{frame}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\end{document}
