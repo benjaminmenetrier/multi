@@ -296,10 +296,10 @@ def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,leg
         out_name (string): Name of the output png file.
         obj_list (list)  : List containing lists to be compared together.
         yabel (string)   : Label of the y-axis.
-        diff_list (list)      : List of numbers regarding which one wants to compare.
+        diff_list (list) : List of numbers regarding which one wants to compare the lists.
         ylabel (string)  : Label of diff_list.
-        x (list)         : List of numbers for x-axis.
-        xlabel (string)  : Label of x-axis
+        x (list)         : List of numbers for the x-axis.
+        xlabel (string)  : Label of the x-axis.
     Return:
         (void): Creates the plot and save it as out_name.
     """
@@ -349,9 +349,23 @@ def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,leg
 
 ################################################################################
 def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list):
-    """Compare spectral and ritz lmp modes:
+    """Compare none, spectral and ritz lmp methods by calling the compare_2N_plot function:
+    Args:
+        out_names (list)          : list of the output file names.
+        lmp_to_compare (list)     : list containg triplets. Each triplets corresponds to the results
+                                    files according the none, ritz, or spectral lmp method, for the
+                                    same set of parameters.
+        column_of_interest (int)  : column of the variable to compare in the results files.
+        ylabel1 (string)          : label of the y-axis (name of the variable to compare)
+        ylabel2 (string)          : label of the bottom plot representing the difference between the
+                                    lanczos and PlanczosIF algorithms for the variable to compare.
+        outer_iterations_list (list) : list containing lists of the iterations at which we change
+                                       of outer loop.
+    Return:
+        (void) Creates the plots and save them as out_names.    
     """
     try:
+        # Creates the legends:
         legend=[]
         for lmp_mode in ['ritz','spectral','none']:
             legend.append([lmp_mode+'-model',lmp_mode+'-control'])
@@ -360,8 +374,11 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
         for r,res_dirs in enumerate(lmp_to_compare):
             diff_list=[]
             obj_list=[]
+            # Loop over the results directories:
             for res_dir in res_dirs:
                 #diff=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+
+                # Get the data from the results files:
                 res1=np.genfromtxt(res_dir+'PlanczosIF_model_space.dat', comments='#')    
                 res2=np.genfromtxt(res_dir+'lanczos_control_space.dat', comments='#')
                 diff=[]
@@ -470,14 +487,25 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
 ################################################################################
 # matrix monitoring
 def matrix_monitoring(res_dir,results_file_name,out_file_name):
-    """Draw the B matrix in color code
+    """Draw the a matrix in color code:
+    Args:
+        res_dir (string)           : result directory containg the matrix data.
+        results_file_name (string) : name of the file containing the matrix data.
+        out_file_name (string)     : name of the output produced plot.
+    Return:
+        (void) Creates the matrix plot in color code and save it as out_file_name.
     """
+    
     res_file=res_dir+results_file_name
     bmatrix=np.genfromtxt(res_file,comments='#')
 
+    # column vector composing the matrix:
     b_vec=[]
+    # matrix at a given outer iteration:
     b_mat=[]
+    # Store the matrices for each outer iterations:
     bmatrices=[]
+    
     io_old=1
     ib_old=1
 
@@ -485,25 +513,19 @@ def matrix_monitoring(res_dir,results_file_name,out_file_name):
         io=b[0]
         ib=b[1]
         elem=b[2]
-        #print(b)
         if io==io_old:
             if ib==ib_old:
                 b_vec.append(elem)
-                #print('vec1',b_vec,io,io_old,ib,ib_old)
             else:
-                #print('vec21',b_vec,io,io_old,ib,ib_old)
                 ib_old=ib
                 b_mat.append(np.array(b_vec))
                 b_vec=[]
                 b_vec.append(elem)
-                #print('vec22',b_vec,io,io_old,ib,ib_old)
-                #print('mat1',b_mat)
+                
         else:
-            #print('matrix',b_mat,io,io_old,ib,ib_old)
             io_old=io
             ib_old=1
             b_mat.append(np.array(b_vec))
-            #print('mat',b_mat,io,io_old,ib,ib_old)
             bmatrices.append(np.array(b_mat))
             b_mat=[]
             b_vec=[]
@@ -511,11 +533,8 @@ def matrix_monitoring(res_dir,results_file_name,out_file_name):
     b_mat.append(b_vec)        
     bmatrices.append(b_mat)  
     bmatrices=np.array(bmatrices)
-    #print(bmatrices)
-    #print(np.shape(bmatrices))
     
     for b,bmat in enumerate(bmatrices):
-        #print('final',np.array(b_mat))
         fig=plt.figure()
         outname=res_dir+out_file_name+'_io{}.png'.format(b+1)
         plt.matshow(np.array(bmat),cmap=plt.get_cmap('copper'))
