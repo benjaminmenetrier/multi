@@ -13,9 +13,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.ticker as ticker
 from matplotlib import cm
 from matplotlib.offsetbox import AnchoredText
-
 import numpy as np
-
 
 # Allow the use of tex format for the labels:
 # plt.rcParams.update({
@@ -23,9 +21,6 @@ import numpy as np
 #     "font.family": "sans-serif",
 #     "font.sans-serif": ["Helvetica"]})
 plt.rcParams.update({"text.usetex": True, "font.size" : 15})
-
-# To use this module in command line:
-#results_directory=str(sys.argv[1])
 
 ################################################################################
 def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io):
@@ -56,7 +51,6 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io):
         plt.yscale("log")
     ax1.set_ylabel(ylabel12)
     start, end = ax1.get_xlim()
-    #ax1.xaxis.set_ticks(np.arange(start, end, 1.))
     ax1.vlines(io, 0, ymax, colors='blue', linestyles='dashed')
 
     # Bottom plot: obj3
@@ -66,20 +60,30 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io):
     ax2.set_xlabel(xlabel)
     ax2.set_ylabel(ylabel3)
     plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-    #ax2.yaxis.set_major_formatter(ticker.FormatStrFormatter('%0.4f'))
     plt.savefig(out_name)
     plt.clf()
 ################################################################################
 
 
 ################################################################################
-def evolution_plot(results_directory,io):
+def J_evolution_plot(results_directory,io):
     """Plots J, Jo and Jb for lanczos and PlanczosIf, as well as their difference.
+    Args:
+        results_directory (string) : results directory containing the results files
+                                     with the output of the code concerning the cost
+                                     function.
+        io (list)                  : List containing the iterations at which we change
+                                     of outer loop.
+    Return:
+        (void): Creates the plot and save it in the results directory given in args.
     """
+    
     # Get the results files from the results directory and store them in lists:
     lanczos=np.genfromtxt(results_directory+'lanczos_control_space.dat', comments='#')
     PlanczosIF=np.genfromtxt(results_directory+'PlanczosIF_model_space.dat', comments='#')
     #diff=np.genfromtxt(results_directory+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
+
+    # Build the difference between lanczos and PlanczosIF manually from the results files:
     diff=[]
     l_iter=min(len(lanczos[0]),len(PlanczosIF[0]))
     for c in range(len(lanczos)):
@@ -88,7 +92,8 @@ def evolution_plot(results_directory,io):
             diff_col.append(lanczos[c,l]-PlanczosIF[c,l])
         diff.append(diff_col)
     diff=np.array(diff)
-    
+
+    # /!\ Fix bug later if the problem occurs again (problem of iterating over a 1D object sometimes:
     # lanczos=np.atleast_2d(np.genfromtxt(results_directory+'/lanczos_control_space.dat', comments='#'))
     # PlanczosIF=np.atleast_2d(np.genfromtxt(results_directory+'/PlanczosIF_model_space.dat', comments='#'))
     # diff=np.atleast_2d(np.genfromtxt(results_directory+'/lanczos_control_vs_PlanczosIF_model.dat', comments='#'))
@@ -119,25 +124,41 @@ def evolution_plot(results_directory,io):
 ################################################################################
 def multi_plot(res_dir_list,outer_iterations):
     """Run the analysis over the results:
+    Args:
+        res_dir_list (list) : List of the results directories (str) for which
+                              the J evolution plots should be produced.
+        outer iterations (list) : List containing the list of the
+                                     iterations at which we change of outer loop.
+    Return:
+        (void) Call the J_evolution_plot function for each directories in res_dir_list.
     """
+    
     for r,res_dir in enumerate(res_dir_list):
         print("plotting for raw results for: \n",res_dir)
         try:
-            evolution_plot(res_dir,outer_iterations[r])
+            J_evolution_plot(res_dir,outer_iterations[r])
         except:
-            #evolution_plot(res_dir,outer_iterations[r])
             print("Error with directory:",res_dir)
 ################################################################################
 
 
 ################################################################################
 def yo_vs_hxg_plot(res_dir):
-    """Plot the 1D observations versus the result of applying the observation operator to the guess:
+    """Plot the 1D observations versus the result of applying the observation
+       operator to the guess:
+       Args:
+            res_dir (string)  : Results directory containing the results files
+                                concerning the guess, the observations and hxg.
+       Return:
+           (void) Creates the plot and save it in res_dir.
     """
+    
     try:
         for name in ['lanczos_control_space_outer_vectors.dat','PlanczosIF_model_space_outer_vectors.dat']:
             results_file=res_dir+name
+            # Creates the ame of the output file from the results file:
             out_name=results_file[:-4]+'_obs_vs_Hxg.png'
+            # Get the data concerning the outer vectors:
             outer_vectors=np.genfromtxt(results_file, comments='#')
             
             io=1
@@ -198,15 +219,29 @@ def yo_vs_hxg_plot(res_dir):
 
 ################################################################################
 def vec_plot(results_file,column_of_interest,coord_column,label,out_file_name):
-    """Plot the outer vectors:
+    """Plot the components of vectors in the y axis, and their spatial
+       coordinates on the x axis:
+    Args:
+       results_file (string)    : file containing the components and their
+                                  spatial coordinates.
+       column_of_interest (int) : column corresponding the vector to plot in
+                                  results_file.
+       column_label (string)    : label of the vector.
+       out_file_name (string)   : name to save the produced plot.
+    Return:
+       (void) produces the plot and save it as out_file_name.
     """
+    
     # Get the data:
     outer_vectors=np.genfromtxt(results_file, comments='#')
 
+    # initial outer iteration:
     io=1
+    # lists containing the vector in all the outer loops:
     vec=[]
     coord=[]
 
+    # list containing the vector at the outer iteration io:
     vec_io=[]
     coord_io=[]
     for i  in range(len(outer_vectors)):
@@ -214,7 +249,7 @@ def vec_plot(results_file,column_of_interest,coord_column,label,out_file_name):
         if int(outer_vectors[i,0])==io:
             vec_io.append(outer_vectors[i,column_of_interest])#-outer_vectors[i,-3])
             coord_io.append(outer_vectors[i,coord_column])
-        # Add the outer vector for outer iteration io to vec:    
+        # Add the vector at outer iteration io to vec:    
         else:
             io=io+1
             vec.append(vec_io)
@@ -223,11 +258,12 @@ def vec_plot(results_file,column_of_interest,coord_column,label,out_file_name):
             coord_io=[]
             vec_io.append(outer_vectors[i,column_of_interest])#-outer_vectors[i,-3])
             coord_io.append(outer_vectors[i,coord_column])
-    # Add the last outer vector.
+    # Add the vector at the last outer iteration to vec.
     vec.append(vec_io)
     coord.append(coord_io)
         
     if not len(vec)==1:
+        # Produces one plot for each outer loop, vertically:
         fig, subplots = plt.subplots(len(vec),1)
         for i, ax in enumerate(subplots):
             plt.ticklabel_format(axis="y", style="sci", scilimits=(-3,3))
@@ -258,18 +294,20 @@ def compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,io,leg
     """Produces usefull comparision with 2N plots:
     Args:
         out_name (string): Name of the output png file.
-        obj_list (list)      : List containing lists to be compared together.
+        obj_list (list)  : List containing lists to be compared together.
         yabel (string)   : Label of the y-axis.
         diff_list (list)      : List of numbers regarding which one wants to compare.
         ylabel (string)  : Label of diff_list.
         x (list)         : List of numbers for x-axis.
         xlabel (string)  : Label of x-axis
     Return:
-        (void): Creates the plot and save it in the png file named by out_name arg.
+        (void): Creates the plot and save it as out_name.
     """
 
+    # Get the colormap (usefull for comparision of different values of a given parameter)
     color_map=cm.get_cmap('copper', len(obj_list))
     colors=color_map(range(len(obj_list)))
+
     # Create figure window to plot data:
     fig = plt.figure(1, figsize=(9,9))
     gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])

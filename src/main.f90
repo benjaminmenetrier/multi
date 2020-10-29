@@ -53,7 +53,7 @@ type(hmatrix_type)             :: hmatrix_full
 type(rmatrix_type)             :: rmatrix
 type(algo_type),allocatable    :: algo_lanczos(:),algo_planczosif(:)
 type(lmp_type),allocatable     :: lmp_lanczos(:),lmp_planczosif(:)
-
+real(8),allocatable            :: consistant_xg(:),consistant_xb(:)
 
 integer                        :: ib,id
 real(8),allocatable            :: delta(:,:)
@@ -76,6 +76,7 @@ allocate(bmatrix(no))
 allocate(hmatrix(no))
 allocate(lmp_lanczos(no),lmp_planczosif(no))
 allocate(grid_coord(n,no))
+allocate(consistant_xg(n),consistant_xb(n))
 
 ! Set seed
 call set_seed(new_seed)
@@ -155,6 +156,10 @@ call rmatrix_apply_sqrt(rmatrix,nobs,nu,yo)
 ! Generate background state
 call rand_normal(n,vb)
 call bmatrix_apply_sqrt(bmatrix_full,n,vb,xb)
+
+
+consistant_xb(:)=xb(:)
+consistant_xg(:)=consistant_xb(:)
 
 ! Open files
 open(delta_test_unit,file='results/delta_test.dat')
