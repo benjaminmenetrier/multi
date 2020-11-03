@@ -7,15 +7,30 @@
 !----------------------------------------------------------------------
 module type_bmatrix
 
-use fft
+use tools_rand
+use type_geom
 
 implicit none
 
 type bmatrix_type
    real(8) :: Lb
    real(8),allocatable :: sigmab(:)
-   real(8),allocatable :: spvar(:)
+   real(8) :: spnorm
+contains
+   procedure :: setup => bmatrix_setup
+   procedure :: spvar => bmatrix_spvar
+   procedure :: spvar_sqrt => bmatrix_spvar_sqrt
+   procedure :: spvar_sqrt_inv => bmatrix_spvar_sqrt_inv
+   procedure :: apply_sqrt => bmatrix_apply_sqrt
+   procedure :: apply_sqrt_ad => bmatrix_apply_sqrt_ad
+   procedure :: apply_sqrt_inv => bmatrix_apply_sqrt_inv
+   procedure :: apply_sqrt_ad_inv => bmatrix_apply_sqrt_ad_inv
+   procedure :: apply => bmatrix_apply
+   procedure :: apply_inv => bmatrix_apply_inv
+   procedure :: randomize => bmatrix_randomize
 end type bmatrix_type
+
+real(8),parameter :: spvarmin = 1.0e-2
 
 contains
 
@@ -23,88 +38,295 @@ contains
 ! Subroutine: bmatrix_setup
 ! Purpose: setup B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_setup(bmatrix,nn,nnmax,sigmabvar,Lb)
+subroutine bmatrix_setup(bmatrix,geom,geom_full,sigmabvar,Lb)
 
 implicit none
 
 ! Passed variables
-type(bmatrix_type),intent(inout) :: bmatrix
-integer,intent(in) :: nn
-integer,intent(in) :: nnmax
+class(bmatrix_type),intent(inout) :: bmatrix
+type(geom_type),intent(in) :: geom
+type(geom_type),intent(in) :: geom_full
 real(8),intent(in) :: sigmabvar
 real(8),intent(in) :: Lb
 
 ! Local variables
-integer :: i
-real(8) :: spvar(nnmax),x(nnmax),v(nnmax)
-real(8),parameter :: pi = acos(-1.0)
-
-! Check nnmax
-if (nn>nnmax) then
-   write(*,'(a)') 'ERROR: nn > nnmax in bmatrix_setup'
-   stop
-end if
+integer :: ih,ix,iy
+real(8) :: dp1,dp2,dist
+real(8) :: x(geom_full%nh),v(geom_full%nh)
+real(8) :: x1(geom%nh),x2(geom%nh),x1out(geom%nh),x2out(geom%nh)
+real(8) :: v1(geom%nh),v2(geom%nh)
 
 ! Release memory
 if (allocated(bmatrix%sigmab)) deallocate(bmatrix%sigmab)
-if (allocated(bmatrix%spvar)) deallocate(bmatrix%spvar)
 
 ! Allocation
-allocate(bmatrix%sigmab(nn))
-allocate(bmatrix%spvar(nn))
+allocate(bmatrix%sigmab(geom%nh))
 
 ! Compute grid-point variance
-do i=1,nn
-   bmatrix%sigmab(i) = 1.0+sigmabvar*sin(2*pi*real(i-1,8)/real(nn,8))
+ih = 0
+do iy=1,geom%ny
+   do ix=1,geom%nx
+      ih = ih+1
+      bmatrix%sigmab(ih) = 1.0+sigmabvar*sin(2*pi*geom%x(ix))*sin(2*pi*geom%y(iy))
+   end do
 end do
-
-! Compute spectral variance
-bmatrix%Lb = Lb
-spvar(1) = 1.0
-do i=2,nnmax/2
-   spvar(2*(i-1)) = exp(-0.5*(real(i-1,8)*bmatrix%Lb)**2)
-   spvar(2*(i-1)+1) = spvar(2*(i-1))
-end do
-spvar(nnmax) = exp(-0.5*(real(nnmax/2,8)*bmatrix%Lb)**2)
-
-! Set minimum value on spectral variance
-spvar = max(spvar,1.0e-5)
 
 ! Compute normalization
+bmatrix%Lb = Lb
+bmatrix%spnorm = 1.0
 x = 0.0
 x(1) = 1.0
-call gp2sp(nnmax,x,v)
-v = v*spvar
-call sp2gp(nnmax,v,x)
-spvar = spvar/x(1)
+call geom_full%gp2sp(x,v)
+call bmatrix%spvar(geom_full,v)
+call geom_full%sp2gp(v,x)
+bmatrix%spnorm = 1.0/x(1)
 
-! Copy spectral variance
-bmatrix%spvar(1:nn) = spvar(1:nn)
+! Direct + inverse test on B
+call random_number(x1)
+call bmatrix%apply(geom,x1,x1out)
+call bmatrix%apply_inv(geom,x1out,x2)
+write(*,'(a,e15.8)') '         Direct + inverse test on B:    ',maxval(abs(x1-x2))
+
+! Inverse + direct test on B
+call random_number(x1)
+call bmatrix%apply_inv(geom,x1,x1out)
+call bmatrix%apply(geom,x1out,x2)
+write(*,'(a,e15.8)') '         Inverse + direct test on B:    ',maxval(abs(x1-x2))
+
+! Adjoint test on U
+call random_number(x1)
+call random_number(x2)
+call geom%gp2sp(x2,v2)
+call bmatrix%apply_sqrt_ad(geom,x1,v1)
+call bmatrix%apply_sqrt(geom,v2,x2)
+dp1 = sum(x1*x2)
+dp2 = geom%spdotprod(v1,v2)
+write(*,'(a,e15.8)') '         Adjoint test on U:             ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+
+! Adjoint test on B
+call random_number(x1)
+call random_number(x2)
+call bmatrix%apply(geom,x1,x1out)
+call bmatrix%apply(geom,x2,x2out)
+dp1 = sum(x1*x2out)
+dp2 = sum(x2*x1out)
+write(*,'(a,e15.8)') '         Auto-adjoint test on B:        ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+
+! Print correlation shape
+x1 = 0.0
+x1(1) = 1.0
+call bmatrix%apply(geom,x1,x2)
+x2 = x2/(bmatrix%sigmab(1)*bmatrix%sigmab)
+write(*,'(a)',advance='no') '         X-coordinate:                 '
+do ix=1,geom%nx
+   ih = ix
+   if (x2(ih)<1.0e-3) exit
+   write(*,'(f6.2)',advance='no') geom%x(ix)
+end do
+write(*,'(a)')
+write(*,'(a)',advance='no') '         Theoretical correlation shape:'
+do ix=1,geom%nx
+   ih = ix
+   if (x2(ih)<1.0e-3) exit
+   if (ix<geom%nx/2) then
+      dist = geom%x(ix)
+   else
+      dist = 1.0-geom%x(ix)
+   end if
+   write(*,'(f6.2)',advance='no') exp(-0.5*(dist/bmatrix%Lb)**2)
+end do
+write(*,'(a)')
+write(*,'(a)',advance='no') '         Effective correlation shape:  '
+do ix=1,geom%nx
+   ih = ix
+   if (x2(ih)<1.0e-3) exit
+   write(*,'(f6.2)',advance='no') x2(ih)
+end do
+write(*,'(a)')
+write(*,'(a)',advance='no') '         Y-coordinate:                 '
+do iy=1,geom%ny
+   ih = 1+(iy-1)*geom%nx
+   if (x2(ih)<1.0e-3) exit
+   write(*,'(f6.2)',advance='no') geom%y(iy)
+end do
+write(*,'(a)')
+write(*,'(a)',advance='no') '         Theoretical correlation shape:'
+do iy=1,geom%ny
+   ih = 1+(iy-1)*geom%nx
+   if (x2(ih)<1.0e-3) exit
+   if (iy<geom%ny/2) then
+      dist = geom%y(iy)
+   else
+      dist = 1.0-geom%y(iy)
+   end if
+   write(*,'(f6.2)',advance='no') exp(-0.5*(dist/bmatrix%Lb)**2)
+end do
+write(*,'(a)')
+write(*,'(a)',advance='no') '         Effective correlation shape:  '
+do iy=1,geom%ny
+   ih = 1+(iy-1)*geom%nx
+   if (x2(ih)<1.0e-3) exit
+   write(*,'(f6.2)',advance='no') x2(ih)
+end do
+write(*,'(a)')
 
 end subroutine bmatrix_setup
+
+!----------------------------------------------------------------------
+! Subroutine: bmatrix_spvar
+! Purpose: apply spectral variances
+!----------------------------------------------------------------------
+subroutine bmatrix_spvar(bmatrix,geom,v)
+
+implicit none
+
+! Passed variables
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(inout) :: v(geom%nh)
+
+! Local variables
+integer :: k,l
+real(8) :: kstarsq,spvar
+complex(8) :: cp(geom%kmax+1,geom%ny),cp_full(0:geom%kmax,-geom%lmax:geom%lmax)
+
+! Real to complex
+call geom%real_to_complex(v,cp)
+
+! Complex to full
+call geom%complex_to_full(cp,cp_full)
+
+do k=0,geom%kmax
+   do l=-geom%lmax,geom%lmax
+      ! Compute k*^2
+      kstarsq = real(k**2+l**2,8)
+
+      ! Apply Gaussian spectral variance
+      spvar = exp(-2.0*kstarsq*(pi*bmatrix%Lb)**2)
+      spvar = max(spvar,spvarmin)
+      cp_full(k,l) = cp_full(k,l)*spvar*bmatrix%spnorm
+   end do
+end do
+
+! Full to complex
+call geom%full_to_complex(cp_full,cp)
+
+! Complex to real
+call geom%complex_to_real(cp,v)
+
+end subroutine bmatrix_spvar
+
+!----------------------------------------------------------------------
+! Subroutine: bmatrix_spvar_sqrt
+! Purpose: apply spectral variances, square-root
+!----------------------------------------------------------------------
+subroutine bmatrix_spvar_sqrt(bmatrix,geom,v)
+
+implicit none
+
+! Passed variables
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(inout) :: v(geom%nh)
+
+! Local variables
+integer :: k,l
+real(8) :: kstarsq,spvar
+complex(8) :: cp(geom%kmax+1,geom%ny),cp_full(0:geom%kmax,-geom%lmax:geom%lmax)
+
+! Real to complex
+call geom%real_to_complex(v,cp)
+
+! Complex to full
+call geom%complex_to_full(cp,cp_full)
+
+do k=0,geom%kmax
+   do l=-geom%lmax,geom%lmax
+      ! Compute k*^2
+      kstarsq = real(k**2+l**2,8)
+
+      ! Apply Gaussian spectral variance
+      spvar = exp(-2.0*kstarsq*(pi*bmatrix%Lb)**2)!*bmatrix%spnorm
+      spvar = max(spvar,spvarmin)
+      cp_full(k,l) = cp_full(k,l)*sqrt(spvar*bmatrix%spnorm)
+   end do
+end do
+
+! Full to complex
+call geom%full_to_complex(cp_full,cp)
+
+! Complex to real
+call geom%complex_to_real(cp,v)
+
+end subroutine bmatrix_spvar_sqrt
+
+!----------------------------------------------------------------------
+! Subroutine: bmatrix_spvar_sqrt_inv
+! Purpose: apply spectral variances, square-root inverse
+!----------------------------------------------------------------------
+subroutine bmatrix_spvar_sqrt_inv(bmatrix,geom,v)
+
+implicit none
+
+! Passed variables
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(inout) :: v(geom%nh)
+
+! Local variables
+integer :: k,l
+real(8) :: kstarsq,spvar
+complex(8) :: cp(geom%kmax+1,geom%ny),cp_full(0:geom%kmax,-geom%lmax:geom%lmax)
+
+! Real to complex
+call geom%real_to_complex(v,cp)
+
+! Complex to full
+call geom%complex_to_full(cp,cp_full)
+
+do k=0,geom%kmax
+   do l=-geom%lmax,geom%lmax
+      ! Compute k*^2
+      kstarsq = real(k**2+l**2,8)
+
+      ! Apply Gaussian spectral variance
+      spvar = exp(-2.0*kstarsq*(pi*bmatrix%Lb)**2)
+      spvar = max(spvar,spvarmin)
+      cp_full(k,l) = cp_full(k,l)/sqrt(spvar*bmatrix%spnorm)
+   end do
+end do
+
+! Full to complex
+call geom%full_to_complex(cp_full,cp)
+
+! Complex to real
+call geom%complex_to_real(cp,v)
+
+end subroutine bmatrix_spvar_sqrt_inv
 
 !----------------------------------------------------------------------
 ! Subroutine: bmatrix_apply_sqrt
 ! Purpose: apply square-root of the B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_apply_sqrt(bmatrix,nn,v,x)
+subroutine bmatrix_apply_sqrt(bmatrix,geom,v,x)
 
 implicit none
 
 ! Passed variables
-type(bmatrix_type),intent(in) :: bmatrix
-integer,intent(in) :: nn
-real(8),intent(in) :: v(nn)
-real(8),intent(out) :: x(nn)
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: v(geom%nh)
+real(8),intent(out) :: x(geom%nh)
 
 ! Local variables
-real(8) :: vtmp(nn)
+real(8) :: vtmp(geom%nh)
 
 ! Apply spectral standard-deviation
-vtmp = v*sqrt(bmatrix%spvar)
+vtmp = v
+call bmatrix%spvar_sqrt(geom,vtmp)
 
 ! Adjoint FFT
-call sp2gp(nn,vtmp,x)
+call geom%sp2gp(vtmp,x)
 
 ! Apply grid-point standard-deviation
 x = x*bmatrix%sigmab
@@ -115,27 +337,27 @@ end subroutine bmatrix_apply_sqrt
 ! Subroutine: bmatrix_apply_sqrt_ad
 ! Purpose: apply adjoint of the square-root of the B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_apply_sqrt_ad(bmatrix,nn,x,v)
+subroutine bmatrix_apply_sqrt_ad(bmatrix,geom,x,v)
 
 implicit none
 
 ! Passed variables
-type(bmatrix_type),intent(in) :: bmatrix
-integer,intent(in) :: nn
-real(8),intent(in) :: x(nn)
-real(8),intent(out) :: v(nn)
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: v(geom%nh)
 
 ! Local variables
-real(8) :: xtmp(nn)
+real(8) :: xtmp(geom%nh)
 
 ! Apply grid-point standard-deviation
 xtmp = x*bmatrix%sigmab
 
 ! FFT
-call gp2sp(nn,xtmp,v)
+call geom%gp2sp(xtmp,v)
 
 ! Apply spectral standard-deviation
-v = v*sqrt(bmatrix%spvar)
+call bmatrix%spvar_sqrt(geom,v)
 
 end subroutine bmatrix_apply_sqrt_ad
 
@@ -143,27 +365,27 @@ end subroutine bmatrix_apply_sqrt_ad
 ! Subroutine: bmatrix_apply_sqrt_inv
 ! Purpose: apply inverse square-root of the B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_apply_sqrt_inv(bmatrix,nn,x,v)
+subroutine bmatrix_apply_sqrt_inv(bmatrix,geom,x,v)
 
 implicit none
 
 ! Passed variables
-type(bmatrix_type),intent(in) :: bmatrix
-integer,intent(in) :: nn
-real(8),intent(in) :: x(nn)
-real(8),intent(out) :: v(nn)
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: v(geom%nh)
 
 ! Local variables
-real(8) :: xtmp(nn)
+real(8) :: xtmp(geom%nh)
 
-! Apply grid-point standard-deviation
+! Apply grid-point standard-deviation inverse
 xtmp = x/bmatrix%sigmab
 
-! FFT
-call gp2sp(nn,xtmp,v)
+! Adjoint FFT inverse
+call geom%gp2sp(xtmp,v)
 
-! Apply spectral standard-deviation
-v = v/sqrt(bmatrix%spvar)
+! Apply spectral standard-deviation inverse
+call bmatrix%spvar_sqrt_inv(geom,v)
 
 end subroutine bmatrix_apply_sqrt_inv
 
@@ -171,26 +393,27 @@ end subroutine bmatrix_apply_sqrt_inv
 ! Subroutine: bmatrix_apply_sqrt_ad_inv
 ! Purpose: apply inverse adjoint of the square-root of the B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_apply_sqrt_ad_inv(bmatrix,nn,v,x)
+subroutine bmatrix_apply_sqrt_ad_inv(bmatrix,geom,v,x)
 
 implicit none
 
 ! Passed variables
-type(bmatrix_type),intent(in) :: bmatrix
-integer,intent(in) :: nn
-real(8),intent(in) :: v(nn)
-real(8),intent(out) :: x(nn)
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: v(geom%nh)
+real(8),intent(out) :: x(geom%nh)
 
 ! Local variables
-real(8) :: vtmp(nn)
+real(8) :: vtmp(geom%nh)
 
-! Apply spectral standard-deviation
-vtmp = v/sqrt(bmatrix%spvar)
+! Apply spectral standard-deviation inverse
+vtmp = v
+call bmatrix%spvar_sqrt_inv(geom,vtmp)
 
-! Adjoint FFT
-call sp2gp(nn,vtmp,x)
+! FFT inverse
+call geom%sp2gp(vtmp,x)
 
-! Apply grid-point standard-deviation
+! Apply grid-point standard-deviation inverse
 x = x/bmatrix%sigmab
 
 end subroutine bmatrix_apply_sqrt_ad_inv
@@ -199,24 +422,24 @@ end subroutine bmatrix_apply_sqrt_ad_inv
 ! Subroutine: bmatrix_apply
 ! Purpose: apply B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_apply(bmatrix,nn,x,bx)
+subroutine bmatrix_apply(bmatrix,geom,x,bx)
 
 implicit none
 
 ! Passed variables
-type(bmatrix_type),intent(in) :: bmatrix
-integer,intent(in) :: nn
-real(8),intent(in) :: x(nn)
-real(8),intent(out) :: bx(nn)
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: bx(geom%nh)
 
 ! Local variables
-real(8) :: v(nn)
+real(8) :: v(geom%nh)
 
 ! Apply adjoint of the square-root of the B matrix
-call bmatrix_apply_sqrt_ad(bmatrix,nn,x,v)
+call bmatrix%apply_sqrt_ad(geom,x,v)
 
 ! Apply square-root of the B matrix
-call bmatrix_apply_sqrt(bmatrix,nn,v,bx)
+call bmatrix%apply_sqrt(geom,v,bx)
 
 end subroutine bmatrix_apply
 
@@ -224,104 +447,49 @@ end subroutine bmatrix_apply
 ! Subroutine: bmatrix_apply_inv
 ! Purpose: apply B matrix inverse
 !----------------------------------------------------------------------
-subroutine bmatrix_apply_inv(bmatrix,nn,x,binvx)
+subroutine bmatrix_apply_inv(bmatrix,geom,x,binvx)
 
 implicit none
 
 ! Passed variables
-type(bmatrix_type),intent(in) :: bmatrix
-integer,intent(in) :: nn
-real(8),intent(in) :: x(nn)
-real(8),intent(out) :: binvx(nn)
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: binvx(geom%nh)
 
 ! Local variables
-real(8) :: v(nn)
+real(8) :: v(geom%nh)
 
 ! Apply inverse of the square-root of the B matrix
-call bmatrix_apply_sqrt_inv(bmatrix,nn,x,v)
+call bmatrix%apply_sqrt_inv(geom,x,v)
 
 ! Apply inverse adjoint of the square-root of the B matrix
-call bmatrix_apply_sqrt_ad_inv(bmatrix,nn,v,binvx)
+call bmatrix%apply_sqrt_ad_inv(geom,v,binvx)
 
 end subroutine bmatrix_apply_inv
 
 !----------------------------------------------------------------------
-! Subroutine: bmatrix_test
-! Purpose: test B matrix
+! Subroutine: bmatrix_randomize
+! Purpose: randomize the B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_test(bmatrix,nn,dobs,grid_coord)
+subroutine bmatrix_randomize(bmatrix,geom,x)
 
 implicit none
 
 ! Passed variables
-type(bmatrix_type),intent(in) :: bmatrix
-integer,intent(in) :: nn
-integer,intent(in) :: dobs
-real,intent(in) :: grid_coord(nn)
+class(bmatrix_type),intent(in) :: bmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(out) :: x(geom%nh)
 
 ! Local variables
-integer :: i
-real(8) :: gp1(nn),gp2(nn),gp1out(nn),gp2out(nn)
-real(8) :: sp1(nn),sp2(nn)
-real(8) :: sumgp,sumsp,sumgpout
+real(8) :: nu(geom%nh)
 
-! Direct + inverse test on B
-call random_number(gp1)
-call bmatrix_apply(bmatrix,nn,gp1,gp1out)
-call bmatrix_apply_inv(bmatrix,nn,gp1out,gp2)
-write(*,'(a,e15.8)') 'Direct + inverse test on B:          ',maxval(abs(gp1-gp2))
+! Gaussian random vector
+call rand_normal(geom%nh,nu)
 
-! Inverse + direct test on B
-call random_number(gp1)
-call bmatrix_apply_inv(bmatrix,nn,gp1,gp1out)
-call bmatrix_apply(bmatrix,nn,gp1out,gp2)
-write(*,'(a,e15.8)') 'Inverse + direct test on B:          ',maxval(abs(gp1-gp2))
+! Apply B matrix square-root
+call bmatrix%apply_sqrt(geom,nu,x)
 
-! Adjoint test on U
-call random_number(gp1)
-call random_number(gp2)
-call gp2sp(nn,gp2,sp2)
-call bmatrix_apply_sqrt_ad(bmatrix,nn,gp1,sp1)
-call bmatrix_apply_sqrt(bmatrix,nn,sp2,gp2)
-sumgp = sum(gp1*gp2)
-sumsp = sum(sp1*sp2)
-write(*,'(a,e15.8)') 'Adjoint test on U:                   ',sumgp-sumsp
-
-! Adjoint test on B
-call random_number(gp1)
-call random_number(gp2)
-call bmatrix_apply(bmatrix,nn,gp1,gp1out)
-call bmatrix_apply(bmatrix,nn,gp2,gp2out)
-sumgp = sum(gp1*gp2out)
-sumgpout = sum(gp2*gp1out)
-write(*,'(a,e15.8)') 'Auto-adjoint test on B:              ',sumgp-sumgpout
-
-! Print other parameters
-gp1 = 0.0
-gp1(1) = 1.0
-call bmatrix_apply(bmatrix,nn,gp1,gp2)
-gp2 = gp2/(bmatrix%sigmab(1)*bmatrix%sigmab)
-write(*,'(a,e15.8)') 'Correlation conditioning number:     ',maxval(bmatrix%spvar)/minval(bmatrix%spvar)
-write(*,'(a,e15.8)') 'Correlation at obs separation:       ',gp2(dobs+1)
-write(*,'(a)',advance='no') 'Coordinate:                         '
-do i=1,nn/2
-   if (abs(gp2(i))<1.0e-3) exit
-   write(*,'(f6.2)',advance='no') grid_coord(i)
-end do
-write(*,'(a)')
-write(*,'(a)',advance='no') 'Theoretical correlation shape:      '
-do i=1,nn/2
-   if (abs(gp2(i))<1.0e-3) exit
-   write(*,'(f6.2)',advance='no') exp(-0.5*(grid_coord(i)/bmatrix%Lb)**2)
-end do
-write(*,'(a)')
-write(*,'(a)',advance='no') 'Effective correlation shape:        '
-do i=1,nn/2
-   if (abs(gp2(i))<1.0e-3) exit
-   write(*,'(f6.2)',advance='no') gp2(i)
-end do
-write(*,'(a)')
-
-end subroutine bmatrix_test
+end subroutine bmatrix_randomize
 
 end module type_bmatrix

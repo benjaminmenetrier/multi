@@ -2,7 +2,7 @@
 set (COMPILER GNU)
 #
 # Set your build type (DEBUG or RELEASE):
-set (BUILD_TYPE RELEASE)
+set (BUILD_TYPE DEBUG)
 #
 # Set FFTW3 directories
 set (EXTERN_FFTW3_INCLUDE /usr/include)

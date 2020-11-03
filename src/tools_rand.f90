@@ -1,11 +1,11 @@
 !----------------------------------------------------------------------
-! Module: rand
+! Module: tools_rand
 ! Purpose: random number generator
 ! Author: Benjamin Menetrier
 ! Licensing: this code is distributed under the CeCILL-C license
 ! Copyright © 2018 IRIT
 !----------------------------------------------------------------------
-module rand
+module tools_rand
 
 implicit none
 
@@ -90,4 +90,4 @@ end do
 
 end subroutine rand_normal
 
-end module rand
+end module tools_rand

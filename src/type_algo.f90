@@ -8,22 +8,31 @@
 module type_algo
 
 use type_bmatrix
+use type_geom
 use type_hmatrix
 use type_lmp
+use type_obsloc
 use type_rmatrix
 
 implicit none
 
 type algo_type
    real(8),allocatable :: dx(:,:)
+   real(8),allocatable :: dva(:)
    real(8),allocatable :: jb(:)
    real(8),allocatable :: jo(:)
+   real(8),allocatable :: jb_nl(:)
+   real(8),allocatable :: jo_nl(:)
    real(8),allocatable :: eigenval(:)
    real(8),allocatable :: eigenvec(:,:)
    real(8),allocatable :: lancvec(:,:)
    real(8) :: lastbeta
    real(8),allocatable :: rho_sqrt(:)
    real(8),allocatable :: beta(:)
+contains
+   procedure :: alloc => algo_alloc
+   procedure :: apply_lanczos => algo_apply_lanczos
+   procedure :: apply_planczosif => algo_apply_planczosif
 end type algo_type
 
 contains
@@ -32,19 +41,22 @@ contains
 ! Subroutine: algo_alloc
 ! Purpose: allocate algo
 !----------------------------------------------------------------------
-subroutine algo_alloc(algo,nn,ni)
+subroutine algo_alloc(algo,geom,ni)
 
 implicit none
 
 ! Passed variables
-type(algo_type),intent(inout) :: algo
-integer,intent(in) :: nn
+class(algo_type),intent(inout) :: algo
+type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 
 ! Release memory
 if (allocated(algo%dx)) deallocate(algo%dx)
+if (allocated(algo%dva)) deallocate(algo%dva)
 if (allocated(algo%jb)) deallocate(algo%jb)
 if (allocated(algo%jo)) deallocate(algo%jo)
+if (allocated(algo%jb_nl)) deallocate(algo%jb_nl)
+if (allocated(algo%jo_nl)) deallocate(algo%jo_nl)
 if (allocated(algo%eigenval)) deallocate(algo%eigenval)
 if (allocated(algo%eigenvec)) deallocate(algo%eigenvec)
 if (allocated(algo%lancvec)) deallocate(algo%lancvec)
@@ -52,12 +64,15 @@ if (allocated(algo%rho_sqrt)) deallocate(algo%rho_sqrt)
 if (allocated(algo%beta)) deallocate(algo%beta)
 
 ! Allocation
-allocate(algo%dx(nn,ni))
+allocate(algo%dx(geom%nh,ni))
+allocate(algo%dva(geom%nh))
 allocate(algo%jb(0:ni))
 allocate(algo%jo(0:ni))
+allocate(algo%jb_nl(0:ni))
+allocate(algo%jo_nl(0:ni))
 allocate(algo%eigenval(ni))
 allocate(algo%eigenvec(ni,ni))
-allocate(algo%lancvec(nn,ni+1))
+allocate(algo%lancvec(geom%nh,ni+1))
 allocate(algo%rho_sqrt(0:ni))
 allocate(algo%beta(0:ni))
 
@@ -67,63 +82,71 @@ end subroutine algo_alloc
 ! Subroutine: algo_apply_lanczos
 ! Purpose: Lanczos algorithm in control space
 !----------------------------------------------------------------------
-subroutine algo_apply_lanczos(algo,nn,bmatrix,hmatrix,rmatrix,dvb,nobs,d,ni,lmp,dva,shutoff_type,shutoff_value,rhs_compare)
+subroutine algo_apply_lanczos(algo,geom,bmatrix,hmatrix,rmatrix,xb,xg,dvb_bar,d,ni,lmp,shutoff_type,shutoff_value)
 
 implicit none
 
 ! Passed variables
-type(algo_type),intent(inout) :: algo
-integer,intent(in) :: nn
+class(algo_type),intent(inout) :: algo
+type(geom_type),intent(in) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
 type(hmatrix_type),intent(in) :: hmatrix
 type(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(in) :: dvb(nn)
-integer,intent(in) :: nobs
-real(8),intent(in) :: d(nobs)
+real(8),intent(in) :: xb(geom%nh)
+real(8),intent(in) :: xg(geom%nh)
+real(8),intent(in) :: dvb_bar(geom%nh)
+real(8),intent(in) :: d(hmatrix%nobs)
 integer,intent(in) :: ni
 type(lmp_type),intent(in) :: lmp
-real(8),intent(out) :: dva(nn)
 integer,intent(in)  :: shutoff_type
 real(8),intent(in)  :: shutoff_value
-real(8),intent(out) :: rhs_compare(ni,2)
 
 ! Local variables
 integer :: ii,iii,info
-real(8) :: xtmp(nn),ytmp(nobs),ytmp2(nobs),y(ni,ni),subdiag(ni-1),work(max(1,2*ni-2))
+real(8) :: xtmp(geom%nh),ytmp(hmatrix%nobs),ytmp2(hmatrix%nobs),y(ni,ni),subdiag(ni-1),work(max(1,2*ni-2))
 real(8) :: alpha(0:ni),beta(0:ni+1),rho(0:ni)
-real(8) :: vtmp(nn),vtmp2(nn)
-real(8) :: p(nn,0:ni),q(nn,0:ni),r(nn,0:ni),s(nn,0:ni),rhs(ni),u(nn,ni),v(nn,0:ni+1),w(nn,0:ni)
+real(8) :: vtmp(geom%nh),vtmp2(geom%nh)
+real(8) :: p(geom%nh,0:ni),q(geom%nh,0:ni),r(geom%nh,0:ni),s(geom%nh,0:ni),rhs(ni),u(geom%nh,ni),v(geom%nh,0:ni+1),w(geom%nh,0:ni)
 real(8) :: accuracy
+real(8),allocatable :: eigenvec(:,:)
 
 ! Initialization
 s(:,0) = 0.0
 v(:,0) = 0.0
-call rmatrix_apply_inv(rmatrix,nobs,d,ytmp)
-call hmatrix_apply_ad(hmatrix,nobs,ytmp,nn,xtmp)
-call bmatrix_apply_sqrt_ad(bmatrix,nn,xtmp,vtmp)
-vtmp = dvb+vtmp
-call lmp_apply_sqrt_ad(lmp,nn,ni,lmp%io,vtmp,r(:,0))
+call rmatrix%apply_inv(d,ytmp)
+call hmatrix%apply_ad(geom,ytmp,xtmp)
+call bmatrix%apply_sqrt_ad(geom,xtmp,vtmp)
+vtmp = dvb_bar+vtmp
+call lmp%apply_sqrt_ad(geom,ni,lmp%io,vtmp,r(:,0))
 beta(0) = sqrt(sum(r(:,0)**2))
 v(:,1) = r(:,0)/beta(0)
 beta(1) = 0.0
 rhs = 0.0
 rhs(1) = beta(0)
 
-! Initialize cost function
-algo%jb(0) = 0.5*sum((0.0-dvb)**2)
-call rmatrix_apply_inv(rmatrix,nobs,d,ytmp)
+! Initialize linear cost function
+algo%jb(0) = 0.5*sum((0.0-dvb_bar)**2)
+call rmatrix%apply_inv(d,ytmp)
 algo%jo(0) = 0.5*sum(d*ytmp)
+
+! Initialize nonlinear cost function
+call bmatrix%apply_inv(geom,xg-xb,xtmp)
+algo%jb_nl(0) = 0.5*sum((xg-xb)*xtmp)
+call hmatrix%apply(geom,xg,ytmp)
+ytmp = ytmp-hmatrix%yo
+call rmatrix%apply_inv(ytmp,ytmp2)
+algo%jo_nl(0) = 0.5*sum(ytmp*ytmp2)
 
 do ii=1,ni
    ! Update
-   call lmp_apply_sqrt(lmp,nn,ni,lmp%io,v(:,ii),vtmp)
-   call bmatrix_apply_sqrt(bmatrix,nn,vtmp,xtmp)
-   call hmatrix_apply(hmatrix,nn,xtmp,nobs,ytmp)
-   call rmatrix_apply_inv(rmatrix,nobs,ytmp,ytmp2)
-   call hmatrix_apply_ad(hmatrix,nobs,ytmp2,nn,xtmp)
-   call bmatrix_apply_sqrt_ad(bmatrix,nn,xtmp,vtmp2)
+   call lmp%apply_sqrt(geom,ni,lmp%io,v(:,ii),vtmp)
+   call bmatrix%apply_sqrt(geom,vtmp,xtmp)
+   call hmatrix%apply(geom,xtmp,ytmp)
+   call rmatrix%apply_inv(ytmp,ytmp2)
+   call hmatrix%apply_ad(geom,ytmp2,xtmp)
+   call bmatrix%apply_sqrt_ad(geom,xtmp,vtmp2)
    vtmp = vtmp+vtmp2
-   call lmp_apply_sqrt_ad(lmp,nn,ni,lmp%io,vtmp,q(:,ii))
+   call lmp%apply_sqrt_ad(geom,ni,lmp%io,vtmp,q(:,ii))
    q(:,ii) = q(:,ii)-beta(ii)*v(:,ii-1)
    alpha(ii) = sum(q(:,ii)*v(:,ii))
    w(:,ii) = q(:,ii)-alpha(ii)*v(:,ii)
@@ -143,21 +166,24 @@ do ii=1,ni
       algo%eigenval(1) = alpha(1)
       algo%eigenvec(1,1) = 1.0
    else
+      allocate(eigenvec(ii,ii))
       algo%eigenval(1:ii) = alpha(1:ii)
       subdiag(1:ii-1) = beta(2:ii)
-      call dsteqr('I',ii,algo%eigenval(1:ii),subdiag(1:ii-1),algo%eigenvec(1:ii,1:ii),ii,work(1:2*ii-2),info)
+      call dsteqr('I',ii,algo%eigenval(1:ii),subdiag(1:ii-1),eigenvec,ii,work(1:2*ii-2),info)
+      algo%eigenvec(1:ii,1:ii) = eigenvec
       if (info/=0) then
          write(*,'(a,i2)') 'Error in dsteqr: ',info
          stop
       end if
       algo%eigenval(1:ii) = max(algo%eigenval(1:ii),1.0)
+      deallocate(eigenvec)
    end if
 
    ! Update increment
    y(1:ii,ii) = matmul(algo%eigenvec(1:ii,1:ii),matmul(transpose(algo%eigenvec(1:ii,1:ii)),rhs(1:ii))/algo%eigenval(1:ii))
    s(:,ii) = matmul(v(:,1:ii),y(1:ii,ii))
-   call lmp_apply_sqrt(lmp,nn,ni,lmp%io,s(:,ii),u(:,ii))
-   call bmatrix_apply_sqrt(bmatrix,nn,u(:,ii),algo%dx(:,ii))
+   call lmp%apply_sqrt(geom,ni,lmp%io,s(:,ii),u(:,ii))
+   call bmatrix%apply_sqrt(geom,u(:,ii),algo%dx(:,ii))
 
    ! rhs check:
 
@@ -173,11 +199,19 @@ do ii=1,ni
       end do
    end if
 
-   ! Compute cost function
-   algo%jb(ii) = 0.5*sum((u(:,ii)-dvb)**2)
-   call hmatrix_apply(hmatrix,nn,algo%dx(:,ii),nobs,ytmp)
-   call rmatrix_apply_inv(rmatrix,nobs,(d-ytmp),ytmp2)
+   ! Compute linear cost function
+   algo%jb(ii) = 0.5*sum((u(:,ii)-dvb_bar)**2)
+   call hmatrix%apply(geom,algo%dx(:,ii),ytmp)
+   call rmatrix%apply_inv((d-ytmp),ytmp2)
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
+
+   ! Compute nonlinear cost function
+   call bmatrix%apply_inv(geom,xg+algo%dx(:,ii)-xb,xtmp)
+   algo%jb_nl(ii) = 0.5*sum((xg+algo%dx(:,ii)-xb)*xtmp)
+   call hmatrix%apply(geom,(xg+algo%dx(:,ii)),ytmp)
+   ytmp = ytmp-hmatrix%yo
+   call rmatrix%apply_inv(ytmp,ytmp2)
+   algo%jo_nl(ii) = 0.5*sum(ytmp*ytmp2)
 
    ! Stop criterion:
    if (shutoff_type==1) then
@@ -193,13 +227,8 @@ do ii=1,ni
    ! end if
 end do
 
-do ii=1,ni
-   rhs_compare(ii,1)=rhs(ii)
-!   rhs_compare(ii,2)=rhs_binv(ii)
-end do
-
 ! Final update
-dva = u(:,ni)
+algo%dva = u(:,ni)
 
 ! Lanczos vectors
 algo%lancvec = v(:,1:ni+1)
@@ -231,39 +260,38 @@ end subroutine algo_apply_lanczos
 ! Subroutine: algo_apply_planczosif
 ! Purpose: PLanczosIF algorithm in linear space
 !----------------------------------------------------------------------
-subroutine algo_apply_planczosif(algo,nn,bmatrix,hmatrix,rmatrix,dxbbar,nobs,d,ni,lmp,dxabar,shutoff_type,shutoff_value)
+subroutine algo_apply_planczosif(algo,geom,bmatrix,hmatrix,rmatrix,dxbbar,d,ni,lmp,dxabar,shutoff_type,shutoff_value)
 
 implicit none
 
 ! Passed variables
-type(algo_type),intent(inout) :: algo
-integer,intent(in) :: nn
+class(algo_type),intent(inout) :: algo
+type(geom_type) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
 type(hmatrix_type),intent(in) :: hmatrix
 type(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(in) :: dxbbar(nn)
-integer,intent(in) :: nobs
-real(8),intent(in) :: d(nobs)
+real(8),intent(in) :: dxbbar(geom%nh)
+real(8),intent(in) :: d(hmatrix%nobs)
 integer,intent(in) :: ni
 type(lmp_type),intent(in) :: lmp
-real(8),intent(out) :: dxabar(nn)
+real(8),intent(out) :: dxabar(geom%nh)
 integer,intent(in)  :: shutoff_type
 real(8),intent(in)  ::shutoff_value
 
 ! Local variables
 integer :: ii,info
-real(8) :: xtmp(nn),ytmp(nobs),ytmp2(nobs),y(ni,ni),rhs(ni),subdiag(ni-1),work(max(1,2*ni-2))
+real(8) :: xtmp(geom%nh),ytmp(hmatrix%nobs),ytmp2(hmatrix%nobs),y(ni,ni),rhs(ni),subdiag(ni-1),work(max(1,2*ni-2))
 real(8) :: alpha(0:ni),beta(0:ni+1),rho(0:ni)
-real(8) :: dxb(nn),dxbar(nn,ni),l(nn,0:ni),p(nn,0:ni),pbar(nn,0:ni),q(nn,0:ni),r(nn,0:ni),s(nn,0:ni),tbar(nn,0:ni),t(nn,0:ni),v(nn,0:ni+1),w(nn,0:ni),zbar(nn,0:ni+1),z(nn,0:ni+1)
+real(8) :: dxb(geom%nh),dxbar(geom%nh,ni),l(geom%nh,0:ni),p(geom%nh,0:ni),pbar(geom%nh,0:ni),q(geom%nh,0:ni),r(geom%nh,0:ni),s(geom%nh,0:ni),tbar(geom%nh,0:ni),t(geom%nh,0:ni),v(geom%nh,0:ni+1),w(geom%nh,0:ni),zbar(geom%nh,0:ni+1),z(geom%nh,0:ni+1)
 
 ! Initialization
 s(:,0) = 0.0
 v(:,0) = 0.0
-call rmatrix_apply_inv(rmatrix,nobs,d,ytmp)
-call hmatrix_apply_ad(hmatrix,nobs,ytmp,nn,xtmp)
+call rmatrix%apply_inv(d,ytmp)
+call hmatrix%apply_ad(geom,ytmp,xtmp)
 r(:,0) = dxbbar+xtmp
-call lmp_apply(lmp,nn,ni,lmp%io,r(:,0),tbar(:,0))
-call bmatrix_apply(bmatrix,nn,tbar(:,0),t(:,0))
+call lmp%apply(geom,ni,lmp%io,r(:,0),tbar(:,0))
+call bmatrix%apply(geom,tbar(:,0),t(:,0))
 beta(0) = sqrt(sum(r(:,0)*t(:,0)))
 v(:,1) = r(:,0)/beta(0)
 zbar(:,1) = tbar(:,0)/beta(0)
@@ -273,21 +301,21 @@ rhs = 0.0
 rhs(1) = beta(0)
 
 ! Initialize cost function
-call bmatrix_apply(bmatrix,nn,dxbbar,dxb)
+call bmatrix%apply(geom,dxbbar,dxb)
 algo%jb(0) = 0.5*sum((0.0-dxb)*(0.0-dxbbar))
-call rmatrix_apply_inv(rmatrix,nobs,d,ytmp)
+call rmatrix%apply_inv(d,ytmp)
 algo%jo(0) = 0.5*sum(d*ytmp)
 
 do ii=1,ni
    ! Update
-   call hmatrix_apply(hmatrix,nn,z(:,ii),nobs,ytmp)
-   call rmatrix_apply_inv(rmatrix,nobs,ytmp,ytmp2)
-   call hmatrix_apply_ad(hmatrix,nobs,ytmp2,nn,xtmp)
+   call hmatrix%apply(geom,z(:,ii),ytmp)
+   call rmatrix%apply_inv(ytmp,ytmp2)
+   call hmatrix%apply_ad(geom,ytmp2,xtmp)
    q(:,ii) = zbar(:,ii)+xtmp-beta(ii)*v(:,ii-1)
    alpha(ii) = sum(q(:,ii)*z(:,ii))
    w(:,ii) = q(:,ii)-alpha(ii)*v(:,ii)
-   call lmp_apply(lmp,nn,ni,lmp%io,w(:,ii),tbar(:,ii))
-   call bmatrix_apply(bmatrix,nn,tbar(:,ii),t(:,ii))
+   call lmp%apply(geom,ni,lmp%io,w(:,ii),tbar(:,ii))
+   call bmatrix%apply(geom,tbar(:,ii),t(:,ii))
    beta(ii+1) = sqrt(sum(w(:,ii)*t(:,ii)))
    v(:,ii+1) = w(:,ii)/beta(ii+1)
    zbar(:,ii+1) = tbar(:,ii)/beta(ii+1)
@@ -324,8 +352,8 @@ do ii=1,ni
 
    ! Compute cost function
    algo%jb(ii) = 0.5*sum((algo%dx(:,ii)-dxb)*(dxbar(:,ii)-dxbbar))
-   call hmatrix_apply(hmatrix,nn,algo%dx(:,ii),nobs,ytmp)
-   call rmatrix_apply_inv(rmatrix,nobs,d-ytmp,ytmp2)
+   call hmatrix%apply(geom,algo%dx(:,ii),ytmp)
+   call rmatrix%apply_inv(d-ytmp,ytmp2)
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
 
    ! Stop criterion:
@@ -353,9 +381,9 @@ algo%lancvec = v(:,1:ni+1)
 algo%lastbeta = beta(ni+1)
 
 ! PLanczosIF to PCGIF
-call bmatrix_apply(bmatrix,nn,r(:,0),l(:,0))
-call lmp_apply(lmp,nn,ni,lmp%io,r(:,0),zbar(:,0))
-call lmp_apply_ad(lmp,nn,ni,lmp%io,l(:,0),z(:,0))
+call bmatrix%apply(geom,r(:,0),l(:,0))
+call lmp%apply(geom,ni,lmp%io,r(:,0),zbar(:,0))
+call lmp%apply_ad(geom,ni,lmp%io,l(:,0),z(:,0))
 rho(0) = sum(r(:,0)*z(:,0))
 beta(0) = sqrt(sum(r(:,0)*z(:,0)))
 pbar(:,0) = zbar(:,0)
@@ -366,9 +394,9 @@ algo%beta(0)=beta(0)
 
 do ii=1,ni
    r(:,ii) = -beta(ii+1)*y(ii,ii)*v(:,ii+1)
-   call bmatrix_apply(bmatrix,nn,r(:,ii),l(:,ii))
-   call lmp_apply(lmp,nn,ni,lmp%io,r(:,ii),zbar(:,ii))
-   call lmp_apply_ad(lmp,nn,ni,lmp%io,l(:,ii),z(:,ii))
+   call bmatrix%apply(geom,r(:,ii),l(:,ii))
+   call lmp%apply(geom,ni,lmp%io,r(:,ii),zbar(:,ii))
+   call lmp%apply_ad(geom,ni,lmp%io,l(:,ii),z(:,ii))
    rho(ii) = sum(r(:,ii)*z(:,ii))
    algo%rho_sqrt(ii)=sqrt(rho(ii))
    beta(ii) = rho(ii)/rho(ii-1)

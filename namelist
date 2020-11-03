@@ -1,0 +1,28 @@
+&solver
+no = 2
+ni = 10
+lmp_mode = "none"
+shutoff_type = 0
+shutoff_value = 0.0
+consistent_strategy = .false.
+use_binv = .true.
+/
+
+&resolutions
+nx = 101,121,
+ny = 101,121,
+/
+
+&observations
+nobs = 1000
+sigma_obs = 0.1
+/
+
+&background
+sigmabvar = 0.0
+Lb = 0.12
+/
+
+&miscellanous
+new_seed = .false.
+/
