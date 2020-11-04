@@ -34,6 +34,7 @@ type algo_type
    real(8),allocatable :: beta(:)
 contains
    procedure :: alloc => algo_alloc
+   procedure :: write => algo_write
    procedure :: apply_lanczos => algo_apply_lanczos
    procedure :: apply_planczosif => algo_apply_planczosif
    procedure :: compute_cost => algo_compute_cost
@@ -87,6 +88,61 @@ allocate(algo%rho_sqrt(0:ni))
 allocate(algo%beta(0:ni))
 
 end subroutine algo_alloc
+
+!----------------------------------------------------------------------
+! Subroutine: algo_write
+! Purpose: write algo
+!----------------------------------------------------------------------
+subroutine algo_write(algo,geom,grpid,subgrpid)
+
+implicit none
+
+! Passed variables
+class(algo_type),intent(inout) :: algo
+type(geom_type),intent(in) :: geom
+integer,intent(in) :: grpid
+integer,intent(in) :: subgrpid
+
+! Local variables
+integer :: ii
+integer :: nx_id,ny_id,nimax_id,nimax_plus_one_id
+integer :: dx_id,jb_id,jo_id,j_id,jb_nl_id,jo_nl_id,j_nl_id,eigenval_id,rho_sqrt_id,beta_id
+real(8) :: dx_2d(geom%nx,geom%ny)
+
+! Create dimensions
+call ncerr('algo_write',nf90_inq_dimid(grpid,'nx',nx_id))
+call ncerr('algo_write',nf90_inq_dimid(grpid,'ny',ny_id))
+call ncerr('algo_write',nf90_def_dim(subgrpid,'nimax',algo%nimax,nimax_id))
+call ncerr('algo_write',nf90_def_dim(subgrpid,'nimax_plus_one',algo%nimax+1,nimax_plus_one_id))
+
+! Create variables
+call ncerr('algo_write',nf90_def_var(subgrpid,'dx',nf90_double,(/nx_id,ny_id,nimax_id/),dx_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'jb',nf90_double,(/nimax_plus_one_id/),jb_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'jo',nf90_double,(/nimax_plus_one_id/),jo_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'j',nf90_double,(/nimax_plus_one_id/),j_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'jb_nl',nf90_double,(/nimax_plus_one_id/),jb_nl_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'jo_nl',nf90_double,(/nimax_plus_one_id/),jo_nl_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'j_nl',nf90_double,(/nimax_plus_one_id/),j_nl_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'eigenval',nf90_double,(/nimax_id/),eigenval_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'rho_sqrt',nf90_double,(/nimax_plus_one_id/),rho_sqrt_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'beta',nf90_double,(/nimax_plus_one_id/),beta_id))
+
+! Write variables
+do ii=1,algo%nimax
+   dx_2d = reshape(algo%dx(:,ii),(/geom%nx,geom%ny/))
+   call ncerr('algo_write',nf90_put_var(subgrpid,dx_id,dx_2d))
+end do
+call ncerr('algo_write',nf90_put_var(subgrpid,jb_id,algo%jb(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,jo_id,algo%jo(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,j_id,algo%j(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,jb_nl_id,algo%jb_nl(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,jo_nl_id,algo%jo_nl(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,j_nl_id,algo%j_nl(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,eigenval_id,algo%eigenval(1:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,rho_sqrt_id,algo%rho_sqrt(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,beta_id,algo%beta(0:algo%nimax)))
+
+end subroutine algo_write
 
 !----------------------------------------------------------------------
 ! Subroutine: algo_apply_lanczos
@@ -194,7 +250,7 @@ do while ((.not.convergence).and.(ii<ni))
    ! Stopping criterion based on the Ritz pairs approximation
    if (shutoff_type==3) then
       do ji=1,ii
-         accuracy = beta(ii+1)*s(ji,ii)/algo%eigenval(ji)
+         accuracy = abs(beta(ii+1)*s(ji,ii))/algo%eigenval(ji)
          if (accuracy>shutoff_value) then
             write(*,'(a)') '         Convergence reached, based on the Ritz pairs approximation'
             convergence = .true.
@@ -369,7 +425,7 @@ do while ((.not.convergence).and.(ii<ni))
    ! Stopping criterion based on the Ritz pairs approximation
    if (shutoff_type==3) then
       do ji=1,ii
-         accuracy = beta(ii+1)*s(ji,ii)/algo%eigenval(ji)
+         accuracy = abs(beta(ii+1)*s(ji,ii))/algo%eigenval(ji)
          if (accuracy>shutoff_value) then
             write(*,'(a)') '         Convergence reached, based on the Ritz pairs approximation'
             convergence = .true.

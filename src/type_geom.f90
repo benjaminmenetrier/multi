@@ -8,7 +8,9 @@
 module type_geom
 
 use, intrinsic :: iso_c_binding
-use tools_const, only: pi
+use netcdf
+use tools_const
+use tools_netcdf
 
 implicit none
 
@@ -22,8 +24,10 @@ type geom_type
    integer             :: lmax
    real(8),allocatable :: x(:)
    real(8),allocatable :: y(:)
+   logical             :: equiv_precond
 contains
    procedure :: setup => geom_setup
+   procedure :: write => geom_write
    procedure :: complex_to_real => geom_complex_to_real
    procedure :: real_to_complex => geom_real_to_complex
    procedure :: complex_to_full => geom_complex_to_full
@@ -38,15 +42,13 @@ contains
    procedure :: interp_sp => geom_interp_sp
 end type geom_type
 
-logical,parameter :: gp_from_sp = .true. ! Use spectral interpolation for model space
-
 contains
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_setup
 ! Purpose: setup geometry
 !----------------------------------------------------------------------
-subroutine geom_setup(geom,nx,ny)
+subroutine geom_setup(geom,nx,ny,equiv_precond)
 
 implicit none
 
@@ -54,6 +56,7 @@ implicit none
 class(geom_type),intent(inout) :: geom
 integer,intent(in) :: nx
 integer,intent(in) :: ny
+logical,intent(in) :: equiv_precond
 
 ! Local variables
 integer :: ix,iy
@@ -61,9 +64,10 @@ real(8) :: dp1,dp2
 real(8),allocatable :: gpsave(:),gp(:),gp1(:),gp2(:)
 real(8),allocatable :: spsave(:),sp(:),sp1(:),sp2(:)
 
-! Copy dimensions
+! Copy dimensions and attributes
 geom%nx = nx
 geom%ny = ny
+geom%equiv_precond = equiv_precond
 
 ! Derived dimensions
 geom%nh = geom%nx*geom%ny
@@ -133,6 +137,35 @@ call geom%interp_sp(geom,sp1,sp2)
 write(*,'(a,e15.8)') '      SP interpolation test: ',maxval(abs(sp1-sp2))
 
 end subroutine geom_setup
+
+!----------------------------------------------------------------------
+! Subroutine: geom_write
+! Purpose: write geometry
+!----------------------------------------------------------------------
+subroutine geom_write(geom,grpid)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(inout) :: geom
+integer,intent(in) :: grpid
+
+! Local variables
+integer :: nx_id,ny_id,x_id,y_id
+
+! Create dimensions
+call ncerr('geom_write',nf90_def_dim(grpid,'nx',geom%nx,nx_id))
+call ncerr('geom_write',nf90_def_dim(grpid,'ny',geom%ny,ny_id))
+
+! Create variables
+call ncerr('geom_write',nf90_def_var(grpid,'x_coord',nf90_double,(/nx_id/),x_id))
+call ncerr('geom_write',nf90_def_var(grpid,'y_coord',nf90_double,(/ny_id/),y_id))
+
+! Write variables
+call ncerr('geom_write',nf90_put_var(grpid,x_id,geom%x))
+call ncerr('geom_write',nf90_put_var(grpid,y_id,geom%y))
+
+end subroutine geom_write
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_complex_to_real
@@ -266,18 +299,18 @@ real(8),intent(out) :: sp(geom%nh)
 ! Local variables
 integer(8) :: plan
 real(8) :: norm
-real(8) :: gp2d(geom%nx,geom%ny)
+real(8) :: gp_2d(geom%nx,geom%ny)
 complex(8) :: cp(geom%kmax+1,geom%ny)
 
 ! Reshape vector
-gp2d = reshape(gp,(/geom%nx,geom%ny/))
+gp_2d = reshape(gp,(/geom%nx,geom%ny/))
 
 ! Create plan
-call dfftw_plan_dft_r2c_2d(plan,geom%nx,geom%ny,gp2d,cp,fftw_estimate)
+call dfftw_plan_dft_r2c_2d(plan,geom%nx,geom%ny,gp_2d,cp,fftw_estimate)
 
 ! Compute FFT
 cp = cmplx(0.0,0.0)
-call dfftw_execute_dft_r2c(plan,gp2d,cp)
+call dfftw_execute_dft_r2c(plan,gp_2d,cp)
 
 ! Auto-adjoint factor
 cp(1,2:geom%ny) = cp(1,2:geom%ny)*sqrt(2.0)
@@ -310,7 +343,7 @@ real(8),intent(out) :: gp(geom%nh)
 
 ! Local variables
 integer(8) :: plan
-real(8) :: gp2d(geom%nx,geom%ny),norm
+real(8) :: gp_2d(geom%nx,geom%ny),norm
 complex(8) :: cp(geom%kmax+1,geom%ny)
 
 ! Real to complex
@@ -321,18 +354,18 @@ cp(1,2:geom%ny) = cp(1,2:geom%ny)/sqrt(2.0)
 cp(2:geom%kmax+1,:) = cp(2:geom%kmax+1,:)/sqrt(2.0)
 
 ! Create plan
-call dfftw_plan_dft_c2r_2d(plan,geom%nx,geom%ny,cp,gp2d,fftw_estimate)
+call dfftw_plan_dft_c2r_2d(plan,geom%nx,geom%ny,cp,gp_2d,fftw_estimate)
 
 ! Compute FFT
-gp2d = 0.0
-call dfftw_execute_dft_c2r(plan,cp,gp2d)
+gp_2d = 0.0
+call dfftw_execute_dft_c2r(plan,cp,gp_2d)
 
 ! Normalize
 norm = 1.0/sqrt(real(geom%nh,8))
-gp2d = gp2d*norm
+gp_2d = gp_2d*norm
 
 ! Reshape vector
-gp = pack(gp2d,.true.)
+gp = pack(gp_2d,.true.)
 
 ! Destroy plan
 call dfftw_destroy_plan(plan)
@@ -444,7 +477,7 @@ real(8),intent(out) :: gp_out(geom_out%nh)
 integer :: ix,iy,ih
 real(8),allocatable :: sp_in(:),sp_out(:)
 
-if (gp_from_sp) then
+if (geom_in%equiv_precond) then
    ! Allocation
    allocate(sp_in(geom_in%nh))
    allocate(sp_out(geom_out%nh))

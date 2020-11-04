@@ -1,6 +1,7 @@
 program main
 
-!use interp
+use netcdf
+use tools_netcdf
 use tools_rand
 use type_algo
 use type_bmatrix
@@ -9,48 +10,42 @@ use type_hmatrix
 use type_lmp
 use type_rmatrix
 
-
 implicit none
 
-! Maximum parameters
-integer,parameter   :: nomax = 10                 ! Maximum number of outer iterations
+! Parameters
+integer,parameter   :: nomax = 9           ! Maximum number of outer iterations
+integer,parameter   :: namelist_unit = 9   ! Namelist unit
 
 ! Namelist parameters
-integer          :: no                            ! Number of outer iterations
-integer          :: ni                            ! Number of inner iterations
-character(len=8) :: lmp_mode                      ! LMP mode ('none', 'spectral', 'ritz')
-logical          :: test_ortho                    ! Test orthogonality
-integer          :: shutoff_type                  ! Stopping criterion according: 1-Jb, 2-beta, 3-Ritz convergence (else: no criterion)
-real(8)          :: shutoff_value                 ! Stopping criterion threshold
-logical          :: consistent_strategy           ! Use the consistent strategy detailed in the note
-logical          :: use_binv                      ! Use B inverse in the inconsistent strategy
-integer          :: nx(nomax)                     ! X direction size
-integer          :: ny(nomax)                     ! Y direction size
-integer          :: nobs                          ! Number of observations
-real(8)          :: sigma_obs                     ! Observation error standard deviation
-real(8)          :: sigmabvar                     ! Grid-point standard deviation variations amplitude
-real(8)          :: Lb                            ! Correlation length-scale
-logical          :: new_seed                      ! New random seed
-
-! Output files units
-integer,parameter :: namelist_unit = 9
-integer,parameter :: delta_test_unit = 10
-integer,parameter :: Bdelta_test_unit = 11
-integer,parameter :: Hdelta_test_unit = 12
-integer,parameter :: lanczos_control_space_unit = 13
-integer,parameter :: lanczos_control_space_outer_grid_unit = 14
-integer,parameter :: lanczos_control_space_outer_obs_unit = 15
-integer,parameter :: PlanczosIF_model_space_unit = 16
-integer,parameter :: PlanczosIF_model_space_outer_grid_unit = 17
-integer,parameter :: PlanczosIF_model_space_outer_obs_unit = 18
-integer,parameter :: lanczos_control_vs_PlanczosIF_model_unit = 19
+integer             :: no                  ! Number of outer iterations
+integer             :: ni                  ! Number of inner iterations
+character(len=8)    :: lmp_mode            ! LMP mode ('none', 'spectral', 'ritz')
+logical             :: test_ortho          ! Test orthogonality
+integer             :: shutoff_type        ! Stopping criterion according: 1-Jb, 2-beta, 3-Ritz convergence (else: no criterion)
+real(8)             :: shutoff_value       ! Stopping criterion threshold
+logical             :: consistent_strategy ! Use the consistent strategy detailed in the note
+logical             :: use_binv            ! Use B inverse in the inconsistent strategy
+logical             :: equiv_precond       ! Equivalent preconditionings (conditions on B and interpolations are valid)
+integer             :: nx(nomax)           ! X direction sizes
+integer             :: ny(nomax)           ! Y direction sizes
+integer             :: nobs                ! Number of observations
+real(8)             :: sigma_obs           ! Observation error standard deviation
+real(8)             :: sigmabvar           ! Grid-point standard deviation variations amplitude
+real(8)             :: Lb                  ! Correlation length-scale
+real(8)             :: spvarmin            ! Minimum spectral variance (inverse fails if this is too small)
+logical             :: new_seed            ! New random seed
+character(len=1024) :: filename            ! Filename
 
 ! Local variables
+integer                        :: ncid,subgrpid,nx_id,ny_id,nobs_id,xb_id,xg_id,hxg_id,d_id
 integer                        :: io,jo,ii,ji
+integer,allocatable            :: grpid(:)
 real(8)                        :: proj,norm
 real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:),dvbbar(:),dxa_prev(:),dva_interp(:),dxabar_interp(:)
+real(8),allocatable            :: xb_2d(:,:),xg_2d(:,:)
 real(8),allocatable            :: d(:),hxg(:)
+character(len=1024)            :: grpname
 type(algo_type),allocatable    :: algo_lanczos(:),algo_planczosif(:)
 type(bmatrix_type),allocatable :: bmatrix(:)
 type(geom_type),allocatable    :: geom(:)
@@ -67,7 +62,8 @@ namelist/solver/ &
  & shutoff_type, &
  & shutoff_value, &
  & consistent_strategy, &
- & use_binv
+ & use_binv, &
+ & equiv_precond
 namelist/resolutions/ &
  & nx, &
  & ny
@@ -76,9 +72,31 @@ namelist/observations/ &
  & sigma_obs
 namelist/background/ &
  & sigmabvar, &
- & Lb
+ & Lb, &
+ & spvarmin
 namelist/miscellanous/ &
- & new_seed
+ & new_seed, &
+ & filename
+
+! Initialize namelist (default values)
+no = 1
+ni = 10
+lmp_mode = 'none'
+test_ortho = .false.
+shutoff_type = 0
+shutoff_value = 0.0
+consistent_strategy = .true.
+use_binv = .false.
+equiv_precond = .true.
+nx = 101
+ny = 101
+nobs = 2000
+sigma_obs = 0.1
+sigmabvar = 0.0
+Lb = 0.12
+spvarmin = 1.0e-5
+new_seed = .false.
+filename = 'output'
 
 ! Read namelist
 open(unit=namelist_unit,file='namelist',status='old',action='read')
@@ -87,6 +105,7 @@ read(namelist_unit,nml=resolutions)
 read(namelist_unit,nml=observations)
 read(namelist_unit,nml=background)
 read(namelist_unit,nml=miscellanous)
+close(unit=namelist_unit)
 
 ! Print namelist
 write(*,'(a)') 'Namelist'
@@ -106,6 +125,7 @@ write(*,'(a)') 'General initialization'
 call set_seed(new_seed)
 
 ! Allocation (number of outer iterations)
+allocate(grpid(no))
 allocate(geom(no))
 allocate(bmatrix(no))
 allocate(algo_lanczos(no))
@@ -113,10 +133,23 @@ allocate(algo_planczosif(no))
 allocate(lmp_lanczos(no))
 allocate(lmp_planczosif(no))
 
+! Create NetCDF file
+call ncerr('main',nf90_create(trim(filename)//'.nc',ior(nf90_clobber,nf90_netcdf4),ncid))
+
+! Set missing value
+call ncerr('main',nf90_put_att(ncid,nf90_global,'_FillValue',-999.0))
+
+! Create groups for each outer iteration
+do io=1,no
+   write(grpname,'(a,i1)') 'outer_',io
+   call ncerr('main',nf90_def_grp(ncid,grpname,grpid(io)))
+end do
+
 ! Setup geometries
 do io=1,no
-   write(*,'(a,i2)') '   Geometry setup for outer iteration ',io
-   call geom(io)%setup(nx(io),ny(io))
+   write(*,'(a,i1)') '   Geometry setup for outer iteration ',io
+   call geom(io)%setup(nx(io),ny(io),equiv_precond)
+   call geom(io)%write(grpid(io))
 end do
 
 ! Allocation (model/control space)
@@ -125,12 +158,42 @@ allocate(xg_full(geom(no)%nh))
 
 ! Setup B matrices
 do io=1,no
-   write(*,'(a,i2)') '   B matrix setup for outer iteration ',io
-   call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb)
+   write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
+   if (geom(io)%equiv_precond) then
+      call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb,spvarmin)
+   else
+      call bmatrix(io)%setup(geom(io),geom(io),sigmabvar,Lb,spvarmin)
+   end if
+   call bmatrix(io)%write(geom(io),grpid(io))
 end do
 
 ! Generate background state
 call bmatrix(no)%randomize(geom(no),xb_full)
+do io=1,no
+   ! Allocation
+   allocate(xb(geom(io)%nh))
+   allocate(xb_2d(geom(io)%nx,geom(io)%ny))
+
+   ! Interpolate background at current resolution
+   call geom(no)%interp_gp(geom(io),xb_full,xb)
+
+   ! Reshape background
+   xb_2d = reshape(xb,(/geom(io)%nx,geom(io)%ny/))
+
+   ! Get dimensions
+   call ncerr('main',nf90_inq_dimid(grpid(io),'nx',nx_id))
+   call ncerr('main',nf90_inq_dimid(grpid(io),'ny',ny_id))
+
+   ! Create variable
+   call ncerr('main',nf90_def_var(grpid(io),'xb',nf90_double,(/nx_id,ny_id/),xb_id))
+
+   ! Write variable
+   call ncerr('main',nf90_put_var(grpid(io),xb_id,xb_2d))
+
+   ! Release memory
+   deallocate(xb)
+   deallocate(xb_2d)
+end do
 
 ! Allocation (obs space)
 allocate(d(nobs))
@@ -138,6 +201,7 @@ allocate(hxg(nobs))
 
 ! Setup obserations locations
 call hmatrix%setup(nobs)
+call hmatrix%write(ncid)
 
 ! Setup R matrix
 call rmatrix%setup(nobs,sigma_obs)
@@ -152,11 +216,12 @@ write(*,'(a)') ''
 !--------------------------------------------------------------------------------
 write(*,'(a)') 'Multi-incremental Lanczos in control space'
 do io=1,no
-   write(*,'(a,i2,a,i4,a,i4)') '   Outer iteration ',io,', resolution: ',geom(io)%nx,' x ',geom(io)%ny
+   write(*,'(a,i1,a,i4,a,i4)') '   Outer iteration ',io,', resolution: ',geom(io)%nx,' x ',geom(io)%ny
 
    ! Allocation
    allocate(xb(geom(io)%nh))
    allocate(xg(geom(io)%nh))
+   allocate(xg_2d(geom(io)%nx,geom(io)%ny))
    allocate(dvbbar(geom(io)%nh))
    call algo_lanczos(io)%alloc(geom(io),ni)
    call lmp_lanczos(io)%alloc(no,geom,ni,io,lmp_mode,'control')
@@ -336,9 +401,34 @@ do io=1,no
  & algo_lanczos(io)%j_nl(ii),' = ',algo_lanczos(io)%jb_nl(ii),' + ',algo_lanczos(io)%jo_nl(ii)
    end do
 
+   ! Create subgroup for this algo
+   call ncerr('main',nf90_def_grp(grpid(io),'lanczos',subgrpid))
+
+   ! Reshape guess
+   xb_2d = reshape(xb,(/geom(io)%nx,geom(io)%ny/))
+
+   ! Get dimensions
+   call ncerr('main',nf90_inq_dimid(grpid(io),'nx',nx_id))
+   call ncerr('main',nf90_inq_dimid(grpid(io),'ny',ny_id))
+   call ncerr('main',nf90_inq_dimid(ncid,'nobs',nobs_id))
+
+   ! Create variables
+   call ncerr('main',nf90_def_var(subgrpid,'xg',nf90_double,(/nx_id,ny_id/),xg_id))
+   call ncerr('main',nf90_def_var(subgrpid,'hxg',nf90_double,(/nobs_id/),hxg_id))
+   call ncerr('main',nf90_def_var(subgrpid,'d',nf90_double,(/nobs_id/),d_id))
+
+   ! Write variable
+   call ncerr('main',nf90_put_var(subgrpid,xg_id,xg_2d))
+   call ncerr('main',nf90_put_var(subgrpid,hxg_id,hxg))
+   call ncerr('main',nf90_put_var(subgrpid,d_id,d))
+
+   ! Write algo data
+   call algo_lanczos(io)%write(geom(io),grpid(io),subgrpid)
+
    ! Release memory
    deallocate(xb)
    deallocate(xg)
+   deallocate(xg_2d)
    deallocate(dvbbar)
 end do
 write(*,'(a)') ''
@@ -348,11 +438,12 @@ write(*,'(a)') ''
 !--------------------------------------------------------------------------------
 write(*,'(a)') 'Multi-incremental PLanczosIF in model space'
 do io=1,no
-   write(*,'(a,i2,a,i4,a,i4)') '   Outer iteration ',io,', resolution: ',geom(io)%nx,' x ',geom(io)%ny
+   write(*,'(a,i1,a,i4,a,i4)') '   Outer iteration ',io,', resolution: ',geom(io)%nx,' x ',geom(io)%ny
 
    ! Allocation
    allocate(xb(geom(io)%nh))
    allocate(xg(geom(io)%nh))
+   allocate(xg_2d(geom(io)%nx,geom(io)%ny))
    allocate(dxbbar(geom(io)%nh))
    call algo_planczosif(io)%alloc(geom(io),ni)
    call lmp_planczosif(io)%alloc(no,geom,ni,io,lmp_mode,'model')
@@ -538,9 +629,34 @@ do io=1,no
  & algo_planczosif(io)%j(ii),' = ',algo_planczosif(io)%jb_nl(ii),' + ',algo_planczosif(io)%jo_nl(ii)
    end do
 
+   ! Create subgroup for this algo
+   call ncerr('main',nf90_def_grp(grpid(io),'planczosif',subgrpid))
+
+   ! Reshape guess
+   xb_2d = reshape(xb,(/geom(io)%nx,geom(io)%ny/))
+
+   ! Get dimensions
+   call ncerr('main',nf90_inq_dimid(grpid(io),'nx',nx_id))
+   call ncerr('main',nf90_inq_dimid(grpid(io),'ny',ny_id))
+   call ncerr('main',nf90_inq_dimid(ncid,'nobs',nobs_id))
+
+   ! Create variables
+   call ncerr('main',nf90_def_var(subgrpid,'xg',nf90_double,(/nx_id,ny_id/),xg_id))
+   call ncerr('main',nf90_def_var(subgrpid,'hxg',nf90_double,(/nobs_id/),hxg_id))
+   call ncerr('main',nf90_def_var(subgrpid,'d',nf90_double,(/nobs_id/),d_id))
+
+   ! Write variable
+   call ncerr('main',nf90_put_var(subgrpid,xg_id,xg_2d))
+   call ncerr('main',nf90_put_var(subgrpid,hxg_id,hxg))
+   call ncerr('main',nf90_put_var(subgrpid,d_id,d))
+
+   ! Write algo data
+   call algo_planczosif(io)%write(geom(io),grpid(io),subgrpid)
+
    ! Release memory
    deallocate(xb)
    deallocate(xg)
+   deallocate(xg_2d)
    deallocate(dxbbar)
 end do
 write(*,'(a)') ''
@@ -550,11 +666,14 @@ write(*,'(a)') ''
 !--------------------------------------------------------------------------------
 write(*,'(a)') 'Lanczos-PLanczosIF comparison'
 do io=1,no
-   write(*,'(a,i2,a,i4,a,i4)') '   Outer iteration ',io,', resolution: ',geom(io)%nx,' x ',geom(io)%ny
+   write(*,'(a,i1,a,i4,a,i4)') '   Outer iteration ',io,', resolution: ',geom(io)%nx,' x ',geom(io)%ny
    do ii=0,ni
       write(*,'(a,i3,a,e15.8,a,e15.8,a,e15.8)') '      Iteration ',ii,':', algo_lanczos(io)%j(ii)-algo_planczosif(io)%j(ii), &
  & ' = ',algo_lanczos(io)%jb(ii)-algo_planczosif(io)%jb(ii),' + ',algo_lanczos(io)%jo(ii)-algo_planczosif(io)%jo(ii)
    end do
 end do
+
+! Close NetCDF file
+call ncerr('main',nf90_close(ncid))
 
 end program main

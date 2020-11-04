@@ -7,6 +7,8 @@
 !----------------------------------------------------------------------
 module type_hmatrix
 
+use netcdf
+use tools_netcdf
 use type_geom
 
 implicit none
@@ -18,6 +20,7 @@ type hmatrix_type
    real(8),allocatable :: yo(:)
 contains
    procedure :: setup => hmatrix_setup
+   procedure :: write => hmatrix_write
    procedure :: apply => hmatrix_apply
    procedure :: apply_ad => hmatrix_apply_ad
    procedure :: test => hmatrix_test
@@ -27,7 +30,7 @@ contains
 
 !----------------------------------------------------------------------
 ! Subroutine: hmatrix_setup
-! Purpose: setup observations locations
+! Purpose: setup H matrix
 !----------------------------------------------------------------------
 subroutine hmatrix_setup(hmatrix,nobs)
 
@@ -50,6 +53,34 @@ call random_number(hmatrix%x_obs)
 call random_number(hmatrix%y_obs)
 
 end subroutine hmatrix_setup
+
+!----------------------------------------------------------------------
+! Subroutine: hmatrix_write
+! Purpose: write H matrix
+!----------------------------------------------------------------------
+subroutine hmatrix_write(hmatrix,ncid)
+
+implicit none
+
+! Passed variables
+class(hmatrix_type),intent(inout) :: hmatrix
+integer,intent(in) :: ncid
+
+! Local variables
+integer :: nobs_id,x_obs_id,y_obs_id
+
+! Create dimensions
+call ncerr('hmatrix_write',nf90_def_dim(ncid,'nobs',hmatrix%nobs,nobs_id))
+
+! Create variables
+call ncerr('hmatrix_write',nf90_def_var(ncid,'x_obs',nf90_double,(/nobs_id/),x_obs_id))
+call ncerr('hmatrix_write',nf90_def_var(ncid,'y_obs',nf90_double,(/nobs_id/),y_obs_id))
+
+! Write variables
+call ncerr('hmatrix_write',nf90_put_var(ncid,x_obs_id,hmatrix%x_obs))
+call ncerr('hmatrix_write',nf90_put_var(ncid,y_obs_id,hmatrix%y_obs))
+
+end subroutine hmatrix_write
 
 !----------------------------------------------------------------------
 ! Subroutine: hmatrix_apply

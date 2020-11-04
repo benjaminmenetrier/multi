@@ -7,17 +7,21 @@
 !----------------------------------------------------------------------
 module type_bmatrix
 
+use netcdf
+use tools_netcdf
 use tools_rand
 use type_geom
 
 implicit none
 
 type bmatrix_type
-   real(8) :: Lb
    real(8),allocatable :: sigmab(:)
+   real(8) :: Lb
+   real(8) :: spvarmin
    real(8) :: spnorm
 contains
    procedure :: setup => bmatrix_setup
+   procedure :: write => bmatrix_write
    procedure :: spvar => bmatrix_spvar
    procedure :: spvar_sqrt => bmatrix_spvar_sqrt
    procedure :: spvar_sqrt_inv => bmatrix_spvar_sqrt_inv
@@ -30,15 +34,13 @@ contains
    procedure :: randomize => bmatrix_randomize
 end type bmatrix_type
 
-real(8),parameter :: spvarmin = 1.0e-2
-
 contains
 
 !----------------------------------------------------------------------
 ! Subroutine: bmatrix_setup
 ! Purpose: setup B matrix
 !----------------------------------------------------------------------
-subroutine bmatrix_setup(bmatrix,geom,geom_full,sigmabvar,Lb)
+subroutine bmatrix_setup(bmatrix,geom,geom_full,sigmabvar,Lb,spvarmin)
 
 implicit none
 
@@ -48,13 +50,14 @@ type(geom_type),intent(in) :: geom
 type(geom_type),intent(in) :: geom_full
 real(8),intent(in) :: sigmabvar
 real(8),intent(in) :: Lb
+real(8),intent(in) :: spvarmin
 
 ! Local variables
 integer :: ih,ix,iy
 real(8) :: dp1,dp2,dist
 real(8) :: x(geom_full%nh),v(geom_full%nh)
-real(8) :: x1(geom%nh),x2(geom%nh),x1out(geom%nh),x2out(geom%nh)
-real(8) :: v1(geom%nh),v2(geom%nh)
+real(8) :: x1(geom%nh),x2(geom%nh),x1out(geom%nh),x2out(geom%nh),v1(geom%nh),v2(geom%nh)
+real(8) :: x1_2d(geom%nx,geom%ny),x2_2d(geom%nx,geom%ny),sigmab_2d(geom%nx,geom%ny)
 
 ! Release memory
 if (allocated(bmatrix%sigmab)) deallocate(bmatrix%sigmab)
@@ -73,6 +76,7 @@ end do
 
 ! Compute normalization
 bmatrix%Lb = Lb
+bmatrix%spvarmin = spvarmin
 bmatrix%spnorm = 1.0
 x = 0.0
 x(1) = 1.0
@@ -113,21 +117,23 @@ dp2 = sum(x2*x1out)
 write(*,'(a,e15.8)') '         Auto-adjoint test on B:        ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
 ! Print correlation shape
-x1 = 0.0
-x1(1) = 1.0
+x1_2d = 0.0
+x1_2d(1,1) = 1.0
+x1 = pack(x1_2d,.true.)
 call bmatrix%apply(geom,x1,x2)
-x2 = x2/(bmatrix%sigmab(1)*bmatrix%sigmab)
+x2_2d = reshape(x2,(/geom%nx,geom%ny/))
+sigmab_2d = reshape(bmatrix%sigmab,(/geom%nx,geom%ny/))
+x2_2d = x2_2d/(sigmab_2d(1,1)*sigmab_2d)
+iy = 1
 write(*,'(a)',advance='no') '         X-coordinate:                 '
 do ix=1,geom%nx
-   ih = ix
-   if (x2(ih)<1.0e-3) exit
+   if (x2_2d(ix,iy)<1.0e-3) exit
    write(*,'(f6.2)',advance='no') geom%x(ix)
 end do
 write(*,'(a)')
 write(*,'(a)',advance='no') '         Theoretical correlation shape:'
 do ix=1,geom%nx
-   ih = ix
-   if (x2(ih)<1.0e-3) exit
+   if (x2_2d(ix,iy)<1.0e-3) exit
    if (ix<geom%nx/2) then
       dist = geom%x(ix)
    else
@@ -138,22 +144,21 @@ end do
 write(*,'(a)')
 write(*,'(a)',advance='no') '         Effective correlation shape:  '
 do ix=1,geom%nx
-   ih = ix
-   if (x2(ih)<1.0e-3) exit
-   write(*,'(f6.2)',advance='no') x2(ih)
+   if (x2_2d(ix,iy)<1.0e-3) exit
+   write(*,'(f6.2)',advance='no') x2_2d(ix,iy)
 end do
 write(*,'(a)')
 write(*,'(a)',advance='no') '         Y-coordinate:                 '
+ix = 1
 do iy=1,geom%ny
-   ih = 1+(iy-1)*geom%nx
-   if (x2(ih)<1.0e-3) exit
+   if (x2_2d(ix,iy)<1.0e-3) exit
    write(*,'(f6.2)',advance='no') geom%y(iy)
 end do
 write(*,'(a)')
 write(*,'(a)',advance='no') '         Theoretical correlation shape:'
 do iy=1,geom%ny
    ih = 1+(iy-1)*geom%nx
-   if (x2(ih)<1.0e-3) exit
+   if (x2_2d(ix,iy)<1.0e-3) exit
    if (iy<geom%ny/2) then
       dist = geom%y(iy)
    else
@@ -165,12 +170,59 @@ write(*,'(a)')
 write(*,'(a)',advance='no') '         Effective correlation shape:  '
 do iy=1,geom%ny
    ih = 1+(iy-1)*geom%nx
-   if (x2(ih)<1.0e-3) exit
-   write(*,'(f6.2)',advance='no') x2(ih)
+   if (x2_2d(ix,iy)<1.0e-3) exit
+   write(*,'(f6.2)',advance='no') x2_2d(ix,iy)
 end do
 write(*,'(a)')
 
 end subroutine bmatrix_setup
+
+!----------------------------------------------------------------------
+! Subroutine: bmatrix_write
+! Purpose: write B matrix
+!----------------------------------------------------------------------
+subroutine bmatrix_write(bmatrix,geom,grpid)
+
+implicit none
+
+! Passed variables
+class(bmatrix_type),intent(inout) :: bmatrix
+type(geom_type),intent(in) :: geom
+integer,intent(in) :: grpid
+
+! Local variables
+integer :: nx_id,ny_id,sigmab_id,dirac_cov_id,dirac_cor_id
+real(8) :: x1(geom%nh),x2(geom%nh)
+real(8) :: x1_2d(geom%nx,geom%ny),x2_2d(geom%nx,geom%ny),sigmab_2d(geom%nx,geom%ny),x2_cor_2d(geom%nx,geom%ny)
+
+! Dirac test
+x1_2d = 0.0
+x1_2d(geom%nx/2,geom%ny/2) = 1.0
+x1 = pack(x1_2d,.true.)
+call bmatrix%apply(geom,x1,x2)
+x2_2d = reshape(x2,(/geom%nx,geom%ny/))
+sigmab_2d = reshape(bmatrix%sigmab,(/geom%nx,geom%ny/))
+x2_cor_2d = x2_2d/(sigmab_2d(geom%nx/2,geom%ny/2)*sigmab_2d)
+
+! Get dimensions
+call ncerr('bmatrix_write',nf90_inq_dimid(grpid,'nx',nx_id))
+call ncerr('bmatrix_write',nf90_inq_dimid(grpid,'ny',ny_id))
+
+! Create variables
+call ncerr('bmatrix_write',nf90_def_var(grpid,'sigmab',nf90_double,(/nx_id,ny_id/),sigmab_id))
+call ncerr('bmatrix_write',nf90_def_var(grpid,'dirac_cov',nf90_double,(/nx_id,ny_id/),dirac_cov_id))
+call ncerr('bmatrix_write',nf90_def_var(grpid,'dirac_cor',nf90_double,(/nx_id,ny_id/),dirac_cor_id))
+
+! Write variables
+call ncerr('bmatrix_write',nf90_put_var(grpid,sigmab_id,sigmab_2d))
+call ncerr('bmatrix_write',nf90_put_var(grpid,dirac_cov_id,x2_2d))
+call ncerr('bmatrix_write',nf90_put_var(grpid,dirac_cor_id,x2_cor_2d))
+
+! Write attributes
+call ncerr('bmatrix_write',nf90_put_att(grpid,nf90_global,'Lb',bmatrix%Lb))
+call ncerr('bmatrix_write',nf90_put_att(grpid,nf90_global,'spvarmin',bmatrix%spvarmin))
+
+end subroutine bmatrix_write
 
 !----------------------------------------------------------------------
 ! Subroutine: bmatrix_spvar
@@ -203,7 +255,7 @@ do k=0,geom%kmax
 
       ! Apply Gaussian spectral variance
       spvar = exp(-2.0*kstarsq*(pi*bmatrix%Lb)**2)
-      spvar = max(spvar,spvarmin)
+      spvar = max(spvar,bmatrix%spvarmin)
       cp_full(k,l) = cp_full(k,l)*spvar*bmatrix%spnorm
    end do
 end do
@@ -247,7 +299,7 @@ do k=0,geom%kmax
 
       ! Apply Gaussian spectral variance
       spvar = exp(-2.0*kstarsq*(pi*bmatrix%Lb)**2)!*bmatrix%spnorm
-      spvar = max(spvar,spvarmin)
+      spvar = max(spvar,bmatrix%spvarmin)
       cp_full(k,l) = cp_full(k,l)*sqrt(spvar*bmatrix%spnorm)
    end do
 end do
@@ -291,7 +343,7 @@ do k=0,geom%kmax
 
       ! Apply Gaussian spectral variance
       spvar = exp(-2.0*kstarsq*(pi*bmatrix%Lb)**2)
-      spvar = max(spvar,spvarmin)
+      spvar = max(spvar,bmatrix%spvarmin)
       cp_full(k,l) = cp_full(k,l)/sqrt(spvar*bmatrix%spnorm)
    end do
 end do
