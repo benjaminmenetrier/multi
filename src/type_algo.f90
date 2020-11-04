@@ -87,6 +87,24 @@ allocate(algo%lancvec(geom%nh,ni+1))
 allocate(algo%rho_sqrt(0:ni))
 allocate(algo%beta(0:ni))
 
+! Initialization at missing value
+algo%nimax = -999
+algo%dx = -999.0
+algo%dva = -999.0
+algo%dxabar = -999.0
+algo%jb = -999.0
+algo%jo = -999.0
+algo%j = -999.0
+algo%jb_nl = -999.0
+algo%jo_nl = -999.0
+algo%j_nl = -999.0
+algo%eigenval = -999.0
+algo%eigenvec = -999.0
+algo%lancvec = -999.0
+algo%lastbeta = -999.0
+algo%rho_sqrt = -999.0
+algo%beta = -999.0
+
 end subroutine algo_alloc
 
 !----------------------------------------------------------------------

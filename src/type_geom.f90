@@ -64,6 +64,16 @@ real(8) :: dp1,dp2
 real(8),allocatable :: gpsave(:),gp(:),gp1(:),gp2(:)
 real(8),allocatable :: spsave(:),sp(:),sp1(:),sp2(:)
 
+! Check dimensions
+if (mod(nx,2)==0) then
+   write(*,'(a)') '      Error: nx should be odd'
+   stop
+end if
+if (mod(ny,2)==0) then
+   write(*,'(a)') '      Error: ny should be odd'
+   stop
+end if
+
 ! Copy dimensions and attributes
 geom%nx = nx
 geom%ny = ny

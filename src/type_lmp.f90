@@ -28,8 +28,8 @@ type lmp_type
    character(len=1024) :: mode
    character(len=1024) :: space
    integer :: io
-   type(outer_type),allocatable :: outer(:)
    real(8),allocatable :: lancvec_trunc(:,:)
+   type(outer_type),allocatable :: outer(:)
 contains
    procedure :: alloc => lmp_alloc
    procedure :: apply => lmp_apply
@@ -62,6 +62,7 @@ integer :: jo
 
 ! Release memory
 if (allocated(lmp%outer)) then
+   if (allocated(lmp%lancvec_trunc)) deallocate(lmp%lancvec_trunc)
    do jo=2,lmp%io
       if (allocated(lmp%outer(jo)%eigenval)) deallocate(lmp%outer(jo)%eigenval)
       if (allocated(lmp%outer(jo)%eigenvec)) deallocate(lmp%outer(jo)%eigenvec)
@@ -72,7 +73,6 @@ if (allocated(lmp%outer)) then
       if (allocated(lmp%outer(jo)%ritzvec)) deallocate(lmp%outer(jo)%ritzvec)
       if (allocated(lmp%outer(jo)%ritzvec1)) deallocate(lmp%outer(jo)%ritzvec1)
       if (allocated(lmp%outer(jo)%ritzvec2)) deallocate(lmp%outer(jo)%ritzvec2)
-      if (allocated(lmp%lancvec_trunc)) deallocate(lmp%lancvec_trunc)
    end do
    deallocate(lmp%outer)
 end if
@@ -98,6 +98,30 @@ if (io>1) then
             allocate(lmp%outer(jo)%ritzvec2(geom(io)%nh,ni))
          end if
          allocate(lmp%outer(jo)%omega(ni))
+      end select
+   end do
+end if
+
+! Initialization at missing value
+lmp%mode = ''
+lmp%space = ''
+lmp%io = -999
+if (io>1) then
+   lmp%lancvec_trunc = -999.0
+   do jo=2,io
+      select case (trim(lmp%mode))
+      case ('spectral','ritz')
+         lmp%outer(jo)%eigenval = -999.0
+         lmp%outer(jo)%eigenvec = -999.0
+         lmp%outer(jo)%lancvec = -999.0
+         lmp%outer(jo)%ritzvec = -999.0
+         if (trim(lmp%space)=='model') then
+            lmp%outer(jo)%lancvec1 = -999.0
+            lmp%outer(jo)%lancvec2 = -999.0
+            lmp%outer(jo)%ritzvec1 = -999.0
+            lmp%outer(jo)%ritzvec2 = -999.0
+         end if
+         lmp%outer(jo)%omega = -999.0
       end select
    end do
 end if

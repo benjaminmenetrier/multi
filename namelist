@@ -1,5 +1,5 @@
 &solver
-no = 3
+no = 2
 ni = 10
 lmp_mode = "none"
 test_ortho = .false.
@@ -11,8 +11,8 @@ equiv_precond = .true.
 /
 
 &resolutions
-nx = 101,121,151,
-ny = 101,121,151,
+nx = 101,121,
+ny = 101,121,
 /
 
 &observations

@@ -197,12 +197,12 @@ real(8) :: x1_2d(geom%nx,geom%ny),x2_2d(geom%nx,geom%ny),sigmab_2d(geom%nx,geom%
 
 ! Dirac test
 x1_2d = 0.0
-x1_2d(geom%nx/2,geom%ny/2) = 1.0
+x1_2d(1,1) = 1.0
 x1 = pack(x1_2d,.true.)
 call bmatrix%apply(geom,x1,x2)
 x2_2d = reshape(x2,(/geom%nx,geom%ny/))
 sigmab_2d = reshape(bmatrix%sigmab,(/geom%nx,geom%ny/))
-x2_cor_2d = x2_2d/(sigmab_2d(geom%nx/2,geom%ny/2)*sigmab_2d)
+x2_cor_2d = x2_2d/(sigmab_2d(1,1)*sigmab_2d)
 
 ! Get dimensions
 call ncerr('bmatrix_write',nf90_inq_dimid(grpid,'nx',nx_id))
