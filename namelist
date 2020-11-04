@@ -1,7 +1,8 @@
 &solver
 no = 2
 ni = 10
-lmp_mode = "none"
+lmp_mode = "spectral"
+test_ortho = .false.
 shutoff_type = 0
 shutoff_value = 0.0
 consistent_strategy = .false.

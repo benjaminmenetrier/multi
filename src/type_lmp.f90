@@ -16,7 +16,6 @@ type outer_type
    real(8),allocatable :: eigenval(:)
    real(8),allocatable :: eigenvec(:,:)
    real(8),allocatable :: omega(:)
-   real(8),allocatable :: lancvec_trunc(:,:)
    real(8),allocatable :: lancvec(:,:)
    real(8),allocatable :: lancvec1(:,:)
    real(8),allocatable :: lancvec2(:,:)
@@ -30,6 +29,7 @@ type lmp_type
    character(len=1024) :: space
    integer :: io
    type(outer_type),allocatable :: outer(:)
+   real(8),allocatable :: lancvec_trunc(:,:)
 contains
    procedure :: alloc => lmp_alloc
    procedure :: apply => lmp_apply
@@ -44,13 +44,14 @@ contains
 ! Subroutine: lmp_alloc
 ! Purpose: allocate LMP
 !----------------------------------------------------------------------
-subroutine lmp_alloc(lmp,geom,ni,io,mode,space)
+subroutine lmp_alloc(lmp,no,geom,ni,io,mode,space)
 
 implicit none
 
 ! Passed variables
 class(lmp_type),intent(inout) :: lmp
-type(geom_type),intent(in) :: geom
+integer,intent(in) :: no
+type(geom_type),intent(in) :: geom(no)
 integer,intent(in) :: ni
 integer,intent(in) :: io
 character(len=*),intent(in) :: mode
@@ -61,17 +62,17 @@ integer :: jo
 
 ! Release memory
 if (allocated(lmp%outer)) then
-   do jo=1,lmp%io
+   do jo=2,lmp%io
       if (allocated(lmp%outer(jo)%eigenval)) deallocate(lmp%outer(jo)%eigenval)
       if (allocated(lmp%outer(jo)%eigenvec)) deallocate(lmp%outer(jo)%eigenvec)
       if (allocated(lmp%outer(jo)%omega)) deallocate(lmp%outer(jo)%omega)
-      if (allocated(lmp%outer(jo)%lancvec_trunc)) deallocate(lmp%outer(jo)%lancvec_trunc)
       if (allocated(lmp%outer(jo)%lancvec)) deallocate(lmp%outer(jo)%lancvec)
       if (allocated(lmp%outer(jo)%lancvec1)) deallocate(lmp%outer(jo)%lancvec1)
       if (allocated(lmp%outer(jo)%lancvec2)) deallocate(lmp%outer(jo)%lancvec2)
       if (allocated(lmp%outer(jo)%ritzvec)) deallocate(lmp%outer(jo)%ritzvec)
       if (allocated(lmp%outer(jo)%ritzvec1)) deallocate(lmp%outer(jo)%ritzvec1)
       if (allocated(lmp%outer(jo)%ritzvec2)) deallocate(lmp%outer(jo)%ritzvec2)
+      if (allocated(lmp%lancvec_trunc)) deallocate(lmp%lancvec_trunc)
    end do
    deallocate(lmp%outer)
 end if
@@ -80,24 +81,26 @@ end if
 lmp%mode = trim(mode)
 lmp%space = trim(space)
 lmp%io = io
-allocate(lmp%outer(io))
-do jo=2,io
-   select case (trim(lmp%mode))
-   case ('spectral','ritz')
-      allocate(lmp%outer(jo)%eigenval(ni))
-      allocate(lmp%outer(jo)%eigenvec(ni,ni))
-      allocate(lmp%outer(jo)%lancvec_trunc(geom%nh,ni+1))
-      allocate(lmp%outer(jo)%lancvec(geom%nh,ni+1))
-      allocate(lmp%outer(jo)%ritzvec(geom%nh,ni))
-      if (trim(lmp%space)=='model') then
-         allocate(lmp%outer(jo)%lancvec1(geom%nh,ni+1))
-         allocate(lmp%outer(jo)%lancvec2(geom%nh,ni+1))
-         allocate(lmp%outer(jo)%ritzvec1(geom%nh,ni))
-         allocate(lmp%outer(jo)%ritzvec2(geom%nh,ni))
-      end if
-      allocate(lmp%outer(jo)%omega(ni))
-   end select
-end do
+if (io>1) then
+   allocate(lmp%lancvec_trunc(geom(io-1)%nh,ni+1))
+   allocate(lmp%outer(2:io))
+   do jo=2,io
+      select case (trim(lmp%mode))
+      case ('spectral','ritz')
+         allocate(lmp%outer(jo)%eigenval(ni))
+         allocate(lmp%outer(jo)%eigenvec(ni,ni))
+         allocate(lmp%outer(jo)%lancvec(geom(io)%nh,ni+1))
+         allocate(lmp%outer(jo)%ritzvec(geom(io)%nh,ni))
+         if (trim(lmp%space)=='model') then
+            allocate(lmp%outer(jo)%lancvec1(geom(io)%nh,ni+1))
+            allocate(lmp%outer(jo)%lancvec2(geom(io)%nh,ni+1))
+            allocate(lmp%outer(jo)%ritzvec1(geom(io)%nh,ni))
+            allocate(lmp%outer(jo)%ritzvec2(geom(io)%nh,ni))
+         end if
+         allocate(lmp%outer(jo)%omega(ni))
+      end select
+   end do
+end if
 
 end subroutine lmp_alloc
 
@@ -140,7 +143,9 @@ do jo=2,io
             tmp = tmp+lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec1(:,ii)*x)
          end do
          do ii=1,ni
-            px = px-lmp%outer(jo)%ritzvec2(:,ii)*lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%lancvec1(:,ni+1)*x)-lmp%outer(jo)%lancvec2(:,ni+1)*lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec1(:,ii)*x)+lmp%outer(jo)%ritzvec2(:,ii)*lmp%outer(jo)%omega(ii)*tmp
+            px = px-lmp%outer(jo)%ritzvec2(:,ii)*lmp%outer(jo)%omega(ii) &
+ & *sum(lmp%outer(jo)%lancvec1(:,ni+1)*x)-lmp%outer(jo)%lancvec2(:,ni+1)*lmp%outer(jo)%omega(ii) &
+ & *sum(lmp%outer(jo)%ritzvec1(:,ii)*x)+lmp%outer(jo)%ritzvec2(:,ii)*lmp%outer(jo)%omega(ii)*tmp
          end do
       end if
    end select
@@ -187,7 +192,9 @@ do jo=io,2,-1
             tmp = tmp+lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec2(:,ii)*x)
          end do
          do ii=1,ni
-            px = px-lmp%outer(jo)%lancvec1(:,ni+1)*lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec2(:,ii)*x)-lmp%outer(jo)%ritzvec1(:,ii)*lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%lancvec2(:,ni+1)*x)+lmp%outer(jo)%ritzvec1(:,ii)*lmp%outer(jo)%omega(ii)*tmp
+            px = px-lmp%outer(jo)%lancvec1(:,ni+1)*lmp%outer(jo)%omega(ii) &
+ & *sum(lmp%outer(jo)%ritzvec2(:,ii)*x)-lmp%outer(jo)%ritzvec1(:,ii)*lmp%outer(jo)%omega(ii) &
+ & *sum(lmp%outer(jo)%lancvec2(:,ni+1)*x)+lmp%outer(jo)%ritzvec1(:,ii)*lmp%outer(jo)%omega(ii)*tmp
          end do
       end if
    end select
