@@ -23,9 +23,9 @@ character(len=8)    :: lmp_mode            ! LMP mode ('none', 'spectral', 'ritz
 logical             :: test_ortho          ! Test orthogonality
 integer             :: shutoff_type        ! Stopping criterion according: 1-Jb, 2-beta, 3-Ritz convergence (else: no criterion)
 real(8)             :: shutoff_value       ! Stopping criterion threshold
-logical             :: consistent_strategy ! Use the consistent strategy detailed in the note
-logical             :: use_binv            ! Use B inverse in the inconsistent strategy
-logical             :: equiv_precond       ! Equivalent preconditionings (conditions on B and interpolations are valid)
+character(len=1024) :: method              ! Guess computation method ('theoretical','standard_inconsistent','standard_consistent','alternative')
+logical             :: transitive_interp   ! Transitive interpolator (grid-point interpolator defined with FFTs and spetral interpolator)
+logical             :: projective_Bmatrix  ! Projective B matrix (low-resolution B matrix is a a projection of the high-resolution B matrix)
 integer             :: nx(nomax)           ! X direction sizes
 integer             :: ny(nomax)           ! Y direction sizes
 integer             :: nobs                ! Number of observations
@@ -42,7 +42,7 @@ integer                        :: io,jo,ii,ji
 integer,allocatable            :: grpid(:)
 real(8)                        :: proj,norm
 real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:)
-real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:),dvbbar(:),dxa_prev(:),dva_interp(:),dxabar_interp(:)
+real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:),dvb(:),dva(:),dxa(:),dxabar(:),dxa_prev(:)
 real(8),allocatable            :: xb_2d(:,:),xg_2d(:,:)
 real(8),allocatable            :: d(:),hxg(:)
 character(len=1024)            :: grpname
@@ -61,9 +61,9 @@ namelist/solver/ &
  & test_ortho, &
  & shutoff_type, &
  & shutoff_value, &
- & consistent_strategy, &
- & use_binv, &
- & equiv_precond
+ & method, &
+ & transitive_interp, &
+ & projective_Bmatrix
 namelist/resolutions/ &
  & nx, &
  & ny
@@ -85,9 +85,8 @@ lmp_mode = 'none'
 test_ortho = .false.
 shutoff_type = 0
 shutoff_value = 0.0
-consistent_strategy = .true.
-use_binv = .false.
-equiv_precond = .true.
+method = 'theoretical'
+transitive_interp = .true.
 nx = 101
 ny = 101
 nobs = 2000
@@ -148,7 +147,7 @@ end do
 ! Setup geometries
 do io=1,no
    write(*,'(a,i1)') '   Geometry setup for outer iteration ',io
-   call geom(io)%setup(nx(io),ny(io),equiv_precond)
+   call geom(io)%setup(nx(io),ny(io),transitive_interp)
    call geom(io)%write(grpid(io))
 end do
 
@@ -159,7 +158,7 @@ allocate(xg_full(geom(no)%nh))
 ! Setup B matrices
 do io=1,no
    write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
-   if (geom(io)%equiv_precond) then
+   if (projective_Bmatrix) then
       call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb,spvarmin)
    else
       call bmatrix(io)%setup(geom(io),geom(io),sigmabvar,Lb,spvarmin)
@@ -222,7 +221,7 @@ do io=1,no
    allocate(xb(geom(io)%nh))
    allocate(xg(geom(io)%nh))
    allocate(xg_2d(geom(io)%nx,geom(io)%ny))
-   allocate(dvbbar(geom(io)%nh))
+   allocate(dvb(geom(io)%nh))
    call algo_lanczos(io)%alloc(geom(io),ni)
    call lmp_lanczos(io)%alloc(no,geom,ni,io,lmp_mode,'control')
 
@@ -233,40 +232,9 @@ do io=1,no
    ! Interpolate background at current resolution
    call geom(no)%interp_gp(geom(io),xb_full,xb)
 
-   if (consistent_strategy) then
-      ! Allocation
-      allocate(dva_interp(geom(io)%nh))
-      allocate(dxb(geom(io)%nh))
-      allocate(dxb_full(geom(no)%nh))
-
-      ! Initialization
-      dvbbar = 0.0
-
-      do jo=1,io-1
-         ! Interpolate analysis increment of previous iterations at current resolution
-         call geom(jo)%interp_sp(geom(io),algo_lanczos(jo)%dva,dva_interp)
-
-         ! Add contributions
-         dvbbar = dvbbar-dva_interp
-      end do
-
-      ! Compute background increment at current resolution
-      call bmatrix(io)%apply_sqrt(geom(io),dvbbar,dxb)
-
-      ! Compute guess at current resolution
-      xg = xb-dxb
-
-      ! Interpolate background increment at full resolution
-      call geom(io)%interp_gp(geom(no),dxb,dxb_full)
-
-      ! Compute guess at full resolution
-      xg_full = xb_full-dxb_full
-
-      ! Release memory
-      deallocate(dva_interp)
-      deallocate(dxb)
-      deallocate(dxb_full)
-   else
+   ! Compte guess and first term of the right-hand side
+   select case (trim(method))
+   case ('theoretical')
       ! Compute guess at full resolution
       if (io==1) then
          ! Background at full resolution
@@ -276,10 +244,8 @@ do io=1,no
          allocate(dxa_prev(geom(io-1)%nh))
          allocate(dxa_full(geom(no)%nh))
 
-         ! Compute analysis increment of the previous outer iteration
+         ! Compute analysis increment of the previous outer iteration at full resolution
          call bmatrix(io-1)%apply_sqrt(geom(io-1),algo_lanczos(io-1)%dva,dxa_prev)
-
-         ! Interpolate analysis increment of the previous outer iteration at full resolution
          call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full)
 
          ! Add analysis increment of the previous outer iteration at full resolution
@@ -293,43 +259,119 @@ do io=1,no
       ! Interpolate guess at current resolution
       call geom(no)%interp_gp(geom(io),xg_full,xg)
 
-      ! Right-hand side
-      if (use_binv) then
-         ! Allocation
-         allocate(dxb(geom(io)%nh))
-         allocate(dxbbar(geom(io)%nh))
+      ! Allocation
+      allocate(dxb(geom(io)%nh))
+      allocate(dxbbar(geom(io)%nh))
 
-         ! Compute background increment at current resolution
-         dxb = xg-xb
+      ! Compute background increment at current resolution
+      dxb = xg-xb
 
-         ! Apply B inverse
-         call bmatrix(io)%apply_inv(geom(io),dxb,dxbbar)
+      ! Apply B inverse
+      call bmatrix(io)%apply_inv(geom(io),dxb,dxbbar)
 
-         ! Apply B square-root
-         call bmatrix(io)%apply_sqrt_ad(geom(io),dxbbar,dvbbar)
+      ! Apply B square-root adjoint
+      call bmatrix(io)%apply_sqrt_ad(geom(io),dxbbar,dvb)
 
-         ! Release memory
-         deallocate(dxb)
-         deallocate(dxbbar)
+      ! Release memory
+      deallocate(dxb)
+      deallocate(dxbbar)
+   case ('standard_inconsistent','standard_consistent')
+      ! Compute guess at full resolution
+      if (io==1) then
+         ! Background at full resolution
+         xg_full = xb_full
       else
          ! Allocation
-         allocate(dva_interp(geom(io)%nh))
+         allocate(dxa_full(geom(no)%nh))
 
-         ! Initialization
-         dvbbar = 0.0
+         ! Compute analysis increment at full resolution
+         if (trim(method)=='standard_inconsistent') then
+            ! Allocation
+            allocate(dxa_prev(geom(io-1)%nh))
 
-         do jo=1,io-1
-            ! Interpolate analysis increment of previous iterations at current resolution
-            call geom(jo)%interp_sp(geom(io),algo_lanczos(jo)%dva,dva_interp)
+            ! Example of inconsistent method: apply U at the previous resolution and interpolate at full resolution.
+            call bmatrix(io-1)%apply_sqrt(geom(io-1),algo_lanczos(io-1)%dva,dxa_prev)
+            call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full)
 
-            ! Add contributions
-            dvbbar = dvbbar-dva_interp
-         end do
+            ! Release memory
+            deallocate(dxa_prev)
+         elseif (trim(method)=='standard_consistent') then
+            ! Allocation
+            allocate(dva(geom(io)%nh))
+            allocate(dxa(geom(io)%nh))
 
+            ! Consistent method (for transitive interpolators): interpolate at current resolution, apply U, and interpolate at full resolution.
+            call geom(io-1)%interp_sp(geom(io),algo_lanczos(io-1)%dva,dva)
+            call bmatrix(io)%apply_sqrt(geom(io),dva,dxa)
+            call geom(io)%interp_gp(geom(no),dxa,dxa_full)
+
+            ! Release memory
+            deallocate(dva)
+            deallocate(dxa)
+         end if
+
+         ! Add analysis increment of the previous outer iteration at full resolution
+         xg_full = xg_full+dxa_full
+ 
          ! Release memory
-         deallocate(dva_interp)
+         deallocate(dxa_full)
       end if
-   end if
+
+      ! Interpolate guess at current resolution
+      call geom(no)%interp_gp(geom(io),xg_full,xg)
+
+      ! Allocation
+      allocate(dva(geom(io)%nh))
+
+      ! Initialization
+      dvb = 0.0
+
+      do jo=1,io-1
+         ! Interpolate analysis increment of previous iterations at current resolution
+         call geom(jo)%interp_sp(geom(io),algo_lanczos(jo)%dva,dva)
+          ! Add contributions
+         dvb = dvb-dva
+      end do
+
+      ! Release memory
+      deallocate(dva)
+   case ('alternative')
+      ! Allocation
+      allocate(dva(geom(io)%nh))
+      allocate(dxb(geom(io)%nh))
+      allocate(dxb_full(geom(no)%nh))
+
+      ! Initialization
+      dvb = 0.0
+
+      do jo=1,io-1
+         ! Interpolate analysis increment of previous iterations at current resolution
+         call geom(jo)%interp_sp(geom(io),algo_lanczos(jo)%dva,dva)
+
+         ! Add contributions
+         dvb = dvb-dva
+      end do
+
+      ! Compute background increment at current resolution
+      call bmatrix(io)%apply_sqrt(geom(io),dvb,dxb)
+
+      ! Compute guess at current resolution
+      xg = xb-dxb
+
+      ! Interpolate background increment at full resolution
+      call geom(io)%interp_gp(geom(no),dxb,dxb_full)
+
+      ! Compute guess at full resolution
+      xg_full = xb_full-dxb_full
+
+      ! Release memory
+      deallocate(dva)
+      deallocate(dxb)
+      deallocate(dxb_full)
+   case default
+      write(*,'(a)') '         Error: wrong method'
+      stop
+   end select
 
    ! Compute innovation
    call hmatrix%apply(geom(io),xg,hxg)
@@ -387,7 +429,7 @@ do io=1,no
 
    ! Minimization
    write(*,'(a)') '      Minimization'
-   call algo_lanczos(io)%apply_lanczos(geom(io),bmatrix(io),hmatrix,rmatrix,dvbbar,d,ni,lmp_lanczos(io), &
+   call algo_lanczos(io)%apply_lanczos(geom(io),bmatrix(io),hmatrix,rmatrix,dvb,d,ni,lmp_lanczos(io), &
  & shutoff_type,shutoff_value)
 
    ! Compute nonlinear cost function
@@ -429,7 +471,7 @@ do io=1,no
    deallocate(xb)
    deallocate(xg)
    deallocate(xg_2d)
-   deallocate(dvbbar)
+   deallocate(dvb)
 end do
 write(*,'(a)') ''
 
@@ -455,9 +497,108 @@ do io=1,no
    ! Interpolate background at current resolution
    call geom(no)%interp_gp(geom(io),xb_full,xb)
 
-   if (consistent_strategy) then
+   ! Compte guess and first term of the right-hand side
+   select case (trim(method))
+   case ('theoretical')
+      ! Compute guess at full resolution
+      if (io==1) then
+         ! Background at full resolution
+         xg_full = xb_full
+      else
+         ! Allocation
+         allocate(dxa_prev(geom(io-1)%nh))
+         allocate(dxa_full(geom(no)%nh))
+
+         ! Compute analysis increment of the previous outer iteration at full resolution
+         call bmatrix(io-1)%apply(geom(io-1),algo_planczosif(io-1)%dxabar,dxa_prev)
+         call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full)
+
+         ! Add analysis increment of the previous outer iteration at full resolution
+         xg_full = xg_full+dxa_full
+ 
+         ! Release memory
+         deallocate(dxa_prev)
+         deallocate(dxa_full)
+      end if
+
+      ! Interpolate guess at current resolution
+      call geom(no)%interp_gp(geom(io),xg_full,xg)
+
       ! Allocation
-      allocate(dxabar_interp(geom(io)%nh))
+      allocate(dxb(geom(io)%nh))
+
+      ! Compute background increment at current resolution
+      dxb = xg-xb
+
+      ! Apply B inverse
+      call bmatrix(io)%apply_inv(geom(io),dxb,dxbbar)
+
+      ! Release memory
+      deallocate(dxb)
+   case ('standard_inconsistent','standard_consistent')
+      ! Compute guess at full resolution
+      if (io==1) then
+         ! Background at full resolution
+         xg_full = xb_full
+      else
+         ! Allocation
+         allocate(dxa_full(geom(no)%nh))
+
+         ! Compute analysis increment at full resolution
+         if (trim(method)=='standard_inconsistent') then
+            ! Allocation
+            allocate(dxa_prev(geom(io-1)%nh))
+
+            ! Example of inconsistent method: apply B at the previous resolution and interpolate at full resolution.
+            call bmatrix(io-1)%apply(geom(io-1),algo_planczosif(io-1)%dxabar,dxa_prev)
+            call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full)
+
+            ! Release memory
+            deallocate(dxa_prev)
+         elseif (trim(method)=='standard_consistent') then
+            ! Allocation
+            allocate(dxabar(geom(io)%nh))
+            allocate(dxa(geom(io)%nh))
+
+            ! Consistent method (for transitive interpolators): interpolate at current resolution, apply B, and interpolate at full resolution.
+            call geom(io-1)%interp_gp(geom(io),algo_planczosif(io-1)%dxabar,dxabar)
+            call bmatrix(io)%apply(geom(io),dxabar,dxa)
+            call geom(io)%interp_gp(geom(no),dxa,dxa_full)
+
+            ! Release memory
+            deallocate(dxabar)
+            deallocate(dxa)
+         end if
+
+         ! Add analysis increment of the previous outer iteration at full resolution
+         xg_full = xg_full+dxa_full
+ 
+         ! Release memory
+         deallocate(dxa_full)
+      end if
+
+      ! Interpolate guess at current resolution
+      call geom(no)%interp_gp(geom(io),xg_full,xg)
+
+      ! Allocation
+      allocate(dxabar(geom(io)%nh))
+
+      ! Initialization
+      dxbbar = 0.0
+
+      do jo=1,io-1
+         ! Interpolate analysis increment of previous iterations at current resolution
+         call geom(jo)%interp_gp(geom(io),algo_planczosif(jo)%dxabar,dxabar)
+
+         ! Add contributions
+         dxbbar = dxbbar-dxabar
+      end do
+
+      ! Release memory
+      deallocate(dxabar)
+   case ('alternative')
+      ! Allocation
+      allocate(dxabar(geom(io)%nh))
       allocate(dxb(geom(io)%nh))
       allocate(dxb_full(geom(no)%nh))
 
@@ -466,10 +607,10 @@ do io=1,no
 
       do jo=1,io-1
          ! Interpolate analysis increment of previous iterations at current resolution
-         call geom(jo)%interp_gp(geom(io),algo_planczosif(jo)%dxabar,dxabar_interp)
+         call geom(jo)%interp_gp(geom(io),algo_planczosif(jo)%dxabar,dxabar)
 
          ! Add contributions
-         dxbbar = dxbbar-dxabar_interp
+         dxbbar = dxbbar-dxabar
       end do
 
       ! Compute background increment at current resolution
@@ -485,68 +626,13 @@ do io=1,no
       xg_full = xb_full-dxb_full
 
       ! Release memory
-      deallocate(dxabar_interp)
+      deallocate(dxabar)
       deallocate(dxb)
       deallocate(dxb_full)
-   else
-      ! Compute guess at full resolution
-      if (io==1) then
-         ! Background at full resolution
-         xg_full = xb_full
-      else
-         ! Allocation
-         allocate(dxa_prev(geom(io-1)%nh))
-         allocate(dxa_full(geom(no)%nh))
-
-         ! Compute analysis increment of the previous outer iteration
-         call bmatrix(io-1)%apply(geom(io-1),algo_planczosif(io-1)%dxabar,dxa_prev)
-
-         ! Interpolate analysis increment of the previous outer iteration at full resolution
-         call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full)
-
-         ! Add analysis increment of the previous outer iteration at full resolution
-         xg_full = xg_full+dxa_full
- 
-         ! Release memory
-         deallocate(dxa_prev)
-         deallocate(dxa_full)
-      end if
-
-      ! Interpolate guess at current resolution
-      call geom(no)%interp_gp(geom(io),xg_full,xg)
-
-      ! Right-hand side
-      if (use_binv) then
-         ! Allocation
-         allocate(dxb(geom(io)%nh))
-
-         ! Compute background increment at current resolution
-         dxb = xg-xb
-
-         ! Apply B inverse
-         call bmatrix(io)%apply_inv(geom(io),dxb,dxbbar)
-
-         ! Release memory
-         deallocate(dxb)
-      else
-         ! Allocation
-         allocate(dxabar_interp(geom(io)%nh))
-
-         ! Initialization
-         dxbbar = 0.0
-
-         do jo=1,io-1
-            ! Interpolate analysis increment of previous iterations at current resolution
-            call geom(jo)%interp_gp(geom(io),algo_planczosif(jo)%dxabar,dxabar_interp)
-
-            ! Add contributions
-            dxbbar = dxbbar-dxabar_interp
-         end do
-
-         ! Release memory
-         deallocate(dxabar_interp)
-      end if
-   end if
+   case default
+      write(*,'(a)') '         Error: wrong method'
+      stop
+   end select
 
    ! Compute innovation
    call hmatrix%apply(geom(io),xg,hxg)

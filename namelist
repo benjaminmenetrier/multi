@@ -1,18 +1,18 @@
 &solver
 no = 2
-ni = 10
+ni = 12
 lmp_mode = "none"
 test_ortho = .false.
 shutoff_type = 0
 shutoff_value = 0.0
-consistent_strategy = .true.
-use_binv = .false.
-equiv_precond = .true.
+method = "standard_inconsistent"
+transitive_interp = .true.
+projective_Bmatrix = .false.
 /
 
 &resolutions
-nx = 101,121,
-ny = 101,121,
+nx = 101,121,151,
+ny = 101,121,151,
 /
 
 &observations

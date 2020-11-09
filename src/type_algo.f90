@@ -166,7 +166,7 @@ end subroutine algo_write
 ! Subroutine: algo_apply_lanczos
 ! Purpose: Lanczos algorithm in control space
 !----------------------------------------------------------------------
-subroutine algo_apply_lanczos(algo,geom,bmatrix,hmatrix,rmatrix,dvbbar,d,ni,lmp,shutoff_type,shutoff_value)
+subroutine algo_apply_lanczos(algo,geom,bmatrix,hmatrix,rmatrix,dvb,d,ni,lmp,shutoff_type,shutoff_value)
 
 implicit none
 
@@ -176,7 +176,7 @@ type(geom_type),intent(in) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
 type(hmatrix_type),intent(in) :: hmatrix
 type(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(in) :: dvbbar(geom%nh)
+real(8),intent(in) :: dvb(geom%nh)
 real(8),intent(in) :: d(hmatrix%nobs)
 integer,intent(in) :: ni
 type(lmp_type),intent(in) :: lmp
@@ -199,7 +199,7 @@ v(:,0) = 0.0
 call rmatrix%apply_inv(d,ytmp)
 call hmatrix%apply_ad(geom,ytmp,xtmp)
 call bmatrix%apply_sqrt_ad(geom,xtmp,vtmp)
-vtmp = dvbbar+vtmp
+vtmp = dvb+vtmp
 call lmp%apply_sqrt_ad(geom,ni,lmp%io,vtmp,r(:,0))
 beta(0) = sqrt(sum(r(:,0)**2))
 v(:,1) = r(:,0)/beta(0)
@@ -210,7 +210,7 @@ convergence = .false.
 ii = 0
 
 ! Initialize linear cost function
-algo%jb(0) = 0.5*sum((0.0-dvbbar)**2)
+algo%jb(0) = 0.5*sum((0.0-dvb)**2)
 call rmatrix%apply_inv(d,ytmp)
 algo%jo(0) = 0.5*sum(d*ytmp)
 algo%j(0) = algo%jb(0)+algo%jo(0)
@@ -278,7 +278,7 @@ do while ((.not.convergence).and.(ii<ni))
    end if
 
    ! Compute linear cost function
-   algo%jb(ii) = 0.5*sum((u(:,ii)-dvbbar)**2)
+   algo%jb(ii) = 0.5*sum((u(:,ii)-dvb)**2)
    call hmatrix%apply(geom,algo%dx(:,ii),ytmp)
    call rmatrix%apply_inv((d-ytmp),ytmp2)
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)

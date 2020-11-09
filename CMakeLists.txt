@@ -4,7 +4,7 @@
 
 cmake_minimum_required( VERSION 3.12 )
 
-project( multi LANGUAGES Fortran )
+project( multi VERSION 0.0.1 LANGUAGES Fortran )
 
 ## Ecbuild integration
 find_package( ecbuild QUIET )
