@@ -613,7 +613,7 @@ which can be simplified for transitive interpolators into:
 \boxed{\delta \mathbf{x}^{a+}_i = \mathbf{T}^\mathbf{x}_{k \rightarrow K} \mathbf{U}_k \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i}
 \end{align}
 \end{itemize}
-Other ways to obtain the analysis increment at full resolution $\delta \mathbf{x}^{a+}_i$ lead to an inconsistency between the explicit guess and implicit guesses.
+Other ways to obtain the analysis increment at full resolution $\delta \mathbf{x}^{a+}_i$ lead to an inconsistency between the explicit guess and implicit guesses. For non-transitive interpolators, there is no guarantee of an explicit expression to obtain a consistent explicit guess.
 
 \subsection{Alternative method}
 Reversing the order of computations yields the same results as the consistent standard method, but with fewer and simpler computations. The first term of the right-hand side is computed first from equations \eqref{eq:back_inc_Bvar} or \eqref{eq:back_inc_Uvar}. Then, the background increment is given by:

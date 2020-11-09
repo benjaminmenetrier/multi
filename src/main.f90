@@ -275,7 +275,7 @@ do io=1,no
       ! Release memory
       deallocate(dxb)
       deallocate(dxbbar)
-   case ('standard_inconsistent','standard_consistent')
+   case ('standard')
       ! Compute guess at full resolution
       if (io==1) then
          ! Background at full resolution
@@ -283,37 +283,20 @@ do io=1,no
       else
          ! Allocation
          allocate(dxa_full(geom(no)%nh))
+         allocate(dva(geom(io)%nh))
+         allocate(dxa(geom(io)%nh))
 
-         ! Compute analysis increment at full resolution
-         if (trim(method)=='standard_inconsistent') then
-            ! Allocation
-            allocate(dxa_prev(geom(io-1)%nh))
-
-            ! Example of inconsistent method: apply U at the previous resolution and interpolate at full resolution.
-            call bmatrix(io-1)%apply_sqrt(geom(io-1),algo_lanczos(io-1)%dva,dxa_prev)
-            call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full)
-
-            ! Release memory
-            deallocate(dxa_prev)
-         elseif (trim(method)=='standard_consistent') then
-            ! Allocation
-            allocate(dva(geom(io)%nh))
-            allocate(dxa(geom(io)%nh))
-
-            ! Consistent method (for transitive interpolators): interpolate at current resolution, apply U, and interpolate at full resolution.
-            call geom(io-1)%interp_sp(geom(io),algo_lanczos(io-1)%dva,dva)
-            call bmatrix(io)%apply_sqrt(geom(io),dva,dxa)
-            call geom(io)%interp_gp(geom(no),dxa,dxa_full)
-
-            ! Release memory
-            deallocate(dva)
-            deallocate(dxa)
-         end if
+         ! Compute analysis increment of the previous outer iteration at full resolution
+         call geom(io-1)%interp_sp(geom(io),algo_lanczos(io-1)%dva,dva)
+         call bmatrix(io)%apply_sqrt(geom(io),dva,dxa)
+         call geom(io)%interp_gp(geom(no),dxa,dxa_full)
 
          ! Add analysis increment of the previous outer iteration at full resolution
          xg_full = xg_full+dxa_full
  
          ! Release memory
+         deallocate(dva)
+         deallocate(dxa)
          deallocate(dxa_full)
       end if
 
@@ -535,7 +518,7 @@ do io=1,no
 
       ! Release memory
       deallocate(dxb)
-   case ('standard_inconsistent','standard_consistent')
+   case ('standard')
       ! Compute guess at full resolution
       if (io==1) then
          ! Background at full resolution
@@ -543,37 +526,20 @@ do io=1,no
       else
          ! Allocation
          allocate(dxa_full(geom(no)%nh))
+         allocate(dxabar(geom(io)%nh))
+         allocate(dxa(geom(io)%nh))
 
-         ! Compute analysis increment at full resolution
-         if (trim(method)=='standard_inconsistent') then
-            ! Allocation
-            allocate(dxa_prev(geom(io-1)%nh))
-
-            ! Example of inconsistent method: apply B at the previous resolution and interpolate at full resolution.
-            call bmatrix(io-1)%apply(geom(io-1),algo_planczosif(io-1)%dxabar,dxa_prev)
-            call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full)
-
-            ! Release memory
-            deallocate(dxa_prev)
-         elseif (trim(method)=='standard_consistent') then
-            ! Allocation
-            allocate(dxabar(geom(io)%nh))
-            allocate(dxa(geom(io)%nh))
-
-            ! Consistent method (for transitive interpolators): interpolate at current resolution, apply B, and interpolate at full resolution.
-            call geom(io-1)%interp_gp(geom(io),algo_planczosif(io-1)%dxabar,dxabar)
-            call bmatrix(io)%apply(geom(io),dxabar,dxa)
-            call geom(io)%interp_gp(geom(no),dxa,dxa_full)
-
-            ! Release memory
-            deallocate(dxabar)
-            deallocate(dxa)
-         end if
+         ! Compute analysis increment of the previous outer iteration at full resolution
+         call geom(io-1)%interp_gp(geom(io),algo_planczosif(io-1)%dxabar,dxabar)
+         call bmatrix(io)%apply(geom(io),dxabar,dxa)
+         call geom(io)%interp_gp(geom(no),dxa,dxa_full)
 
          ! Add analysis increment of the previous outer iteration at full resolution
          xg_full = xg_full+dxa_full
  
          ! Release memory
+         deallocate(dxabar)
+         deallocate(dxa)
          deallocate(dxa_full)
       end if
 

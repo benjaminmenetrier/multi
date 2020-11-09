@@ -24,7 +24,7 @@ type geom_type
    integer             :: lmax
    real(8),allocatable :: x(:)
    real(8),allocatable :: y(:)
-   logical             :: equiv_precond
+   logical             :: transitive_interp
 contains
    procedure :: setup => geom_setup
    procedure :: write => geom_write
@@ -48,7 +48,7 @@ contains
 ! Subroutine: geom_setup
 ! Purpose: setup geometry
 !----------------------------------------------------------------------
-subroutine geom_setup(geom,nx,ny,equiv_precond)
+subroutine geom_setup(geom,nx,ny,transitive_interp)
 
 implicit none
 
@@ -56,7 +56,7 @@ implicit none
 class(geom_type),intent(inout) :: geom
 integer,intent(in) :: nx
 integer,intent(in) :: ny
-logical,intent(in) :: equiv_precond
+logical,intent(in) :: transitive_interp
 
 ! Local variables
 integer :: ix,iy
@@ -77,7 +77,7 @@ end if
 ! Copy dimensions and attributes
 geom%nx = nx
 geom%ny = ny
-geom%equiv_precond = equiv_precond
+geom%transitive_interp = transitive_interp
 
 ! Derived dimensions
 geom%nh = geom%nx*geom%ny
@@ -487,7 +487,7 @@ real(8),intent(out) :: gp_out(geom_out%nh)
 integer :: ix,iy,ih
 real(8),allocatable :: sp_in(:),sp_out(:)
 
-if (geom_in%equiv_precond) then
+if (geom_in%transitive_interp) then
    ! Allocation
    allocate(sp_in(geom_in%nh))
    allocate(sp_out(geom_out%nh))
@@ -507,7 +507,6 @@ if (geom_in%equiv_precond) then
 else
    ! Initialization
    ih = 0
-
    do iy=1,geom_out%ny
       do ix=1,geom_out%nx
          ! Apply scalar interpolation

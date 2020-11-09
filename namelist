@@ -1,13 +1,13 @@
 &solver
-no = 2
+no = 3
 ni = 12
 lmp_mode = "none"
 test_ortho = .false.
 shutoff_type = 0
 shutoff_value = 0.0
-method = "standard_inconsistent"
+method = "theoretical"
 transitive_interp = .true.
-projective_Bmatrix = .false.
+projective_Bmatrix = .true.
 /
 
 &resolutions
