@@ -6,26 +6,26 @@ This code implements the final example given in the note: [Multi-incremental mul
 
 ## Getting started
 
-- Clone ecbuild:
+### Clone ecbuild
 
     cd ${path_to_source}
     git clone https://github.com/ecmwf/ecbuild
 
-- Add ecbuild to your PATH:
+### Add ecbuild to your PATH
 
-   export PATH=$PATH:${path_to_source}/ecbuild/bin
+    export PATH=$PATH:${path_to_source}/ecbuild/bin
 
-- Clone multi:
+### Clone multi
 
-   cd ${path_to_source}
-   git clone https://github.com/benjaminmenetrier/multi
+    cd ${path_to_source}
+    git clone https://github.com/benjaminmenetrier/multi
 
-- Compile the code:
+### Compile the code
 
-   cd ${path_to_build}
-   ecbuild ${path_to_source}/multi
-   make
+    cd ${path_to_build}
+    ecbuild ${path_to_source}/multi
+    make
 
-- Run the code:
+### Run the code
 
-   ${path_to_build}/bin/multi < ${path_to_source}/namelist
+    ${path_to_build}/bin/multi < ${path_to_source}/namelist
