@@ -37,7 +37,7 @@ contains
    procedure :: spdotprod => geom_spdotprod
    procedure :: geom_interp_gp_scalar
    procedure :: geom_interp_gp_field
-   generic :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
+   generic   :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
    procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
    procedure :: interp_sp => geom_interp_sp
 end type geom_type

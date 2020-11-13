@@ -1,6 +1,6 @@
 &solver
-no = 3
-ni = 12
+no = 2
+ni = 6
 lmp_mode = "none"
 test_ortho = .false.
 shutoff_type = 0
@@ -11,19 +11,19 @@ projective_Bmatrix = .true.
 /
 
 &resolutions
-nx = 101,121,151,
-ny = 101,121,151,
+nx = 101
+ny = 101
 /
 
 &observations
-nobs = 2000
+nobs = 3000
 sigma_obs = 0.1
 /
 
 &background
-sigmabvar = 0.0
+sigmabvar = 0.1
 Lb = 0.12
-spvarmin = 1.0e-5
+spvarmin = 1e-05
 /
 
 &miscellanous
