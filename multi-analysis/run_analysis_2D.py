@@ -104,7 +104,7 @@ outer_iterations_list=[]
 
 # Loop over the parameters and run the code:
 for no in [2]:
-    for ni in [4,6]:
+    for ni in [4]:
         for lmp_mode in ['"none"']:
             for method in ['"theoretical"']:
                 for nx in [101]:
@@ -120,79 +120,90 @@ for no in [2]:
                                         outer_iterations.append((ni)*io)
                                         outer_iterations_list.append(outer_iterations)
                                         
-                                        # Create the results directory:
-                                        name_string1='res_no{}_ni{}_lmp-{}_met-{}'
-                                        name_string1=name_string1.format(no,ni,lmp_mode,method)
-                                        name_string2='_nx{}_ny{}_n-obs{}_sigmaobs{}'
-                                        name_string2=name_string2.format(nx,ny,nobs,sigma_obs)
-                                        name_string3='_sigbvar{}_Lb{}'
-                                        name_string3=name_string3.format(sigmabvar,Lb)
+                                    # Create the results directory:
+                                    name_string1='res_no{}_ni{}_lmp-{}_met-{}'
+                                    name_string1=name_string1.format(no,ni,lmp_mode.replace('"',''),method.replace('"',''))
+                                    name_string2='_nx{}_ny{}_n-obs{}_sigmaobs{}'
+                                    name_string2=name_string2.format(nx,ny,nobs,sigma_obs)
+                                    name_string3='_sigbvar{}_Lb{}'
+                                    name_string3=name_string3.format(sigmabvar,Lb)
+                                    
+                                    res_dir=res_dir_raw+name_string1+name_string2+name_string3
+                                    res_dir_list.append(res_dir)
+                                    # Rewrite the results or not:
+                                    if not rewrite_results and os.path.exists(res_dir):
+                                        continue
+                                    if not os.path.exists(res_dir):
+                                        os.mkdir(res_dir)
                                         
-                                        res_dir=res_dir_raw+name_string1+name_string2+name_string3
-                                        res_dir_list.append(res_dir)
-                                        # Rewrite the results or not:
-                                        if not rewrite_results and os.path.exists(res_dir):
-                                            continue
-                                        if not os.path.exists(res_dir):
-                                            os.mkdir(res_dir)
-                                            
-                                        # Write the parameters in namelist file:
-                                        namelist=open("../namelist","w")
-                                        # Solver:
-                                        namelist.write("&solver\n")
-                                        namelist.write("no = {}\n".format(no))
-                                        namelist.write("ni = {}\n".format(ni))
-                                        namelist.write("lmp_mode = {}\n".format(lmp_mode))
-                                        namelist.write("test_ortho = {}\n".format(test_ortho))
-                                        namelist.write("shutoff_type = {}\n".format(shutoff_type))
-                                        namelist.write("shutoff_value = {}\n".format(shutoff_value))
-                                        namelist.write("method = {}\n".format(method))
-                                        namelist.write("transitive_interp = {}\n".format(transitive_interp))
-                                        namelist.write("projective_Bmatrix = {}\n".format(projective_Bmatrix))
-                                        namelist.write("/\n\n")
-                                        # Resolutions:
-                                        namelist.write("&resolutions\n")
-                                        namelist.write("nx = {}\n".format(nx))
-                                        namelist.write("ny = {}\n".format(ny))
-                                        namelist.write("/\n\n")
-                                        # Observations:
-                                        namelist.write("&observations\n")
-                                        namelist.write("nobs = {}\n".format(nobs))
-                                        namelist.write("sigma_obs = {}\n".format(sigma_obs))
-                                        namelist.write("/\n\n")
-                                        # Background:
-                                        namelist.write("&background\n")
-                                        namelist.write("sigmabvar = {}\n".format(sigmabvar))
-                                        namelist.write("Lb = {}\n".format(Lb))
-                                        namelist.write("spvarmin = {}\n".format(spvarmin))
-                                        namelist.write("/\n\n")
-                                        # Miscellanous:
-                                        namelist.write("&miscellanous\n")
-                                        namelist.write("new_seed = {}\n".format(new_seed))
-                                        namelist.write("filename = {}\n".format(filename))
-                                        namelist.write("/\n")
-                                        namelist.close()
-                                        
-                                        # Run the code and save the results:
-                                        # Compile the code:
-                                        #os.chdir("../build")
-                                        #os.system("ecbuild ..")
-                                        #os.system("make")
-                                        #os.chdir(cwd)
-                                        os.chdir('..')
-                                        os.system(exec_command)
-                                        os.chdir(cwd)
-                                        copyfile(code_output,res_dir+"/output.nc")
+                                    # Write the parameters in namelist file:
+                                    namelist=open("../namelist","w")
+                                    # Solver:
+                                    namelist.write("&solver\n")
+                                    namelist.write("no = {}\n".format(no))
+                                    namelist.write("ni = {}\n".format(ni))
+                                    namelist.write("lmp_mode = {}\n".format(lmp_mode))
+                                    namelist.write("test_ortho = {}\n".format(test_ortho))
+                                    namelist.write("shutoff_type = {}\n".format(shutoff_type))
+                                    namelist.write("shutoff_value = {}\n".format(shutoff_value))
+                                    namelist.write("method = {}\n".format(method))
+                                    namelist.write("transitive_interp = {}\n".format(transitive_interp))
+                                    namelist.write("projective_Bmatrix = {}\n".format(projective_Bmatrix))
+                                    namelist.write("/\n\n")
+                                    # Resolutions:
+                                    namelist.write("&resolutions\n")
+                                    namelist.write("nx = {}\n".format(nx))
+                                    namelist.write("ny = {}\n".format(ny))
+                                    namelist.write("/\n\n")
+                                    # Observations:
+                                    namelist.write("&observations\n")
+                                    namelist.write("nobs = {}\n".format(nobs))
+                                    namelist.write("sigma_obs = {}\n".format(sigma_obs))
+                                    namelist.write("/\n\n")
+                                    # Background:
+                                    namelist.write("&background\n")
+                                    namelist.write("sigmabvar = {}\n".format(sigmabvar))
+                                    namelist.write("Lb = {}\n".format(Lb))
+                                    namelist.write("spvarmin = {}\n".format(spvarmin))
+                                    namelist.write("/\n\n")
+                                    # Miscellanous:
+                                    namelist.write("&miscellanous\n")
+                                    namelist.write("new_seed = {}\n".format(new_seed))
+                                    namelist.write("filename = {}\n".format(filename))
+                                    namelist.write("/\n")
+                                    namelist.close()
+                                    
+                                    # Run the code and save the results:
+                                    # Compile the code:
+                                    #os.chdir("../build")
+                                    #os.system("ecbuild ..")
+                                    #os.system("make")
+                                    #os.chdir(cwd)
+                                    os.chdir('..')
+                                    os.system(exec_command)
+                                    os.chdir(cwd)
+                                    copyfile(code_output,res_dir+"/output.nc")
 ################################################################################
 
 
 # Plot comparision between lanczos and Planczos for cost function:
 for r,res_dir in enumerate(res_dir_list):
-    compare_cost_plot(res_dir,outer_iterations_list[r])
+    print(res_dir)
+    
+    lanczos_vs_planczosif_plot(res_dir,outer_iterations_list[r])
+    ds=netcdf_extract(res_dir)
+    for io in ds.groups:
+        for field in ['sigmab','dirac_cov','dirac_cor','xb']:
+            matrix=np.array(ds[io][field][:])
+            out_name=res_dir+'/'+field+'_'+io
+            field_plot(matrix,out_name)
+        for algo in ds[io].groups:
+            for field in ['xg']:
+                matrix=np.array(ds[io][algo][field][:])
+                out_name=res_dir+'/'+algo+'_'+field+'_'+io
+                field_plot(matrix,out_name)
 ################################################################################
-# Plot the results of the code:
-#multi_plot(res_dir_list,outer_iterations_list)
-################################################################################
+
 
 
 
@@ -356,19 +367,6 @@ for r,res_dir in enumerate(res_dir_list):
 # # Check that the difference between the second level preconditionners:
 # #check_second_level_lmp(out_names_check,check_second_level_lmp_dirs,outer_iterations_list)
 
-# ################################################################################
-# # matrix representation:
-# for res_dir in res_dir_list:
-#     # For the B matrix:
-#     results_file='Bdelta_test.dat'
-#     out_file_name='B_matrix'
-#     matrix_monitoring(res_dir,results_file,out_file_name)
-#     # For the H matrix:
-#     results_file='Hdelta_test.dat'
-#     out_file_name='H_matrix'
-#     matrix_monitoring(res_dir,results_file,out_file_name)
-
-################################################################################
 
 
 

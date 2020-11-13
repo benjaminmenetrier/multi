@@ -1,6 +1,6 @@
 &solver
 no = 2
-ni = 6
+ni = 4
 lmp_mode = "none"
 test_ortho = .false.
 shutoff_type = 0

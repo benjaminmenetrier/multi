@@ -37,7 +37,7 @@ def netcdf_extract(res_dir):
 
 
 ################################################################################
-def compare_cost_plot(res_dir,io):
+def lanczos_vs_planczosif_plot(res_dir,io):
     """ Plot the J, Jb and Jo:
         Args: 
             res_dir (string): result directory in which is stored the netcdf output file.
@@ -47,8 +47,8 @@ def compare_cost_plot(res_dir,io):
     ds=netcdf_extract(res_dir)
     
     lanczos,planczosif={},{}
-    keys=['j_nl','jo_nl','jb_nl']
-    labels=[r'$J$',r'$J_o$',r'$J_b$']
+    keys=['j_nl','jo_nl','jb_nl','j','jo','jb','rho_sqrt','beta']
+    labels=[r'$J^{nl}$',r'$J_o^{nl}$',r'$J_b^{nl}$',r'$J$',r'$J_o$',r'$J_b$',r'$\sqrt{\rho}$',r'$\beta$']
     for k in keys:
         lanczos[k]=[]
         planczosif[k]=[]
@@ -125,6 +125,29 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io,legend):
     plt.savefig(out_name)
     plt.clf()
 ################################################################################
+
+
+################################################################################
+
+
+
+
+################################################################################
+
+
+################################################################################
+def field_plot(matrix,out_name):
+    """Represents matrix using colormap.
+    """
+    print('plotting ',out_name)
+    fig=plt.figure()
+    plt.matshow(np.array(matrix),cmap=plt.get_cmap('copper'))
+    plt.colorbar()
+    plt.savefig(out_name)
+################################################################################
+
+
+
 
 
 ################################################################################
