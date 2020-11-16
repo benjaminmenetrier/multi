@@ -79,6 +79,43 @@ def lanczos_vs_planczosif_plot(res_dir,io):
 ################################################################################
 
 
+################################################################################
+def obs_plot(res_dir):
+    """
+    """
+    out_name=res_dir+'/obs_coord.png'
+    ds=netcdf_extract(res_dir)
+    #nobs=ds['nobs']
+    x_obs=np.array(ds['x_obs'][:])
+    y_obs=np.array(ds['y_obs'][:])
+    # obs=np.zeros((nobs,nobs))
+    # for i in range(nobs):
+    #     for j in range(nobs):
+    #         obs[i,j]=
+
+    fig = plt.figure()
+    #plt.plot(x_obs[:],y_obs[:],color='black',label=legend[0])
+    plt.scatter(x_obs,y_obs,s=0.1)
+    plt.savefig(out_name)
+    plt.clf()    
+################################################################################
+################################################################################
+def coord_plot(res_dir):
+    """
+    """
+    ds=netcdf_extract(res_dir)
+    for io in ds.groups:
+        out_name=res_dir+'/grid_coord_{}.png'.format(io)
+        x_coord=np.array(ds[io]['x_coord'][:])
+        y_coord=np.array(ds[io]['y_coord'][:])
+
+        fig = plt.figure()
+        plt.scatter(x_coord,y_coord,s=0.1)
+        plt.savefig(out_name)
+        plt.clf()    
+################################################################################
+
+
 
 ################################################################################
 def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io,legend):
@@ -99,7 +136,7 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io,legend):
     
     # Create figure window to plot data
     fig = plt.figure(1, figsize=(9,9))
-    gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
+    gs = gridspec.GridSpec(2, 1, height_ratios=[6, 3])
 
     # Top plot: obj1 vs obj2
     ax1 = fig.add_subplot(gs[0])
@@ -108,6 +145,7 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io,legend):
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
                ncol=2, mode="expand", borderaxespad=0.)
 
+    plt.subplots_adjust(hspace=0.5)
     ymax=max(max(obj1),max(obj2))
     if ymax > 100:
         plt.yscale("log")
