@@ -19,10 +19,6 @@ import netCDF4 as nc
 # Allow the use of tex format for the labels:
 plt.rcParams.update({"text.usetex": True, "font.size" : 15})
 
-# To use this module in command line:
-#results_directory=str(sys.argv[1])
-
-
 ################################################################################
 def netcdf_extract(res_dir):
     """ Extract the netcdf data from the result directory res_dir:
@@ -34,8 +30,6 @@ def netcdf_extract(res_dir):
     ds=nc.Dataset(res_dir+"/output.nc")
     return ds
 ################################################################################
-
-
 ################################################################################
 def lanczos_vs_planczosif_plot(res_dir,io):
     """ Plot the J, Jb and Jo:
@@ -77,31 +71,24 @@ def lanczos_vs_planczosif_plot(res_dir,io):
         legend=['Lanczos','PlanczosIF']
         compare_plots(out_name,lanczos[k],planczosif[k],ylabel12,diff[k],ylabel3,x,xlabel,io,legend)
 ################################################################################
-
-
 ################################################################################
 def obs_plot(res_dir):
     """
     """
     out_name=res_dir+'/obs_coord.png'
     ds=netcdf_extract(res_dir)
-    #nobs=ds['nobs']
     x_obs=np.array(ds['x_obs'][:])
     y_obs=np.array(ds['y_obs'][:])
-    # obs=np.zeros((nobs,nobs))
-    # for i in range(nobs):
-    #     for j in range(nobs):
-    #         obs[i,j]=
 
+    print("plotting:", out_name)
     fig = plt.figure()
-    #plt.plot(x_obs[:],y_obs[:],color='black',label=legend[0])
-    plt.scatter(x_obs,y_obs,s=0.1)
+    plt.scatter(x_obs,y_obs)# rajoute hmatrix%yo
     plt.savefig(out_name)
-    plt.clf()    
+    plt.clf()
 ################################################################################
 ################################################################################
 def coord_plot(res_dir):
-    """
+    """Check the model grid:
     """
     ds=netcdf_extract(res_dir)
     for io in ds.groups:
@@ -110,13 +97,46 @@ def coord_plot(res_dir):
         y_coord=np.array(ds[io]['y_coord'][:])
 
         fig = plt.figure()
-        plt.scatter(x_coord,y_coord,s=0.1)
+        plt.scatter(x_coord,y_coord)
         plt.savefig(out_name)
         plt.clf()    
 ################################################################################
-
-
-
+################################################################################
+def obs_vs_hxg(res_dir):
+    """
+    """
+    ds=netcdf_extract(res_dir)
+    x_obs=np.array(ds['x_obs'][:])
+    y_obs=np.array(ds['y_obs'][:])
+    for io in ds.groups:
+        for algo in ds[io].groups:
+            hxg=np.array(ds[io][algo]['hxg'][:])
+            out_name=res_dir+'/'+algo+'_hxg_'+io+'.png'
+            print("plotting:", out_name)
+            fig=plt.figure()
+            plt.scatter(x_obs,y_obs,c=hxg,cmap=plt.get_cmap('copper'))
+            plt.colorbar()
+            plt.savefig(out_name)
+            plt.clf()
+################################################################################
+################################################################################
+def innovation_plot(res_dir):
+    """
+    """
+    ds=netcdf_extract(res_dir)
+    x_obs=np.array(ds['x_obs'][:])
+    y_obs=np.array(ds['y_obs'][:])
+    for io in ds.groups:
+        for algo in ds[io].groups:
+            d=np.array(ds[io][algo]['d'][:])
+            out_name=res_dir+'/'+algo+'_d_'+io+'.png'
+            print("plotting:", out_name)
+            fig=plt.figure()
+            plt.scatter(x_obs,y_obs,c=d,cmap=plt.get_cmap('copper'))
+            plt.colorbar()
+            plt.savefig(out_name)
+            plt.clf()
+################################################################################
 ################################################################################
 def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io,legend):
     """Produces usefull comparision plots bteween obj1 and obj2:
@@ -163,19 +183,9 @@ def compare_plots(out_name,obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,io,legend):
     plt.savefig(out_name)
     plt.clf()
 ################################################################################
-
-
-################################################################################
-
-
-
-
-################################################################################
-
-
 ################################################################################
 def field_plot(matrix,out_name):
-    """Represents matrix using colormap.
+    """Represents matrix using matshow.
     """
     print('plotting ',out_name)
     fig=plt.figure()
@@ -183,8 +193,20 @@ def field_plot(matrix,out_name):
     plt.colorbar()
     plt.savefig(out_name)
 ################################################################################
-
-
+################################################################################
+def field_plot2(matrix,x_coord,y_coord,out_name):
+    """Represents matrix using scatterplot.
+    """
+    print('plotting ',out_name)
+    fig=plt.figure()
+    val=[]
+    for i in range(len(x_coord)):
+        val.append(matrix[i][j])
+    print(len(val),len(x_coord))        
+    plt.scatter(x_coord,y_coord,c=val,cmap=plt.get_cmap('copper'))
+    plt.colorbar()
+    plt.savefig(out_name)
+################################################################################
 
 
 

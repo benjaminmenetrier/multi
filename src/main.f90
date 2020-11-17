@@ -431,6 +431,7 @@ do io=1,no
 
    ! Reshape guess
    xb_2d = reshape(xb,(/geom(io)%nx,geom(io)%ny/))
+   ! Reshape
 
    ! Get dimensions
    call ncerr('main',nf90_inq_dimid(grpid(io),'nx',nx_id))

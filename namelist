@@ -17,7 +17,7 @@ ny = 101
 
 &observations
 nobs = 2000
-sigma_obs = 0.001
+sigma_obs = 0.01
 /
 
 &background
