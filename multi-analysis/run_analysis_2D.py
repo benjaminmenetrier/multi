@@ -105,9 +105,9 @@ outer_iterations_list=[]
 # Loop over the parameters and run the code:
 for no in [4]:
     for ni in [6]:
-        for lmp_mode in ['"none"']:
+        for lmp_mode in ['"none"']:#['"none"','"ritz"','"spectral"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
-                for nx in ['101']:
+                for nx in ['101,121,151,201']:
                     for nobs in [2000]:
                         for sigma_obs in [0.01]:
                             for sigmabvar in [0.1]:
@@ -187,35 +187,37 @@ for no in [4]:
                                     
 ################################################################################
 # Plot comparision between lanczos and Planczos for cost function:
-# for r,res_dir in enumerate(res_dir_list):
+for r,res_dir in enumerate(res_dir_list):
 
-#     # Plots the observations
-#     obs_plot(res_dir)
-#     hxg_plot(res_dir)
-#     innovation_plot(res_dir)
+    # Get the data:
+    ds=netcdf_extract(res_dir)
+    
+    # Plots the observations
+    obs_plot(ds,res_dir)
+    hxg_plot(ds,res_dir)
+    innovation_plot(ds,res_dir)
 
-#     # Plots the comparision between lanczos and planczosif for the cost function:
-#     lanczos_vs_planczosif_plot(res_dir,outer_iterations_list[r])
+    # Plots the comparision between lanczos and planczosif for the cost function:
+    lanczos_vs_planczosif_plot(ds,res_dir,outer_iterations_list[r])
 
-#     # Plots the model fields as matrices and scatterplots (what is the best?):
-#     ds=netcdf_extract(res_dir)
-#     for io in ds.groups:
-#         x_coord=np.array(ds[io]['x_coord'])
-#         y_coord=np.array(ds[io]['y_coord'])
-#         for field in ['sigmab','dirac_cov','dirac_cor','xb']:
-#             matrix=np.array(ds[io][field][:])
-#             out_name=res_dir+'/'+field+'_'+io
-#             field_plot(matrix,out_name)
-#         for algo in ds[io].groups:
-#             for field in ['xg']:
-#                 matrix=np.array(ds[io][algo][field][:])
-#                 out_name=res_dir+'/'+algo+'_'+field+'_'+io
-#                 field_plot(matrix,out_name)
-#                 # Plots the increment:
-#                 for ii in range(ds[io][algo].dimensions['nimax'].size):
-#                     dx=np.array(ds[io][algo]['dx'][ii][:])
-#                     out_name=res_dir+'/'+algo+'_dx_'+io+'_'+'inner_'+str(ii)
-#                     field_plot(dx,out_name)
+    # Plots the model fields as matrices and scatterplots (what is the best?):
+    for io in ds.groups:
+        x_coord=np.array(ds[io]['x_coord'])
+        y_coord=np.array(ds[io]['y_coord'])
+        for field in ['sigmab','dirac_cov','dirac_cor','xb']:
+            matrix=np.array(ds[io][field][:])
+            out_name=res_dir+'/'+field+'_'+io
+            field_plot(matrix,out_name)
+        for algo in ds[io].groups:
+            for field in ['xg']:
+                matrix=np.array(ds[io][algo][field][:])
+                out_name=res_dir+'/'+algo+'_'+field+'_'+io
+                field_plot(matrix,out_name)
+                # Plots the increment:
+                for ii in range(ds[io][algo].dimensions['nimax'].size):
+                    dx=np.array(ds[io][algo]['dx'][ii][:])
+                    out_name=res_dir+'/'+algo+'_dx_'+io+'_'+'inner_'+str(ii)
+                    field_plot(dx,out_name)
 #--------------------------------------------------------------------------------    
 # Comparision between the methods:
 methods_list=['theoretical','standard','alternative']

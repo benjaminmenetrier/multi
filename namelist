@@ -11,8 +11,8 @@ projective_Bmatrix = .true.
 /
 
 &resolutions
-nx = 101
-ny = 101
+nx = 101,121,151,201
+ny = 101,121,151,201
 /
 
 &observations
