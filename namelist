@@ -5,7 +5,7 @@ lmp_mode = "none"
 test_ortho = .false.
 shutoff_type = 0
 shutoff_value = 0.0
-method = "theoretical"
+method = "alternative"
 transitive_interp = .true.
 projective_Bmatrix = .true.
 /

@@ -66,9 +66,9 @@ out_dirs.append(results_dir_root)
 res_dir_raw=results_dir_root+'raw_results/'
 out_dirs.append(res_dir_raw)
 
-# # Results for the comparision between LMP modes:
-# res_dir_lmp_compare_J=results_dir_root+'lmp_compare_J/'
-# out_dirs.append(res_dir_lmp_compare_J)
+# Results for the comparision between LMP modes:
+compare_methods_dir=results_dir_root+'compare_methods/'
+out_dirs.append(compare_methods_dir)
 
 # # Results for the check of second-level lmp:
 # res_dir_lmp_check=results_dir_root+'check_second_level_lmp/'
@@ -106,7 +106,7 @@ outer_iterations_list=[]
 for no in [4]:
     for ni in [6]:
         for lmp_mode in ['"none"']:
-            for method in ['"theoretical"']:
+            for method in ['"theoretical"','"standard"','"alternative"']:
                 for nx in ['101']:
                     for nobs in [2000]:
                         for sigma_obs in [0.01]:
@@ -176,10 +176,10 @@ for no in [4]:
                                     
                                     # Run the code and save the results:
                                     # Compile the code:
-                                    #os.chdir("../build")
-                                    #os.system("ecbuild ..")
-                                    #os.system("make")
-                                    #os.chdir(cwd)
+                                    os.chdir("../build")
+                                    os.system("ecbuild ..")
+                                    os.system("make")
+                                    os.chdir(cwd)
                                     os.chdir('..')
                                     os.system(exec_command)
                                     os.chdir(cwd)
@@ -187,42 +187,58 @@ for no in [4]:
                                     
 ################################################################################
 # Plot comparision between lanczos and Planczos for cost function:
+# for r,res_dir in enumerate(res_dir_list):
+
+#     # Plots the observations
+#     obs_plot(res_dir)
+#     hxg_plot(res_dir)
+#     innovation_plot(res_dir)
+
+#     # Plots the comparision between lanczos and planczosif for the cost function:
+#     lanczos_vs_planczosif_plot(res_dir,outer_iterations_list[r])
+
+#     # Plots the model fields as matrices and scatterplots (what is the best?):
+#     ds=netcdf_extract(res_dir)
+#     for io in ds.groups:
+#         x_coord=np.array(ds[io]['x_coord'])
+#         y_coord=np.array(ds[io]['y_coord'])
+#         for field in ['sigmab','dirac_cov','dirac_cor','xb']:
+#             matrix=np.array(ds[io][field][:])
+#             out_name=res_dir+'/'+field+'_'+io
+#             field_plot(matrix,out_name)
+#         for algo in ds[io].groups:
+#             for field in ['xg']:
+#                 matrix=np.array(ds[io][algo][field][:])
+#                 out_name=res_dir+'/'+algo+'_'+field+'_'+io
+#                 field_plot(matrix,out_name)
+#                 # Plots the increment:
+#                 for ii in range(ds[io][algo].dimensions['nimax'].size):
+#                     dx=np.array(ds[io][algo]['dx'][ii][:])
+#                     out_name=res_dir+'/'+algo+'_dx_'+io+'_'+'inner_'+str(ii)
+#                     field_plot(dx,out_name)
+#--------------------------------------------------------------------------------    
+# Comparision between the methods:
+methods_list=['theoretical','standard','alternative']
 for r,res_dir in enumerate(res_dir_list):
-    print(res_dir)
-
-    # Plots the observations
-    obs_plot(res_dir)
-    obs_vs_hxg(res_dir)
-    innovation_plot(res_dir)
-
-    # Plots the comparision between lanczos and planczosif for the cost function:
-    lanczos_vs_planczosif_plot(res_dir,outer_iterations_list[r])
-
-    # Plots the model fields as matrices and scatterplots (what is the best?):
-    ds=netcdf_extract(res_dir)
-    for io in ds.groups:
-        x_coord=np.array(ds[io]['x_coord'])
-        y_coord=np.array(ds[io]['y_coord'])
-        for field in ['sigmab','dirac_cov','dirac_cor','xb']:
-            matrix=np.array(ds[io][field][:])
-            out_name=res_dir+'/'+field+'_'+io
-            field_plot(matrix,out_name)
-            #out_name=res_dir+'/'+field+'-bis_'+io
-            #field_plot2(matrix,x_coord,y_coord,out_name)
-        for algo in ds[io].groups:
-            for field in ['xg']:
-                matrix=np.array(ds[io][algo][field][:])
-                out_name=res_dir+'/'+algo+'_'+field+'_'+io
-                field_plot(matrix,out_name)
-                #out_name=res_dir+'/'+algo+'_'+field+'-bis_'+io
-                #field_plot2(matrix,x_coord,y_coord,out_name)
-                # Plots the increment:
-                for ii in range(ds[io][algo].dimensions['nimax'].size):
-                    dx=np.array(ds[io][algo]['dx'][ii][:])
-                    out_name=res_dir+'/'+algo+'_dx_'+io+'_'+'inner_'+str(ii)
-                    field_plot(dx,out_name)
-                    #out_name=res_dir+'/'+algo+'_dx_'+io+'-bis_'+'inner_'+str(ii)
-                    #field_plot2(dx,x_coord,y_coord,out_name)
+    try:    
+        if methods_list[0] in res_dir:
+            res_tmp=res_dir.split('theoretical')
+            res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
+            # Store the output files names
+            compare_methods_out=res_tmp1+'compare'+res_tmp2
+            compare_methods_out=compare_methods_out.replace(res_dir_raw,compare_methods_dir)
+            if not os.path.exists(compare_methods_out):
+                os.mkdir(compare_methods_out)
+            compare_methods=[]
+            for method in methods_list:
+                compare_methods.append(res_tmp1+method+res_tmp2)
+            compare_methods_data=[]
+            for res in compare_methods:
+                ds=netcdf_extract(res)
+                compare_methods_data.append(ds)
+            compare_methods_plot(compare_methods_data,methods_list,outer_iterations_list[r],compare_methods_out)    
+    except:
+        print("Cannot compare methods: the following file does not exist:\n",res)
 ################################################################################
 
 
