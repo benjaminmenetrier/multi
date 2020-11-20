@@ -7,6 +7,7 @@
 # Author: Nicolas Baillot d'Etivaux
 
 ################################################################################
+
 # Imported packages:
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec 
@@ -38,8 +39,6 @@ def lanczos_vs_planczosif_plot(ds,res_dir,outer_iterations):
         Return:
             (void): Plots the cost functions and save them as out_name_J,Jb or Jo.
     """
-    #ds=netcdf_extract(res_dir)
-    
     lanczos,planczosif={},{}
     keys=['j_nl','jo_nl','jb_nl','j','jo','jb','rho_sqrt','beta']
     labels=[r'$J^{nl}$',r'$J_o^{nl}$',r'$J_b^{nl}$',r'$J$',r'$J_o$',r'$J_b$',r'$\sqrt{\rho}$',r'$\beta$']
@@ -76,7 +75,6 @@ def obs_plot(ds,res_dir):
     """Plots the observations:
     """
     out_name=res_dir+'/obs.png'
-    #ds=netcdf_extract(res_dir)
     x_obs=np.array(ds['x_obs'][:])
     y_obs=np.array(ds['y_obs'][:])
     obs_val=np.array(ds['obs_val'][:])
@@ -93,7 +91,6 @@ def obs_plot(ds,res_dir):
 def coord_plot(ds,res_dir):
     """Check the model grid (should plot a straight line x=y):
     """
-    #ds=netcdf_extract(res_dir)
     for io in ds.groups:
         out_name=res_dir+'/grid_coord_{}.png'.format(io)
         x_coord=np.array(ds[io]['x_coord'][:])
@@ -108,7 +105,6 @@ def coord_plot(ds,res_dir):
 def hxg_plot(ds,res_dir):
     """Plots hxg
     """
-    #ds=netcdf_extract(res_dir)
     x_obs=np.array(ds['x_obs'][:])
     y_obs=np.array(ds['y_obs'][:])
     for io in ds.groups:
@@ -127,7 +123,6 @@ def hxg_plot(ds,res_dir):
 def innovation_plot(ds,res_dir):
     """Plots the innovation
     """
-    #ds=netcdf_extract(res_dir)
     x_obs=np.array(ds['x_obs'][:])
     y_obs=np.array(ds['y_obs'][:])
     for io in ds.groups:
@@ -261,56 +256,9 @@ def compare_methods_plot(compare_methods_data,methods_list,outer_iterations,comp
         compare_plots_2N(obj_list[key],ylabel1,diff_list[key],ylabel2,x,xlabel,outer_iterations,legend,out_name)
 ################################################################################
 ################################################################################
-def evolution_plot(results_directory,outer_iterations):
-    """Plots J, Jo and Jb for lanczos and PlanczosIf, as well as their difference.
-    """
-    # Get the results files from the results directory and store them in lists:
-    lanczos=np.genfromtxt(results_directory+'lanczos_control_space.dat', comments='#')
-    PlanczosIF=np.genfromtxt(results_directory+'PlanczosIF_model_space.dat', comments='#')
-    diff=[]
-    l_iter=min(len(lanczos[0]),len(PlanczosIF[0]))
-    for c in range(len(lanczos)):
-        diff_col=[]
-        for l in range(l_iter):
-            diff_col.append(lanczos[c,l]-PlanczosIF[c,l]) 
-        diff.append(diff_col)
-    diff=np.array(diff)
-    
-    # Total iterations (outer x inner):
-    itot=list(range(len(lanczos)))
-
-    #--------------- Plots for J -----------------------------
-    out_name=results_directory+"/lanczos_vs_PlanczosIF_J.png"
-    compare_plots(lanczos[:,3],PlanczosIF[:,3],r'$J=J_b+J_o$',
-                 diff[:,3],r'$J_{B^{1/2}}-J_{B}$',
-                  itot,r'iterations',outer_iterations,out_name)
-
-    #--------------- Plots for Jb ----------------------------
-    out_name=results_directory+"/lanczos_vs_PlanczosIF_Jb.png"
-    compare_plots(lanczos[:,4],PlanczosIF[:,4],r'$J_b$',
-                 diff[:,4],r'$J_{b,B^{1/2}}-J_{b,B}$',
-                  itot,'iterations',outer_iterations,out_name)
-
-    #--------------- Plots for Jo ----------------------------
-    out_name=results_directory+"/lanczos_vs_PlanczosIF_Jo.png"
-    compare_plots(lanczos[:,5],PlanczosIF[:,5],r'$J_o$',
-                 diff[:,5],r'$J_{o,B^{1/2}}-J_{o,B}$',
-                  itot,'iterations',outer_iterations,out_name)
-################################################################################
-################################################################################
-def multi_plot(res_dir_list,outer_iterations):
-    """Run the analysis over the results:
-    """
-    for r,res_dir in enumerate(res_dir_list):
-        print("plotting for raw results for: \n",res_dir)
-        try:
-            evolution_plot(res_dir,outer_iterations[r])
-        except:
-            print("Error with directory:",res_dir)
-################################################################################
-################################################################################
+# :!\ Obsolete (tmp):
 def vec_plot(results_file,column_of_interest,label,out_name):
-    """Plot the outer vectors:
+    """Plots 1D vectors:
     """
     print("plotting:",out_name)
     # Get the data:
@@ -408,6 +356,7 @@ def compare_plots_2N(obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iteration
     plt.close()
 ################################################################################
 ################################################################################
+# /!\ Obsolete: (tmp)
 def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list):
     """Compare spectral and ritz lmp modes:
     """
@@ -444,91 +393,3 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
     except:
         print("Error with lmp comparision of:\n",res_dirs,"\n")
 ##################################################################################
-# ################################################################################
-# def diff_plot(out_names,param_list,res_dir_list):
-
-#     legend=[]
-#     for lmp_mode in ['ritz','spectral','none']:
-#             for par in param_list:
-#                 legend.append([lmp_mode+'-model',lmp_mode+'-control'])
-
-#     ylabel=r'$J_{B^{1/2}}-J_{B}$'
-#     xlabel=r'\N_obs'
-#     color_map=cm.get_cmap('copper', 3)
-#     colors=color_map(range(len(param_list)))
-
-#     for r,res_dirs in enumerate(res_dir_list):
-#         diff_list=[]
-#         for res_dir in res_dirs:
-#             res=np.genfromtxt(res_dir+'lanczos_control_vs_PlanczosIF_model.dat', comments='#')
-#             diff_list.append(res[-1,3])
-            
-#     # Create figure window to plot data:
-#     fig = plt.figure(1, figsize=(9,9))
-
-#     for par in param_list: 
-#         ax1.plot(param_list[:],diff_list[:],color=colors[o],label=legend[o][0])
-#     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-#                                    ncol=3, mode="expand", borderaxespad=0.)
-#     ax1.set_ylabel(ylabel)
-#     ax1.set_xlabel(xlabel)
-#     plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
-#     plt.savefig(out_name)
-#     plt.clf()
-# ##############################################################################
-################################################################################
-# matrix monitoring
-# def matrix_monitoring(res_dir,results_file_name,out_file_name):
-#     """Draw the B matrix in color code
-#     """
-#     res_file=res_dir+results_file_name
-#     bmatrix=np.genfromtxt(res_file,comments='#')
-
-#     b_vec=[]
-#     b_mat=[]
-#     bmatrices=[]
-#     io_old=1
-#     ib_old=1
-
-#     for b in bmatrix:
-#         io=b[0]
-#         ib=b[1]
-#         elem=b[2]
-#         #print(b)
-#         if io==io_old:
-#             if ib==ib_old:
-#                 b_vec.append(elem)
-#                 #print('vec1',b_vec,io,io_old,ib,ib_old)
-#             else:
-#                 #print('vec21',b_vec,io,io_old,ib,ib_old)
-#                 ib_old=ib
-#                 b_mat.append(np.array(b_vec))
-#                 b_vec=[]
-#                 b_vec.append(elem)
-#                 #print('vec22',b_vec,io,io_old,ib,ib_old)
-#                 #print('mat1',b_mat)
-#         else:
-#             #print('matrix',b_mat,io,io_old,ib,ib_old)
-#             io_old=io
-#             ib_old=1
-#             b_mat.append(np.array(b_vec))
-#             #print('mat',b_mat,io,io_old,ib,ib_old)
-#             bmatrices.append(np.array(b_mat))
-#             b_mat=[]
-#             b_vec=[]
-#             b_vec.append(elem)
-#     b_mat.append(b_vec)        
-#     bmatrices.append(b_mat)  
-#     bmatrices=np.array(bmatrices)
-#     #print(bmatrices)
-#     #print(np.shape(bmatrices))
-    
-#     for b,bmat in enumerate(bmatrices):
-#         #print('final',np.array(b_mat))
-#         fig=plt.figure()
-#         outname=res_dir+out_file_name+'_io{}.png'.format(b+1)
-#         plt.matshow(np.array(bmat),cmap=plt.get_cmap('copper'))
-#         plt.colorbar()
-#         plt.savefig(outname)
-#         plt.clf()
-################################################################################
