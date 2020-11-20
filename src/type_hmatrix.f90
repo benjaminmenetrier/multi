@@ -58,16 +58,17 @@ end subroutine hmatrix_setup
 ! Subroutine: hmatrix_write
 ! Purpose: write H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_write(hmatrix,ncid)
+subroutine hmatrix_write(hmatrix,ncid,x_obs_id,y_obs_id,nobs_id)
 
 implicit none
 
 ! Passed variables
 class(hmatrix_type),intent(inout) :: hmatrix
 integer,intent(in) :: ncid
+integer,intent(inout) :: nobs_id,x_obs_id,y_obs_id
 
 ! Local variables
-integer :: nobs_id,x_obs_id,y_obs_id
+!integer :: nobs_id,x_obs_id,y_obs_id
 
 ! Create dimensions
 call ncerr('hmatrix_write',nf90_def_dim(ncid,'nobs',hmatrix%nobs,nobs_id))

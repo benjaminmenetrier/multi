@@ -75,14 +75,16 @@ def lanczos_vs_planczosif_plot(ds,res_dir,outer_iterations):
 def obs_plot(ds,res_dir):
     """Plots the observations:
     """
-    out_name=res_dir+'/obs_coord.png'
+    out_name=res_dir+'/obs.png'
     #ds=netcdf_extract(res_dir)
     x_obs=np.array(ds['x_obs'][:])
     y_obs=np.array(ds['y_obs'][:])
-
+    obs_val=np.array(ds['obs_val'][:])
+    
     print("plotting:", out_name)
     fig = plt.figure()
-    plt.scatter(x_obs,y_obs)# rajoute hmatrix%yo
+    plt.scatter(x_obs,y_obs,c=obs_val,cmap=plt.get_cmap('copper'))
+    plt.colorbar()
     plt.savefig(out_name)
     plt.clf()
     plt.close()
@@ -227,7 +229,6 @@ def compare_methods_plot(compare_methods_data,methods_list,outer_iterations,comp
         for space in ['control','model']:
             legend_met.append(met+'-'+space)
         legend.append(legend_met)
-        print(legend)
     
     for k,key in enumerate(keys):
         lanczos[key]=[]

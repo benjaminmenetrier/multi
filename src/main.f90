@@ -37,7 +37,8 @@ logical             :: new_seed            ! New random seed
 character(len=1024) :: filename            ! Filename
 
 ! Local variables
-integer                        :: ncid,subgrpid,nx_id,ny_id,nobs_id,xb_id,xg_id,hxg_id,d_id
+integer                        :: ncid,subgrpid,nx_id,ny_id,xb_id,xg_id,hxg_id,d_id
+integer                        :: x_obs_id,y_obs_id,nobs_id,obs_val_id
 integer                        :: io,jo,ii,ji
 integer,allocatable            :: grpid(:)
 real(8)                        :: proj,norm
@@ -200,14 +201,19 @@ allocate(hxg(nobs))
 
 ! Setup obserations locations
 call hmatrix%setup(nobs)
-call hmatrix%write(ncid)
+call hmatrix%write(ncid,x_obs_id,y_obs_id,nobs_id)
 
 ! Setup R matrix
 call rmatrix%setup(nobs,sigma_obs)
 
 ! Setup observations
 call rmatrix%randomize(hmatrix%yo)
-
+! Write observations:
+! Create obs variable
+call ncerr('main',nf90_def_var(ncid,'obs_val',nf90_double,(/nobs_id/),obs_val_id))
+! Write obs variable
+call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
+   
 write(*,'(a)') ''
 
 !--------------------------------------------------------------------------------

@@ -16,7 +16,7 @@ ny = 101,121,151,201
 /
 
 &observations
-nobs = 2000
+nobs = 50
 sigma_obs = 0.01
 /
 

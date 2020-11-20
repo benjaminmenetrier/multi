@@ -108,7 +108,7 @@ for no in [4]:
         for lmp_mode in ['"none"']:#['"none"','"ritz"','"spectral"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
                 for nx in ['101,121,151,201']:
-                    for nobs in [2000]:
+                    for nobs in [50]:
                         for sigma_obs in [0.01]:
                             for sigmabvar in [0.1]:
                                 for Lb in [0.12]:
