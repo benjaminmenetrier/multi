@@ -11,18 +11,18 @@ projective_Bmatrix = .true.
 /
 
 &resolutions
-nx = 101,121,151,201
-ny = 101,121,151,201
+nx = 101
+ny = 101
 /
 
 &observations
-nobs = 50
+nobs = 2000
 sigma_obs = 0.01
 /
 
 &background
 sigmabvar = 0.1
-Lb = 0.12
+Lb = 0.1
 spvarmin = 1e-05
 /
 

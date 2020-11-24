@@ -36,68 +36,99 @@
 [shadow=false]
 
 
-\begin{frame}{Full resolution, no preconditionning: background state}
+\begin{frame}{Content}
+\begin{itemize}
+\item Full resolution example:
+\begin{itemize}
+\item Background state and observations
+\item B matrix monitoring
+\item Innovation vs. guess
+\item Cost function
+\item Short conclusion
+\end{itemize}
+\item Changing the resolution:
+\begin{itemize}
+\item illustration of the change on the background state.
+\item Modifications on the guess.
+\item Cost function.
+\end{itemize}
+\item Short conclusion
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Parameters of the example}
+The aim of this presentation is to monitor the output of the code multi 2D and spot the potential problems and reassuring things.\\
+The parameters of the code are fixed to the following:\\
+
+\begin{itemize}
+\item outer ierations: 4, inner iterations: 6, no stop criterion.
+\item no LMP are used.
+\item $\sigma^b_{var}$=0.1, $L_b=0.1$ (correlation lenghtscale), minimum spectral variance: $10^{-5}$.
+\item $n_{obs}=2000$, $\sigma^o=0.01$.
+\item others: transitive interpolation: True / Projective Bmatrix: True / no orthogonality test.
+\item method used to compute the increments at outer loop level: "theoretical" (using exact $B^{-1}$) -- see the notes of Benjamin.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Full resolution}
 \begin{center}
-$nx\times ny=101 \times 101$, $sigmabvar=0.1$, $L_b=0.1$.\\
-\begin{figure}
- \includegraphics[scale=0.5]{./images/xb.png}
- \caption{$x^b$}
-\end{figure} 
+{\huge Full resolution example.}\\
+\vspace{+1cm}
+The resolution is fixed at $nx\times ny=101 \times 101$ for the example. The problem is modeled in a square domain of size 1, divided in $n_x \times n_y$ pixels.\\
 \end{center}
 \end{frame}
 
-
-\begin{frame}{Full resolution, no preconditionning: observations}
+\begin{frame}{Full resolution: Background state and Observations}
 \begin{center}
-$nx\times ny=101 \time 101$, $\sigma^o$=0.01, $n_{obs}=2000$.\\
-\begin{figure}
- \includegraphics[scale=0.5]{./images/obs_coord.png}
- \caption{Observations}
-\end{figure} 
-\end{center}
-\end{frame}
-
-\begin{frame}{Full resolution, no preconditionning: $\sigma^b$ example}
-\begin{center}
-$nx\times ny=101 \times 101$, $sigmabvar=0.1$, $L_b=0.1$.\\
-\begin{figure}
- \includegraphics[scale=0.5]{./images/sigmab.png}
- \caption{$\sigma^b$ field example}
-\end{figure} 
-\end{center}
-\end{frame}
-
-\begin{frame}{Full resolution, no preconditionning: dirac corr example}
-\begin{center}
-$nx\times ny=101 \times 101$, $sigmabvar=0.1$, $L_b=0.1$.\\
-\begin{figure}
- \includegraphics[scale=0.5]{./images/dirac_cor.png}
- \caption{dirac corr example}
-\end{figure} 
-\end{center}
-\end{frame}
-
-
-
-% guess -------------------------------------------------------------
-\begin{frame}{Full resolution, no preconditionning: guess}
-\begin{center}
-With lanczos algorithm:\\
-(maybe there is a problem with the guess initialisation (to $x^b$ ?)):
+The background and observations generated randomly seems to be good.\\
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/lxg1.png}
+  \includegraphics[width=\linewidth]{images/xb.png}
+  \caption{background state $x^b$.}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{images/obs.png}
+  \caption{Observations.}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Full resolution: B matrix}
+\begin{center}
+The B matrix is OK: The correlation lenghtscale modifies the figures as expected (not shown), and one can see that the left panel shows correlations consistent with the periodic domain in which we are working.\\ 
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=0.8\linewidth]{images/sigmab.png}
+  \caption{Background error field $\sigma^b$.}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=0.8\linewidth]{images/dirac_cor.png}
+  \caption{B applied to a "dirac": ($B(1,0,0,..,0)^T$)}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+% guess -------------------------------------------------------------
+\begin{frame}{Full resolution: guess}
+\begin{center}
+With lanczos algorithm:\\
+(maybe there is a problem with the guess initialisation (to $x^b$ ?), I am not sure to understand the shape of the first guess. The second guess is equal to $x^b$.):
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=0.8\linewidth]{images/lxg1.png}
   \caption{guess (outer iteration 1)}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/lxg2.png}
+  \includegraphics[width=0.8\linewidth]{images/lxg2.png}
   \caption{guess (outer iteration 2)}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: guess}
+\begin{frame}{Full resolution: guess}
 \begin{center}
 With lanczos algorithm:
 \begin{figure}
@@ -113,10 +144,10 @@ With lanczos algorithm:
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: guess}
+\begin{frame}{Full resolution: guess}
 \begin{center}
 With PlanczosIF algorithm:\\
-(idem for the first guess?):
+(The first guess is different from the one using lanczos algorithm, and is still different from $x^b$, while the second guess is equal to $x^b$):
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=\linewidth]{images/pxg1.png}
@@ -130,7 +161,7 @@ With PlanczosIF algorithm:\\
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: guess}
+\begin{frame}{Full resolution: guess}
 \begin{center}
 With PlanczosIF algorithm:
 \begin{figure}
@@ -148,9 +179,9 @@ With PlanczosIF algorithm:
 %------------------------------
 
 % hxg -------------------------------------------------------------
-\begin{frame}{Full resolution, no preconditionning: $H x^g$}
+\begin{frame}{Full resolution: mapping the guess to the obs: $H x^g$}
 \begin{center}
-This example is obtained in model space but the results are strictly equal in control space (but they should not since the first guesses are different ?):
+This example is obtained in model space but the results are STRICTLY equal in control space (but they should not since the first guesses are different in both algorithms ?):
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=\linewidth]{images/hxg1.png}
@@ -164,9 +195,9 @@ This example is obtained in model space but the results are strictly equal in co
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: $H x^g$}
+\begin{frame}{Full resolution: mapping the guess to the obs: $H x^g$}
 \begin{center}
-Reassuring: it seems to converge to small values of the $H x^g$
+Reassuring: 1) The coordinates are good; 2) $Hx^g$ seems to be close to the background state at the beggining and closer to the obs at the end (but with a higher variance than the observations). 
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=\linewidth]{images/hxg3.png}
@@ -182,9 +213,9 @@ Reassuring: it seems to converge to small values of the $H x^g$
 %-------------------------------------------------------------
 
 % innovation -------------------------------------------------------------
-\begin{frame}{Full resolution, no preconditionning: innovations}
+\begin{frame}{Full resolution: innovations}
 \begin{center}
-This example is obtained in model space but the results are strictly equal in control space (but they should not since the first guesses are different ?):
+Idem: the results shown are obtained with lanczos algo, but are the same with PlanczosIF since $Hx^g_{lanczos}=Hx^g_{PlanczosIF}$ as discussed in the previous slide (is that an error or they may differ behind the scope of floating numbers in double precision ?).
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=\linewidth]{images/d1.png}
@@ -198,7 +229,7 @@ This example is obtained in model space but the results are strictly equal in co
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: innovations}
+\begin{frame}{Full resolution: innovations}
 \begin{center}
 Reassuring: it seems to converge to small values of the innovation
 \begin{figure}
@@ -216,63 +247,106 @@ Reassuring: it seems to converge to small values of the innovation
 %-------------------------------------------------------------
 
 
-
-% cost function:----------------------------------------------------------------------------
-\begin{frame}{Full resolution, no preconditionning: Cost function}
+\begin{frame}{Full resolution: Cost function}
 \begin{center}
-$\sigma^o$=0.01, $nx\times ny=101 \times 101$, $sigmabvar=0.1$, $n_{obs}=2000$, $L_b=0.1$\\
- \includegraphics[scale=0.3]{./images/jnl.png}
+In the following slides, we compare the cost functions obtained with the different methods ("theoretical", "standard", and "alternative") with both lanczos algorithms in control space and PlanczosIF in model space.\\
+\vspace{+1cm}
+The code allows to retrieve the non linear cost functions (departure from the background $J^{nl}_b$, from the observations $J^{nl}_o$ and there sum $J^{nl}$) as well as the linearized ones $J_b,J_o$, and $J$.
+\vspace{+1cm}
+The blue dashed lines represent the outer iterations. The lower panel illustrates the difference between the result in control space or model space for each method.\\
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: Cost function}
+% cost function:----------------------------------------------------------------------------
+\begin{frame}{Full resolution: Cost function}
 \begin{center}
-$\sigma^o$=0.01, $nx\times ny=101 \times 101$, $sigmabvar=0.1$, $n_{obs}=2000$, $L_b=0.1$\\
+\minipage{0.39\textwidth}
+non linear total cost function $J^{nl}=J^{nl}_o + J^{nl}_b$.\\
+1) The code converges with all the methods.\\
+2) The differences between the methods seems small (as well as the difference between the two algorithms for each methods -- lower panel).\\
+\endminipage \hfill
+\minipage{0.59\textwidth}%
+\begin{figure}
+  \includegraphics[width=\linewidth]{images/jnl.png}
+\end{figure}
+\endminipage
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Full resolution: Cost function}
+\begin{center}
+The observational part of the cost function seems to be good...
  \includegraphics[scale=0.3]{./images/jonl.png}
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: Cost function}
+\begin{frame}{Full resolution: Cost function}
 \begin{center}
-$\sigma^o$=0.01, $nx\times ny=101 \times 101$, $sigmabvar=0.1$, $n_{obs}=2000$, $L_b=0.1$\\
+... as well as the background contribution.
  \includegraphics[scale=0.3]{./images/jbnl.png}
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: Cost function}
+\begin{frame}{Full resolution: Cost function}
 \begin{center}
-$\sigma^o$=0.01, $nx\times ny=101 \times 101$, $sigmabvar=0.1$, $n_{obs}=2000$, $L_b=0.1$\\
- \includegraphics[scale=0.3]{./images/jb.png}
+\minipage{0.39\textwidth}
+There is a small difference between the linearized cost function and the non-linear one, as expected, but stronger for the "theoretical" method (?).
+\endminipage \hfill
+\minipage{0.59\textwidth}%
+\begin{figure}
+  \includegraphics[width=\linewidth]{images/jb.png}
+\end{figure}
+\endminipage
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: Cost function}
+\begin{frame}{Full resolution: Cost function}
 \begin{center}
-$\sigma^o$=0.01, $nx\times ny=101 \times 101$, $sigmabvar=0.1$, $n_{obs}=2000$, $L_b=0.1$\\
- \includegraphics[scale=0.3]{./images/beta.png}
+\minipage{0.39\textwidth}
+$\beta$ is the ratio between the norm of the residue at inner iterations i and i+1 (see Benjamin's notes).\\
+I think there is a problem in the inner iterations or with the storing of $\beta$ because we can see the peak is delayed of one inner iteration at each outer iterations. (I will check that issue, it might also be in my plotting code).
+\endminipage \hfill
+\minipage{0.59\textwidth}%
+\begin{figure}
+  \includegraphics[width=\linewidth]{images/beta.png}
+\end{figure}
+\endminipage
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: Cost function}
+\begin{frame}{Full resolution: Cost function}
 \begin{center}
-$\sigma^o$=0.01, $nx\times ny=101 \times 101$, $sigmabvar=0.1$, $n_{obs}=2000$, $L_b=0.1$\\
- \includegraphics[scale=0.3]{./images/rho.png}
+\minipage{0.39\textwidth}
+$\rho$ is the norm of the residue and seems to converge well.
+\endminipage \hfill
+\minipage{0.59\textwidth}%
+\begin{figure}
+  \includegraphics[width=\linewidth]{images/rho.png}
+\end{figure}
+\endminipage
 \end{center}
 \end{frame}
-
 
 % Changing the resolution ------------------------------------------------------------------------------------------
 
 
 \begin{frame}
 \begin{center}
-  \huge{Canging the resolution}
+  {\huge Canging the resolution}\\
+  \vspace{+1cm}
+In the following, we choose the resolutions for the outer iterations to be:\\
+outer 1: $n_x \times n_y = 101 \times 101$,\\
+outer 2: $n_x \times n_y = 121 \times 121$,\\
+outer 3: $n_x \times n_y = 151 \times 151$,\\
+outer 4: $n_x \times n_y = 201 \times 201$.
 \end{center}
 \end{frame}
 
 % xb -------------------------------------------------------------
 \begin{frame}{Changing resolution: $x^b$}
 \begin{center}
+The change of resolution is OK for the background (idem for the B matrix -- not shown).
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=\linewidth]{images/xb1r.png}
@@ -304,97 +378,95 @@ $\sigma^o$=0.01, $nx\times ny=101 \times 101$, $sigmabvar=0.1$, $n_{obs}=2000$, 
 
 
 % guess -------------------------------------------------------------
-\begin{frame}{Changing resolution, no preconditionning: guess}
+\begin{frame}{Changing resolution: guess}
 \begin{center}
-With lanczos algorithm:
+With lanczos algorithm:\\
+It seems there is a problem with the guess (I cannot see why this occure -- the filling value is choosen to be -999).
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/lxg1r.png}
+  \includegraphics[width=0.8\linewidth]{images/lxg1r.png}
   \caption{guess (outer iteration 1)}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/lxg2r.png}
+  \includegraphics[width=0.8\linewidth]{images/lxg2r.png}
   \caption{guess (outer iteration 2)}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Changing resolution, no preconditionning: guess}
+\begin{frame}{Changing resolution: guess}
 \begin{center}
 With lanczos algorithm:
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/lxg3r.png}
+  \includegraphics[width=0.8\linewidth]{images/lxg3r.png}
   \caption{guess (outer iteration 3)}
 \endminipage \hfill
 \minipage{0.49\textwidth}%
-  \includegraphics[width=\linewidth]{images/lxg4r.png}
+  \includegraphics[width=0.8\linewidth]{images/lxg4r.png}
   \caption{guess (outer iteration 4)}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Changing resolution, no preconditionning: guess}
+\begin{frame}{Changing resolution: guess}
 \begin{center}
-With PlanczosIF algorithm:
+With PlanczosIF algorithm:\\
+(idem for this algorithm).
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/pxg1r.png}
+  \includegraphics[width=0.8\linewidth]{images/pxg1r.png}
   \caption{guess (outer iteration 1)}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/pxg2r.png}
+  \includegraphics[width=0.8\linewidth]{images/pxg2r.png}
   \caption{guess (outer iteration 2)}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Changing resolution, no preconditionning: guess}
+\begin{frame}{Changing resolution: guess}
 \begin{center}
 With PlanczosIF algorithm:
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/pxg3r.png}
+  \includegraphics[width=0.8\linewidth]{images/pxg3r.png}
   \caption{guess (outer iteration 3)}
 \endminipage \hfill
 \minipage{0.49\textwidth}%
-  \includegraphics[width=\linewidth]{images/pxg4r.png}
+  \includegraphics[width=0.8\linewidth]{images/pxg4r.png}
   \caption{guess (outer iteration 4)}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Full resolution, no preconditionning: Cost function}
+\begin{frame}{Changing resolution: guess}
 \begin{center}
- \includegraphics[scale=0.3]{./images/jnlr.png}
+\minipage{0.39\textwidth}
+The convergence is correct, also for $J_o$ and $J_b$ (in the current state of the code, we do not add new observations at outer iterations level, so there is no artificial deterioring of the cost function at each outer iterations).\\
+\endminipage \hfill
+\minipage{0.59\textwidth}%
+\begin{figure}
+  \includegraphics[width=\linewidth]{images/jnlr.png}
+\end{figure}
+\endminipage
 \end{center}
 \end{frame}
-
 %------------------------------------------------------------------------------------------
 
 
 % Conclusions ------------------------------------------------------------------------------------------
-\begin{frame}{Small conclusion:}
+\begin{frame}{Short conclusion:}
 \begin{itemize}
  \item The code seems to converge to a correct solution according to the innovation, cost function and residual norm, both in full resolution or changing it.
  \item There is no significant difference between the three methods in both cases.
  \item There is a small difference between non-linear and linearized cost functions.
- \item There might be a problem with the guess (?).
- \item There is a problem with the inner increments (always at filling values except for the first one).
-\end{itemize}
-\end{frame}
-
-\begin{frame}{To Do}
-\begin{itemize}
- \item Save the obs values.
- \item Save the outer increments.
- \item Check the initialisation of the guess.
- \item Check the values of the inner increments.
- \item Question: why the dimensions of the 2 fields in netcdf file are (ny,nx) and not (nx,ny) ?
+ \item There might be a problem with the inner increments, leading to problem with the guess (?).
+ \item Everything else seems OK.
 \end{itemize}
 \end{frame}
 %------------------------------------------------------------------------------------------

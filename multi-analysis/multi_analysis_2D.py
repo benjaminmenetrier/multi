@@ -256,7 +256,46 @@ def compare_methods_plot(compare_methods_data,methods_list,outer_iterations,comp
         compare_plots_2N(obj_list[key],ylabel1,diff_list[key],ylabel2,x,xlabel,outer_iterations,legend,out_name)
 ################################################################################
 ################################################################################
-# :!\ Obsolete (tmp):
+def compare_methods_2D_outer(compare_methods_data,methods_list,compare_methods_dir):
+    """Plots the comparision between the different methods:
+    """
+    diff_dict={}
+    keys=['xg']
+    labels=[r'$x^g$']
+    # legend=[]
+    # for met in methods_list:
+    #     legend_met=[]
+    #     for space in ['control','model']:
+    #         legend_met.append(met+'-'+space)
+    #     legend.append(legend_met)
+
+    ds_th=compare_methods_data[0]
+    for io in ds_th.groups:
+        for algo in ds_th[io].groups:
+            diff_dict[algo]={}
+            for key in keys:
+                diff_dict[algo][key]=[]
+                for m,met in enumerate(methods_list):
+                    ds=compare_methods_data[m]
+                    data_to_compare=np.array(ds[io][algo][key][:])
+                    diff_dict[algo][key].append(np.array(data_to_compare))
+                # Compute the difference as a 2D matrix -- diff = (method - theoretical)
+                for m,met in enumerate(methods_list):
+                    if m==0:
+                        pass
+                    else:
+                        diff_matrix=np.zeros(np.shape(diff_dict[algo][key][m]))
+                        for line in range(len(diff_dict[algo][key][m])):
+                            for col in range(len(diff_dict[algo][key][m][line])):
+                                diff=diff_dict[algo][key][m][line][col]-diff_dict[algo][key][0][line][col]
+                                diff_matrix[line][col]=diff
+                        # Plot the difference:
+                        out_name=compare_methods_dir+'/diff_theoretial_vs_{}/-{}_{}_{}.png'.format(met,algo,key,io)
+                        print('plotting:',out_name)
+                        field_plot(diff_matrix,out_name)
+################################################################################
+################################################################################
+# /!\ Obsolete (tmp):
 def vec_plot(results_file,column_of_interest,label,out_name):
     """Plots 1D vectors:
     """
