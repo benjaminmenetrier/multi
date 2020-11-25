@@ -436,7 +436,7 @@ do io=1,no
    call ncerr('main',nf90_def_grp(grpid(io),'lanczos',subgrpid))
 
    ! Reshape guess
-   xb_2d = reshape(xb,(/geom(io)%nx,geom(io)%ny/))
+   xg_2d = reshape(xg,(/geom(io)%nx,geom(io)%ny/))
    ! Reshape
 
    ! Get dimensions
@@ -692,7 +692,7 @@ do io=1,no
    call ncerr('main',nf90_def_grp(grpid(io),'planczosif',subgrpid))
 
    ! Reshape guess
-   xb_2d = reshape(xb,(/geom(io)%nx,geom(io)%ny/))
+   xg_2d = reshape(xg,(/geom(io)%nx,geom(io)%ny/))
 
    ! Get dimensions
    call ncerr('main',nf90_inq_dimid(grpid(io),'nx',nx_id))
