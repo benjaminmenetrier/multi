@@ -280,19 +280,16 @@ def compare_methods_2D_outer(compare_methods_data,methods_list,compare_methods_d
                     data_to_compare=np.array(ds[io][algo][key][:])
                     diff_dict[algo][key].append(np.array(data_to_compare))
                 # Compute the difference as a 2D matrix -- diff = (method - theoretical)
-                for m,met in enumerate(methods_list):
-                    if m==0:
-                        pass
-                    else:
-                        diff_matrix=np.zeros(np.shape(diff_dict[algo][key][m]))
-                        for line in range(len(diff_dict[algo][key][m])):
-                            for col in range(len(diff_dict[algo][key][m][line])):
-                                diff=diff_dict[algo][key][m][line][col]-diff_dict[algo][key][0][line][col]
-                                diff_matrix[line][col]=diff
-                        # Plot the difference:
-                        out_name=compare_methods_dir+'/diff_theoretial_vs_{}/-{}_{}_{}.png'.format(met,algo,key,io)
-                        print('plotting:',out_name)
-                        field_plot(diff_matrix,out_name)
+                for m,met in enumerate(methods_list[1:]):
+                    diff_matrix=np.zeros(np.shape(diff_dict[algo][key][m]))
+                    for line in range(len(diff_dict[algo][key][m])):
+                        for col in range(len(diff_dict[algo][key][m][line])):
+                            diff=diff_dict[algo][key][m][line][col]-diff_dict[algo][key][0][line][col]
+                            diff_matrix[line][col]=diff
+                    # Plot the difference:
+                    out_name=compare_methods_dir+'/theoretical_vs_{}/{}_{}_{}.png'.format(met,algo,key,io)
+                    print('plotting:',out_name)
+                    field_plot(diff_matrix,out_name)
 ################################################################################
 ################################################################################
 # /!\ Obsolete (tmp):

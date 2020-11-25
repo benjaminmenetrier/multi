@@ -45,7 +45,7 @@ filename='"output"'
 
 # if True, the results already existing for the same set of parameters
 # will be rewritten:
-rewrite_results=False
+rewrite_results=True
 #---------------------------
 
 # Path to the executable from multi:
@@ -88,13 +88,13 @@ outer_iterations_list=[]
 # (future improvement: use itertools)
 for no in [4]:
     for ni in [6]:
-        for lmp_mode in ['"none"']:#['"none"','"ritz"','"spectral"']:
+        for lmp_mode in ['"non"']:#['"none"','"ritz"','"spectral"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
-                for nx in ['101']:
+                for nx in ['101,501,901,1301']:
                     for nobs in [2000]:
                         for sigma_obs in [0.01]:
                             for sigmabvar in [0.1]:
-                                for Lb in [0.1]:
+                                for Lb in [0.01]:
                                     # square grid:
                                     ny=nx
                                     #ny='1'
@@ -171,49 +171,48 @@ for no in [4]:
                                     copyfile(code_output,res_dir+"/output.nc")
                                     
 ################################################################################
-# # Plots:
+# Plots:
 
-# # Loop over the results directories produced:
-# for r,res_dir in enumerate(res_dir_list):
-    
-#     # Get the data:
-#     ds=netcdf_extract(res_dir)
-    
-#     # Plots in observation space:
-#     obs_plot(ds,res_dir)
-#     hxg_plot(ds,res_dir)
-#     innovation_plot(ds,res_dir)
-    
-#     # Plots comparision between lanczos and planczosif:
-#     lanczos_vs_planczosif_plot(ds,res_dir,outer_iterations_list[r])
-    
-#     # Plots in model space:
-#     # At outer loop level:
-#     for io in ds.groups:
-#         x_coord=np.array(ds[io]['x_coord'])
-#         y_coord=np.array(ds[io]['y_coord'])
-#         for field in ['sigmab','dirac_cov','dirac_cor','xb']:
-#             matrix=np.array(ds[io][field][:])
-#             out_name=res_dir+'/'+field+'_'+io
-#             field_plot(matrix,out_name)
-#         for algo in ds[io].groups:
-#             for field in ['xg']:
-#                 matrix=np.array(ds[io][algo][field][:])
-#                 out_name=res_dir+'/'+algo+'_'+field+'_'+io
-#                 field_plot(matrix,out_name)
-#                 # At inner loop level:
-#                 for ii in range(ds[io][algo].dimensions['nimax'].size):
-#                     dx=np.array(ds[io][algo]['dx'][ii][:])
-#                     out_name=res_dir+'/'+algo+'_dx_'+io+'_'+'inner_'+str(ii)
-#                     field_plot(dx,out_name)
-# ################################################################################
-
-# Comparision between the different methods:
-methods_list=['theoretical','standard','alternative']
+# Loop over the results directories produced:
 for r,res_dir in enumerate(res_dir_list):
-    #try:
-    aaa=True
-    if aaa==True:
+    
+    # Get the data:
+    ds=netcdf_extract(res_dir)
+    
+    # Plots in observation space:
+    obs_plot(ds,res_dir)
+    hxg_plot(ds,res_dir)
+    innovation_plot(ds,res_dir)
+    
+    # Plots comparision between lanczos and planczosif:
+    lanczos_vs_planczosif_plot(ds,res_dir,outer_iterations_list[r])
+    
+    # Plots in model space:
+    # At outer loop level:
+    for io in ds.groups:
+        x_coord=np.array(ds[io]['x_coord'])
+        y_coord=np.array(ds[io]['y_coord'])
+        for field in ['sigmab','dirac_cov','dirac_cor','xb']:
+            matrix=np.array(ds[io][field][:])
+            out_name=res_dir+'/'+field+'_'+io
+            field_plot(matrix,out_name)
+        for algo in ds[io].groups:
+            for field in ['xg']:
+                matrix=np.array(ds[io][algo][field][:])
+                out_name=res_dir+'/'+algo+'_'+field+'_'+io
+                field_plot(matrix,out_name)
+                # At inner loop level:
+                for ii in range(ds[io][algo].dimensions['nimax'].size):
+                    dx=np.array(ds[io][algo]['dx'][ii][:])
+                    out_name=res_dir+'/'+algo+'_dx_'+io+'_'+'inner_'+str(ii)
+                    field_plot(dx,out_name)
+################################################################################
+# Comparision between the different methods:
+
+methods_list=['theoretical','standard','alternative']
+
+for r,res_dir in enumerate(res_dir_list):
+    try:
         if methods_list[0] in res_dir:
             res_tmp=res_dir.split('theoretical')
             res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
@@ -222,6 +221,10 @@ for r,res_dir in enumerate(res_dir_list):
             compare_methods_out=compare_methods_out.replace(res_dir_raw,compare_methods_dir)
             if not os.path.exists(compare_methods_out):
                 os.mkdir(compare_methods_out)
+            for met in methods_list[1:]:
+                compare_methods_2D_dir = compare_methods_out+"/theoretical_vs_"+met    
+                if not os.path.exists(compare_methods_2D_dir):
+                    os.mkdir(compare_methods_2D_dir)
             compare_methods=[]
             for method in methods_list:
                 compare_methods.append(res_tmp1+method+res_tmp2)
@@ -230,10 +233,9 @@ for r,res_dir in enumerate(res_dir_list):
                 ds=netcdf_extract(res)
                 compare_methods_data.append(ds)
             # Comparision for 1D variables (cost functions, rho, beta ...):
-            #compare_methods_plot(compare_methods_data,methods_list,outer_iterations_list[r],compare_methods_out)
+            compare_methods_plot(compare_methods_data,methods_list,outer_iterations_list[r],compare_methods_out)
             # Comparision for 2D variables:
             compare_methods_2D_outer(compare_methods_data,methods_list,compare_methods_out)
-    #except:
-    aaa=False
-        #print("Cannot compare methods: the following file does not exist:\n",res)
+    except:
+        print("Cannot compare methods: the following file does not exist:\n",res)
 ################################################################################
