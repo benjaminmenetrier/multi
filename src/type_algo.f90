@@ -148,7 +148,7 @@ call ncerr('algo_write',nf90_def_var(subgrpid,'beta',nf90_double,(/nimax_plus_on
 ! Write variables
 do ii=1,algo%nimax
    dx_2d = reshape(algo%dx(:,ii),(/geom%nx,geom%ny/))
-   call ncerr('algo_write',nf90_put_var(subgrpid,dx_id,dx_2d))
+   call ncerr('algo_write',nf90_put_var(subgrpid,dx_id,dx_2d,(/1,1,ii/),(/geom%nx,geom%ny,1/)))
 end do
 call ncerr('algo_write',nf90_put_var(subgrpid,jb_id,algo%jb(0:algo%nimax)))
 call ncerr('algo_write',nf90_put_var(subgrpid,jo_id,algo%jo(0:algo%nimax)))
