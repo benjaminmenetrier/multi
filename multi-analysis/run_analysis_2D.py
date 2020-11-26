@@ -88,7 +88,7 @@ outer_iterations_list=[]
 # (future improvement: use itertools)
 for no in [4]:
     for ni in [6]:
-        for lmp_mode in ['"non"']:#['"none"','"ritz"','"spectral"']:
+        for lmp_mode in ['"none"']:#['"none"','"ritz"','"spectral"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
                 for nx in ['101,501,901,1301']:
                     for nobs in [2000]:

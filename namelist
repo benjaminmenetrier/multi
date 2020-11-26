@@ -28,5 +28,5 @@ spvarmin = 1e-05
 
 &miscellanous
 new_seed = .false.
-filename = "output"
+filename = "outputs_tmp/output"
 /
