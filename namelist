@@ -1,7 +1,7 @@
 &solver
 no = 4
 ni = 6
-lmp_mode = "non"
+lmp_mode = "none"
 test_ortho = .false.
 shutoff_type = 0
 shutoff_value = 0.0
@@ -11,8 +11,8 @@ projective_Bmatrix = .true.
 /
 
 &resolutions
-nx = 101,501,901,1301
-ny = 101,501,901,1301
+nx = 101,901,1301
+ny = 101,901,1301
 /
 
 &observations
@@ -28,5 +28,5 @@ spvarmin = 1e-05
 
 &miscellanous
 new_seed = .false.
-filename = "outputs_tmp/output"
+filename = "output.nc"
 /

@@ -40,7 +40,7 @@ Lb=0.12
 spvarmin=1.0e-5
 
 new_seed=".false."
-filename='"output"'
+filename='"output.nc"'
 
 
 # if True, the results already existing for the same set of parameters
@@ -90,7 +90,7 @@ for no in [4]:
     for ni in [6]:
         for lmp_mode in ['"none"']:#['"none"','"ritz"','"spectral"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
-                for nx in ['101,501,901,1301']:
+                for nx in ['101']:
                     for nobs in [2000]:
                         for sigma_obs in [0.01]:
                             for sigmabvar in [0.1]:

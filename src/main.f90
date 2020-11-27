@@ -17,6 +17,8 @@ integer,parameter   :: nomax = 9           ! Maximum number of outer iterations
 integer,parameter   :: namelist_unit = 9   ! Namelist unit
 
 ! Namelist parameters
+character(len=1024) :: namelist_name       ! name of the namelist file to use (default="namelist")
+
 integer             :: no                  ! Number of outer iterations
 integer             :: ni                  ! Number of inner iterations
 character(len=8)    :: lmp_mode            ! LMP mode ('none', 'spectral', 'ritz')
@@ -96,10 +98,16 @@ sigmabvar = 0.0
 Lb = 0.12
 spvarmin = 1.0e-5
 new_seed = .false.
-filename = 'output'
+!filename = 'output'
+filename = 'output.nc'
+
+! Read the name of the namelist to use:
+!(Default = namelist)
+read(*,'(a)') namelist_name
 
 ! Read namelist
-open(unit=namelist_unit,file='namelist',status='old',action='read')
+!open(unit=namelist_unit,file='namelist',status='old',action='read')
+open(unit=namelist_unit,file=namelist_name,status='old',action='read')
 read(namelist_unit,nml=solver)
 read(namelist_unit,nml=resolutions)
 read(namelist_unit,nml=observations)
@@ -134,7 +142,8 @@ allocate(lmp_lanczos(no))
 allocate(lmp_planczosif(no))
 
 ! Create NetCDF file
-call ncerr('main',nf90_create(trim(filename)//'.nc',ior(nf90_clobber,nf90_netcdf4),ncid))
+!call ncerr('main',nf90_create(trim(filename)//'.nc',ior(nf90_clobber,nf90_netcdf4),ncid))
+call ncerr('main',nf90_create(trim(filename),ior(nf90_clobber,nf90_netcdf4),ncid))
 
 ! Set missing value
 call ncerr('main',nf90_put_att(ncid,nf90_global,'_FillValue',-999.0))
