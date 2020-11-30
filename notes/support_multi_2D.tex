@@ -44,7 +44,6 @@
 \item B matrix monitoring
 \item Innovation vs. guess
 \item Cost function
-\item Short conclusion
 \end{itemize}
 \item Changing the resolution:
 \begin{itemize}
@@ -66,7 +65,7 @@ The parameters of the code are fixed to the following:\\
 \item $\sigma^b_{var}$=0.1, $L_b=0.1$ (correlation lenghtscale), minimum spectral variance: $10^{-5}$.
 \item $n_{obs}=2000$, $\sigma^o=0.01$.
 \item others: transitive interpolation: True / Projective Bmatrix: True / no orthogonality test.
-\item method used to compute the increments at outer loop level: "theoretical" (using exact $B^{-1}$) -- see the notes of Benjamin.
+\item method used to compute the increments at outer loop level: "theoretical" (using $B^{-1}$) -- see the notes of Benjamin.
 \end{itemize}
 \end{frame}
 
@@ -114,7 +113,7 @@ The B matrix is OK: The correlation lenghtscale modifies the figures as expected
 \begin{frame}{Full resolution: guess}
 \begin{center}
 With lanczos algorithm:\\
-(maybe there is a problem with the guess initialisation (to $x^b$ ?), I am not sure to understand the shape of the first guess. The second guess is equal to $x^b$.):
+The problem have been fixed: The first guess is now the background state.
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=0.8\linewidth]{images/lxg1.png}
@@ -133,11 +132,11 @@ With lanczos algorithm:\\
 With lanczos algorithm:
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/lxg3.png}
+  \includegraphics[width=0.8\linewidth]{images/lxg3.png}
   \caption{guess (outer iteration 3)}
 \endminipage \hfill
 \minipage{0.49\textwidth}%
-  \includegraphics[width=\linewidth]{images/lxg4.png}
+  \includegraphics[width=0.8\linewidth]{images/lxg4.png}
   \caption{guess (outer iteration 4)}
 \endminipage
 \end{figure}
@@ -146,15 +145,14 @@ With lanczos algorithm:
 
 \begin{frame}{Full resolution: guess}
 \begin{center}
-With PlanczosIF algorithm:\\
-(The first guess is different from the one using lanczos algorithm, and is still different from $x^b$, while the second guess is equal to $x^b$):
+With PlanczosIF algorithm (same results as using lanczos):\\
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/pxg1.png}
+  \includegraphics[width=0.8\linewidth]{images/pxg1.png}
   \caption{guess (outer iteration 1)}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/pxg2.png}
+  \includegraphics[width=0.8\linewidth]{images/pxg2.png}
   \caption{guess (outer iteration 2)}
 \endminipage
 \end{figure}
@@ -163,14 +161,14 @@ With PlanczosIF algorithm:\\
 
 \begin{frame}{Full resolution: guess}
 \begin{center}
-With PlanczosIF algorithm:
+With PlanczosIF algorithm (same results as using lanczos):
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/pxg3.png}
+  \includegraphics[width=0.8\linewidth]{images/pxg3.png}
   \caption{guess (outer iteration 3)}
 \endminipage \hfill
 \minipage{0.49\textwidth}%
-  \includegraphics[width=\linewidth]{images/pxg4.png}
+  \includegraphics[width=0.8\linewidth]{images/pxg4.png}
   \caption{guess (outer iteration 4)}
 \endminipage
 \end{figure}
@@ -181,14 +179,14 @@ With PlanczosIF algorithm:
 % hxg -------------------------------------------------------------
 \begin{frame}{Full resolution: mapping the guess to the obs: $H x^g$}
 \begin{center}
-This example is obtained in model space but the results are STRICTLY equal in control space (but they should not since the first guesses are different in both algorithms ?):
+lanczos example (identical with PlanczosIF):
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/hxg1.png}
+  \includegraphics[width=\linewidth]{images/lhxg1.png}
   \caption{$H x^g$ (outer iteration 1)}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/hxg2.png}
+  \includegraphics[width=\linewidth]{images/lhxg2.png}
   \caption{$H x^g$ (outer iteration 2)}
 \endminipage
 \end{figure}
@@ -197,14 +195,14 @@ This example is obtained in model space but the results are STRICTLY equal in co
 
 \begin{frame}{Full resolution: mapping the guess to the obs: $H x^g$}
 \begin{center}
-Reassuring: 1) The coordinates are good; 2) $Hx^g$ seems to be close to the background state at the beggining and closer to the obs at the end (but with a higher variance than the observations). 
+$Hx^g$ seems to be close to the background state at the beggining and closer to the obs at the end (but with a higher variance than the observations ?). 
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/hxg3.png}
+  \includegraphics[width=\linewidth]{images/lhxg3.png}
   \caption{$H x^g$ (outer iteration 3)}
 \endminipage \hfill
 \minipage{0.49\textwidth}%
-  \includegraphics[width=\linewidth]{images/hxg4.png}
+  \includegraphics[width=\linewidth]{images/lhxg4.png}
   \caption{$H x^g$ (outer iteration 4)}
 \endminipage
 \end{figure}
@@ -215,7 +213,7 @@ Reassuring: 1) The coordinates are good; 2) $Hx^g$ seems to be close to the back
 % innovation -------------------------------------------------------------
 \begin{frame}{Full resolution: innovations}
 \begin{center}
-Idem: the results shown are obtained with lanczos algo, but are the same with PlanczosIF since $Hx^g_{lanczos}=Hx^g_{PlanczosIF}$ as discussed in the previous slide (is that an error or they may differ behind the scope of floating numbers in double precision ?).
+lanczos example (identical with PlanczosIF):
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=\linewidth]{images/d1.png}
@@ -231,7 +229,7 @@ Idem: the results shown are obtained with lanczos algo, but are the same with Pl
 
 \begin{frame}{Full resolution: innovations}
 \begin{center}
-Reassuring: it seems to converge to small values of the innovation
+Are the values of the innovation small enough ?
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=\linewidth]{images/d3.png}
@@ -328,6 +326,21 @@ $\rho$ is the norm of the residue and seems to converge well.
 \end{center}
 \end{frame}
 
+
+\begin{frame}{Differences between the methods}
+\begin{center}
+\minipage{0.39\textwidth}
+There are small differences between the guesses obtained with the "alternative" and "theoretical" methods as illustrated with this example, whereas there are not between "standard" and "theoretical" methods.\\
+The differences appear after the firsts outer loops.
+\endminipage \hfill
+\minipage{0.59\textwidth}%
+\begin{figure}
+  \includegraphics[width=0.8\linewidth]{images/ldiffaltvsth3.png}
+  \caption{$x^g_{alt}-x^g_{th}$ (lanczos example)}
+\end{figure}
+\endminipage
+\end{center}
+\end{frame}
 % Changing the resolution ------------------------------------------------------------------------------------------
 
 
@@ -349,11 +362,11 @@ outer 4: $n_x \times n_y = 201 \times 201$.
 The change of resolution is OK for the background (idem for the B matrix -- not shown).
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/xb1r.png}
+  \includegraphics[width=0.8\linewidth]{images/xb1r.png}
   \caption{$x^b$ (outer iteration 1)}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/xb2r.png}
+  \includegraphics[width=0.8\linewidth]{images/xb2r.png}
   \caption{$x^b$ (outer iteration 2)}
 \endminipage
 \end{figure}
@@ -364,11 +377,11 @@ The change of resolution is OK for the background (idem for the B matrix -- not 
 \begin{center}
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{images/xb3r.png}
+  \includegraphics[width=0.8\linewidth]{images/xb3r.png}
   \caption{$x^b$ (outer iteration 3)}
 \endminipage \hfill
 \minipage{0.49\textwidth}%
-  \includegraphics[width=\linewidth]{images/xb4r.png}
+  \includegraphics[width=0.8\linewidth]{images/xb4r.png}
   \caption{$x^b$ (outer iteration 4)}
 \endminipage
 \end{figure}
@@ -380,8 +393,7 @@ The change of resolution is OK for the background (idem for the B matrix -- not 
 % guess -------------------------------------------------------------
 \begin{frame}{Changing resolution: guess}
 \begin{center}
-With lanczos algorithm:\\
-It seems there is a problem with the guess (I cannot see why this occure -- the filling value is choosen to be -999).
+With lanczos algorithm (identical with PlanczosIF): The problem is fixed
 \begin{figure}
 \minipage{0.49\textwidth}
   \includegraphics[width=0.8\linewidth]{images/lxg1r.png}
@@ -411,40 +423,8 @@ With lanczos algorithm:
 \end{center}
 \end{frame}
 
-\begin{frame}{Changing resolution: guess}
-\begin{center}
-With PlanczosIF algorithm:\\
-(idem for this algorithm).
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=0.8\linewidth]{images/pxg1r.png}
-  \caption{guess (outer iteration 1)}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=0.8\linewidth]{images/pxg2r.png}
-  \caption{guess (outer iteration 2)}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
 
-\begin{frame}{Changing resolution: guess}
-\begin{center}
-With PlanczosIF algorithm:
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=0.8\linewidth]{images/pxg3r.png}
-  \caption{guess (outer iteration 3)}
-\endminipage \hfill
-\minipage{0.49\textwidth}%
-  \includegraphics[width=0.8\linewidth]{images/pxg4r.png}
-  \caption{guess (outer iteration 4)}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-\begin{frame}{Changing resolution: guess}
+\begin{frame}{Changing resolution: cost function}
 \begin{center}
 \minipage{0.39\textwidth}
 The convergence is correct, also for $J_o$ and $J_b$ (in the current state of the code, we do not add new observations at outer iterations level, so there is no artificial deterioring of the cost function at each outer iterations).\\
@@ -463,10 +443,10 @@ The convergence is correct, also for $J_o$ and $J_b$ (in the current state of th
 \begin{frame}{Short conclusion:}
 \begin{itemize}
  \item The code seems to converge to a correct solution according to the innovation, cost function and residual norm, both in full resolution or changing it.
- \item There is no significant difference between the three methods in both cases.
+ \item There is no significant difference between the three methods or between the algorithms used in both scenarios for the resolution.
  \item There is a small difference between non-linear and linearized cost functions.
- \item There might be a problem with the inner increments, leading to problem with the guess (?).
- \item Everything else seems OK.
+ \item There are small differences in the guess appearing after the first outer loops between the alternative and theoretical methods, but not between the standard and theoretical methods.
+ \item Need to check beta (outer loops problem?)
 \end{itemize}
 \end{frame}
 %------------------------------------------------------------------------------------------

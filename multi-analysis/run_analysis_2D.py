@@ -90,11 +90,11 @@ for no in [4]:
     for ni in [6]:
         for lmp_mode in ['"none"']:#['"none"','"ritz"','"spectral"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
-                for nx in ['101']:
+                for nx in ['101,121,151,201']:
                     for nobs in [2000]:
                         for sigma_obs in [0.01]:
                             for sigmabvar in [0.1]:
-                                for Lb in [0.01]:
+                                for Lb in [0.1]:
                                     # square grid:
                                     ny=nx
                                     #ny='1'
@@ -161,11 +161,12 @@ for no in [4]:
                                     
                                     # Compile and run the code:
                                     os.chdir("../build")
-                                    os.system("ecbuild ..")
+                                    # ecbuild not necessary:
+                                    #os.system("ecbuild ..")
                                     os.system("make")
                                     os.chdir(cwd)
                                     os.chdir('..')
-                                    os.system(exec_command)
+                                    os.system('echo "namelist" | '+exec_command)
                                     os.chdir(cwd)
                                     # Copy the results:
                                     copyfile(code_output,res_dir+"/output.nc")
