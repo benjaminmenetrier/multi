@@ -54,13 +54,14 @@ results_dir_root=directories["analysis"]+'/diff_methods_results_dev/'
 out_dirs.append(results_dir_root)
 
 # Results directory:
-diff_methods_dir=results_dir_root+'diff_methods_analysis_results/'
+diff_methods_dir=results_dir_root+'/diff_methods_analysis_results/'
 out_dirs.append(diff_methods_dir)
 
 # Location of the raw outputs of the code (temporary stored):
 outputs_tmp_dir=directories["code"]+'/outputs_tmp/'
 directories["outputs"]=outputs_tmp_dir
 out_dirs.append(outputs_tmp_dir)
+
 
 # Location of the raw outputs of the code (temporary stored):
 namelists_tmp_dir=directories["code"]+'/namelists_tmp/'
@@ -118,10 +119,9 @@ methods_list=['"standard"','"alternative"']
 np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
-nwalkers = 4
-nsteps = 1
+nwalkers = 24
+nsteps = 5
 ndim=len(parameters_to_sample)
-#nthreads=6
 
 # Run the analysis:
 p0=walkers_create(nwalkers,parameters,parameters_to_sample,verb)
@@ -141,20 +141,17 @@ scale_factor = 0.2
 ln_prob_args=(parameters,parameters_to_sample,methods_list,exec_command,directories,verb)
 
 # Parallelization of the code using pool:
-# with Pool() as pool:
-#     # Define the sampler object:
-#     sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
-#                                     a=scale_factor,live_dangerously=True,pool=pool)
-#     # Run the MCMC:
-#     state = sampler.run_mcmc(p0, nsteps)
+with Pool() as pool:
+    # Define the sampler object:
+    sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
+                                    a=scale_factor,live_dangerously=True,pool=pool)
+    # Run the MCMC:
+    state = sampler.run_mcmc(p0, nsteps)
     
-#     #dirty_sampler=emcee.EnsembleSampler(nwalkers,1,ln_23,a=scale_factor,live_dangerously=True,pool=pool)
-#     #dirty_state=dirty_sampler.run_mcmc(p0,nsteps)
-
-sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
-                                a=scale_factor,live_dangerously=True)
-# Run the MCMC:
-state = sampler.run_mcmc(p0, nsteps)
+# sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
+#                                 a=scale_factor,live_dangerously=True)
+# # Run the MCMC:
+# state = sampler.run_mcmc(p0, nsteps)
 #-------------------------------------------------------------------------------
 # Save the results:
 # Save the chain containing the position (chain) and associated lnprobability (lnprob):

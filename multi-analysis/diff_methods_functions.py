@@ -109,9 +109,9 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
         # Get the results of the code and store them:
         #try:
         if True:
-            ds=netcdf_extract(os.path.join(directories["outputs"]+outputs[m]))
+            ds=netcdf_extract(outputs[m])
             results[method]=ds
-            os.remove(os.path.join(directories["outputs"]+outputs[m]))
+            os.remove(outputs[m])
         #except:
         #    print("Error with output of the following command line:")
         #    print(command_line)
@@ -217,8 +217,7 @@ def namelist_write(p,parameters,parameters_to_sample,directories,verb):
        parameter space.
     """
     namelist_id="namelist_"
-    #output_id=directories["outputs"]+'/output_'
-    output_id='output_'
+    output_id=os.path.join(directories['outputs']+'output_')
     i=0
     for key in parameters:
         #namelist_id+=key+"_"
