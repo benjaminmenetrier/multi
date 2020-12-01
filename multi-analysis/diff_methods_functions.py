@@ -61,7 +61,8 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
                     parameters[key]['val']=p[i]
                     i+=1
                 elif par_type=='int':
-                    parameters[key]['val']=int(p[i])
+                    # /!\ keep float to avoid conflicts:
+                    parameters[key]['val']=p[i]
                     i+=1
                 elif par_type=='geom':
                     print("do the geometry parameters later")
@@ -88,46 +89,35 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
         #except:
         #    print("Error in namelist_write -- fix later: the origin seems to be in parallelization of writing tasks")
         #    return -np.inf
-        # Compile and run the code:
-        os.chdir(directories["build"])
-        # Porvoke an error when using parallelization with pool:
-        # Fortunately this is not necessary.
-        #os.system("ecbuild ..")
-        #try:
-        if True:
-            os.system("make")
-        #except:
-        #    print("Make Error")
-        #    return -np.inf
         os.chdir(directories["code"])
         command_line=os.path.join('echo "'+directories["namelists"]+'/'+namelists[m]+'" | '+exec_command)
         print(command_line)
         os.system(command_line)
         
-        os.remove(os.path.join(directories["namelists"]+namelists[m]))
+        #os.remove(os.path.join(directories["namelists"]+namelists[m]))
         
         # Get the results of the code and store them:
-        #try:
-        if True:
+        try:
+            print(outputs[m])
             ds=netcdf_extract(outputs[m])
             results[method]=ds
             os.remove(outputs[m])
-        #except:
-        #    print("Error with output of the following command line:")
-        #    print(command_line)
-        #    return -np.inf
+        except:
+            print("Error with output of the following command line:")
+            print(command_line)
+            return -np.inf
         os.chdir(os.path.join(directories["analysis"]))
     #-----------------------------------------------------------------------
     # Compute the difference:
     algo='lanczos'
     cost_func_id='j_nl'
     #try:
-    if True:
-        diff=diff_compute_cost_function(results,algo,methods_list,cost_func_id)
+    #if True:
+        #diff=diff_compute_cost_function(results,algo,methods_list,cost_func_id)
     #except:
-        print("Error in diff_compute with the following parameters:")
-        print('par=',parameters)
-        return -np.inf
+        #print("Error in diff_compute with the following parameters:")
+        #print('par=',parameters)
+        #return -np.inf
     #-----------------------------------------------------------------------
     return -parameters['nobs']['val']
     #return diff
@@ -228,8 +218,9 @@ def namelist_write(p,parameters,parameters_to_sample,directories,verb):
                 namelist_id+=str(p[i])+"_"
                 output_id+=str(p[i])+"_"
             elif par_type=='int':
-                namelist_id+=str(int(p[i]))+"_"
-                output_id+=str(int(p[i]))+"_"
+                # /!\ keep floats for the name to avoid conflicts:
+                namelist_id+=str(p[i])+"_"
+                output_id+=str(p[i])+"_"
             elif par_type=='geom':
                 print("do the geometry parameters later")
             else:
@@ -243,6 +234,7 @@ def namelist_write(p,parameters,parameters_to_sample,directories,verb):
             output_id+=str(parameters[key]['val'])+"_"
     namelist_id=namelist_id.replace('"','')
     output_id=output_id.replace('"','')
+    output_id+='.nc'
     
     # Write the parameters in namelist file:
     namelist=open(os.path.join(directories["namelists"]+namelist_id),"w")
@@ -265,7 +257,7 @@ def namelist_write(p,parameters,parameters_to_sample,directories,verb):
     namelist.write("/\n\n")
     # Observations:
     namelist.write("&observations\n")
-    namelist.write("nobs = {}\n".format(parameters['nobs']['val']))
+    namelist.write("nobs = {}\n".format(int(parameters['nobs']['val'])))
     namelist.write("sigma_obs = {}\n".format(parameters['sigma_obs']['val']))
     namelist.write("/\n\n")
     # Background:

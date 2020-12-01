@@ -120,7 +120,7 @@ np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
 nwalkers = 24
-nsteps = 5
+nsteps = 10
 ndim=len(parameters_to_sample)
 
 # Run the analysis:
@@ -154,6 +154,7 @@ with Pool() as pool:
 # state = sampler.run_mcmc(p0, nsteps)
 #-------------------------------------------------------------------------------
 # Save the results:
+print("save the results as pickles")
 # Save the chain containing the position (chain) and associated lnprobability (lnprob):
 pickle.dump(sampler.chain,open(diff_methods_dir+"chain.py","wb"))
 pickle.dump((-1)*sampler.lnprobability,open(diff_methods_dir+"lnprob.py","wb"))
