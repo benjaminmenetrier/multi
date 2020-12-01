@@ -108,8 +108,7 @@ if verb:
     print('initial parameters: \n', parameters, '\n')
 
 # Define the parameters space to sample:
-#parameters_to_sample=['nobs','sigma_obs','Lb']
-parameters_to_sample=['nobs']
+parameters_to_sample=['nobs', 'sigma_obs','Lb']
 
 # Define the methods to compare:
 methods_list=['"standard"','"alternative"']
@@ -119,8 +118,8 @@ methods_list=['"standard"','"alternative"']
 np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
-nwalkers = 24
-nsteps = 10
+nwalkers = 60
+nsteps = 100
 ndim=len(parameters_to_sample)
 
 # Run the analysis:
@@ -147,15 +146,21 @@ with Pool() as pool:
                                     a=scale_factor,live_dangerously=True,pool=pool)
     # Run the MCMC:
     state = sampler.run_mcmc(p0, nsteps)
-    
+   
 # sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
 #                                 a=scale_factor,live_dangerously=True)
 # # Run the MCMC:
 # state = sampler.run_mcmc(p0, nsteps)
+
+
 #-------------------------------------------------------------------------------
 # Save the results:
 print("save the results as pickles")
 # Save the chain containing the position (chain) and associated lnprobability (lnprob):
-pickle.dump(sampler.chain,open(diff_methods_dir+"chain.py","wb"))
-pickle.dump((-1)*sampler.lnprobability,open(diff_methods_dir+"lnprob.py","wb"))
+results={}
+results['chain'] = sampler.chain
+results['ln_prob'] = (-1)*sampler.lnprobability
+
+pickle.dump(results,open(diff_methods_dir+"results.py","wb"))
+print('results have been saved in:',diff_methods_dir+'results.py')
 ################################################################################

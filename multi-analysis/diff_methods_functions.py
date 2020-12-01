@@ -98,7 +98,6 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
         
         # Get the results of the code and store them:
         try:
-            print(outputs[m])
             ds=netcdf_extract(outputs[m])
             results[method]=ds
             os.remove(outputs[m])
@@ -111,16 +110,14 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
     # Compute the difference:
     algo='lanczos'
     cost_func_id='j_nl'
-    #try:
-    #if True:
-        #diff=diff_compute_cost_function(results,algo,methods_list,cost_func_id)
-    #except:
-        #print("Error in diff_compute with the following parameters:")
-        #print('par=',parameters)
-        #return -np.inf
+    try:
+        diff=diff_compute_cost_function(results,algo,methods_list,cost_func_id)
+    except:
+       print("Error in diff_compute with the following parameters:")
+       print('par=',parameters)
+       return -np.inf
     #-----------------------------------------------------------------------
-    return -parameters['nobs']['val']
-    #return diff
+    return diff
 ################################################################################
 def diff_compute_cost_function(results,algo,methods_list,cost_func_id):
     """Compute the difference between the costs functions.
