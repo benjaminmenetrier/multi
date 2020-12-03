@@ -63,6 +63,7 @@ integer :: ix,iy
 real(8) :: dp1,dp2
 real(8),allocatable :: gpsave(:),gp(:),gp1(:),gp2(:)
 real(8),allocatable :: spsave(:),sp(:),sp1(:),sp2(:)
+complex(8),allocatable :: cpsave(:,:),cp(:,:)
 
 ! Check dimensions
 if (mod(nx,2)==0) then
@@ -95,6 +96,8 @@ allocate(spsave(geom%nh))
 allocate(sp(geom%nh))
 allocate(sp1(geom%nh))
 allocate(sp2(geom%nh))
+allocate(cpsave(geom%kmax+1,geom%ny))
+allocate(cp(geom%kmax+1,geom%ny))
 
 ! Grid coordinates
 do ix=1,geom%nx
@@ -110,18 +113,31 @@ write(*,'(a,i4,a,i4)') '      Spectral: ',geom%kmax,' x ',geom%lmax
 ! Initialization
 call random_number(gpsave)
 call geom%gp2sp(gpsave,spsave)
+call geom%real_to_complex(spsave,cpsave)
+
+! Complex to real and back to complex test
+cp = cpsave
+call geom%complex_to_real(cp,sp)
+call geom%real_to_complex(sp,cp)
+write(*,'(a,e15.8)') '      Complex to real to complex: ',maxval(abs(cp-cpsave))
+
+! Direct + inverse test
+sp = spsave
+call geom%real_to_complex(sp,cp)
+call geom%complex_to_real(cp,sp)
+write(*,'(a,e15.8)') '      Real to complex to real:    ',maxval(abs(sp-spsave))
 
 ! Direct + inverse test
 gp = gpsave
 call geom%gp2sp(gp,sp)
 call geom%sp2gp(sp,gp)
-write(*,'(a,e15.8)') '      Direct + inverse test: ',maxval(abs(gp-gpsave))
+write(*,'(a,e15.8)') '      GP to SP to GP:              ',maxval(abs(gp-gpsave))
 
 ! Inverse + direct test
 sp = spsave
 call geom%sp2gp(sp,gp)
 call geom%gp2sp(gp,sp)
-write(*,'(a,e15.8)') '      Inverse + direct test: ',maxval(abs(sp-spsave))
+write(*,'(a,e15.8)') '      SP to GP to SP:              ',maxval(abs(sp-spsave))
 
 ! Dot product test
 call random_number(gp1)
@@ -130,21 +146,21 @@ call geom%gp2sp(gp1,sp1)
 call geom%gp2sp(gp2,sp2)
 dp1 = sum(gp1*gp2)
 dp2 = geom%spdotprod(sp1,sp2)
-write(*,'(a,e15.8)') '      Dot product test:      ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+write(*,'(a,e15.8)') '      Dot product test:            ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
 ! Adjoint test
 call geom%sp2gp(sp2,gp2)
 dp1 = sum(gp1*gp2)
 dp2 = geom%spdotprod(sp1,sp2)
-write(*,'(a,e15.8)') '      Adjoint test:          ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+write(*,'(a,e15.8)') '      SP to GP adjoint test:        ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
 ! Grid-point interpolation test
 call geom%interp_gp(geom,gp1,gp2)
-write(*,'(a,e15.8)') '      GP interpolation test: ',maxval(abs(gp1-gp2))
+write(*,'(a,e15.8)') '      GP interpolation test:        ',maxval(abs(gp1-gp2))
 
 ! Spectral interpolation test
 call geom%interp_sp(geom,sp1,sp2)
-write(*,'(a,e15.8)') '      SP interpolation test: ',maxval(abs(sp1-sp2))
+write(*,'(a,e15.8)') '      SP interpolation test:        ',maxval(abs(sp1-sp2))
 
 end subroutine geom_setup
 
@@ -237,17 +253,17 @@ isp = 0
 i = 1
 j = 1
 isp = isp+1
-cp(i,j) = cmplx(sp(isp),0.0)
+cp(i,j) = dcmplx(sp(isp),0.0)
 do j=2,geom%ny/2+1
    isp = isp+1
-   cp(i,j) = cmplx(sp(isp),sp(isp+1))
+   cp(i,j) = dcmplx(sp(isp),sp(isp+1))
    cp(i,geom%ny-j+2) = conjg(cp(i,j))
    isp = isp+1
 end do
 do i=2,geom%nx/2+1
    do j=1,geom%ny
       isp = isp+1
-      cp(i,j) = cmplx(sp(isp),sp(isp+1))
+      cp(i,j) = dcmplx(sp(isp),sp(isp+1))
       isp = isp+1
    end do
 end do
@@ -270,7 +286,7 @@ complex(8),intent(out) :: cp_full(0:geom%kmax,-geom%lmax:geom%lmax)
 ! Complex array mapping
 cp_full(0:geom%kmax,0:geom%lmax) = cp(1:geom%kmax+1,1:geom%lmax+1)
 cp_full(1:geom%kmax,-geom%lmax:-1) = cp(2:geom%kmax+1,geom%ny-geom%lmax+1:geom%ny)
-cp_full(0,-1:-geom%lmax:-1) = cmplx(0.0,0.0)
+cp_full(0,-1:-geom%lmax:-1) = dcmplx(0.0,0.0)
 
 end subroutine geom_complex_to_full
 
@@ -309,7 +325,7 @@ real(8),intent(out) :: sp(geom%nh)
 ! Local variables
 integer(8) :: plan
 real(8) :: norm
-real(8) :: gp_2d(geom%nx,geom%ny)
+real(8) :: gp_2d(geom%nx,geom%ny),gp_2d_save(geom%nx,geom%ny)
 complex(8) :: cp(geom%kmax+1,geom%ny)
 
 ! Reshape vector
@@ -319,7 +335,7 @@ gp_2d = reshape(gp,(/geom%nx,geom%ny/))
 call dfftw_plan_dft_r2c_2d(plan,geom%nx,geom%ny,gp_2d,cp,fftw_estimate)
 
 ! Compute FFT
-cp = cmplx(0.0,0.0)
+cp = dcmplx(0.0,0.0)
 call dfftw_execute_dft_r2c(plan,gp_2d,cp)
 
 ! Auto-adjoint factor
@@ -607,7 +623,7 @@ else
    call geom_in%complex_to_full(cp_in,cp_in_full)
 
    ! Initialize
-   cp_out_full = cmplx(0.0,0.0)
+   cp_out_full = dcmplx(0.0,0.0)
 
    ! Copy
    kmaxmin = min(geom_in%kmax,geom_out%kmax)

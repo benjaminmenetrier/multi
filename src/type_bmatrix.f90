@@ -97,6 +97,13 @@ call bmatrix%apply_inv(geom,x1,x1out)
 call bmatrix%apply(geom,x1out,x2)
 write(*,'(a,e15.8)') '         Inverse + direct test on B:    ',maxval(abs(x1-x2))
 
+! Test on U being the square-root of B
+call random_number(x1)
+call bmatrix%apply(geom,x1,x1out)
+call bmatrix%apply_sqrt_ad(geom,x1,v1)
+call bmatrix%apply_sqrt(geom,v1,x2)
+write(*,'(a,e15.8)') '         U = square-root of B:          ',maxval(abs(x1out-x2))
+
 ! Adjoint test on U
 call random_number(x1)
 call random_number(x2)
