@@ -3,34 +3,30 @@
 ################################################################################
 # multi-analysis.py
 
-# purpose: This code plots the results of the code multi.
+# purpose: Contains functions for the methods comparision analysis.
 # Author: Nicolas Baillot d'Etivaux
 
 ################################################################################
+
 # Imported packages:
 import os
 import sys
 import numpy as np
 from distutils.dir_util import copy_tree
 from shutil import copyfile
-from multi_analysis_2D import *
 from fnmatch import fnmatch
 import netCDF4 as nc
 
-# Allow the use of tex format for the labels:
-plt.rcParams.update({"text.usetex": True, "font.size" : 15})
 
 ################################################################################
-# usefull or not for the next steps ? is there options that we want to manage ?
+################################################################################
 def netcdf_extract(output):
-    """ Extract the netcdf data from the result directory res_dir:
-        Args: 
-            res_dir: result directory in which is stored the netcdf output file.
-        Return: 
-            ds: netCDF4 dataset containing the results.
+    """Extract the netCDF data from output file:
     """
+    # option 'r' or 'rb' can cause errors: (fix later)
     ds=nc.Dataset(output,"r")
     return ds
+################################################################################
 ################################################################################
 def ln_23(p):
     namelist=open("../namelists_tmp/"+str(p[0]),"w")
@@ -38,6 +34,7 @@ def ln_23(p):
     namelist.close()
     #os.remove("../namelists_tmp/"+str(p))
     return 0
+################################################################################
 ################################################################################
 def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,directories,verb):
     """Compute the log probability.
@@ -89,21 +86,24 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
         #    print("Error in namelist_write -- fix later: the origin seems to be in parallelization of writing tasks")
         #    return -np.inf
         os.chdir(directories["code"])
-        command_line=os.path.join('echo "'+directories["namelists"]+'/'+namelists[m]+'" | '+exec_command)
+        path_to_namelist=os.path.join(directories["namelists"]+namelists[m])
+        print(path_to_namelist)
+        command_line=os.path.join('echo "'+path_to_namelist+'" | '+exec_command)
         print(command_line)
         os.system(command_line)
         
         os.remove(os.path.join(directories["namelists"]+namelists[m]))
         
         # Get the results of the code and store them:
-        try:
+        #try:
+        if True:
             ds=netcdf_extract(outputs[m])
             results[method]=ds
             os.remove(outputs[m])
-        except:
-            print("Error with output of the following command line:")
-            print(command_line)
-            return -np.inf
+        #except:
+        #    print("Error with output of the following command line:")
+        #    print(command_line)
+        #    return -np.inf
         os.chdir(os.path.join(directories["analysis"]))
     #-----------------------------------------------------------------------
     # Compute the difference:
@@ -117,6 +117,7 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
        return -np.inf
     #-----------------------------------------------------------------------
     return diff
+################################################################################
 ################################################################################
 def diff_compute_cost_function(results,algo,methods_list,cost_func_id):
     """Compute the difference between the costs functions.
@@ -140,7 +141,8 @@ def diff_compute_cost_function(results,algo,methods_list,cost_func_id):
     diff=0
     for i in range(len(cost_function[methods_list[0]])):
         diff+=abs(cost_function[methods_list[0]][i]-cost_function[methods_list[1]][i])
-    return diff            
+    return diff
+################################################################################
 ################################################################################
 # def walkers_create(nwalkers,parameters,parameters_to_sample,verb):
 #     """Generates the walkers in the parameter space to sample:
@@ -173,6 +175,7 @@ def diff_compute_cost_function(results,algo,methods_list,cost_func_id):
 #         all_walkers.append(walker_values)
 #     return all_walkers    
 ################################################################################
+################################################################################
 def walkers_create(nwalkers,parameters,parameters_to_sample,verb):
     """Generates the walkers in the parameter space to sample:
     """
@@ -196,12 +199,14 @@ def walkers_create(nwalkers,parameters,parameters_to_sample,verb):
                     break
                 walker_values.append(p)
         all_walkers.append(walker_values)
-    return all_walkers    
+    return all_walkers
 ################################################################################
+################################################################################
+# Make it later:
 # def walkers_continue(state):
 #     """Take an existing state of the chain and reuse it as first state for the run.
 #     """
-    
+################################################################################
 ################################################################################
 def namelist_write(p,parameters,parameters_to_sample,directories,verb):
     """Write the namelist file according to the position of the walker p in the 
@@ -279,3 +284,4 @@ def namelist_write(p,parameters,parameters_to_sample,directories,verb):
     namelist_and_output={'namelist':namelist_id, 'output':output_id}
     return namelist_and_output
 ################################################################################ 
+################################################################################

@@ -13,11 +13,11 @@ import sys
 import numpy as np
 from distutils.dir_util import copy_tree
 from shutil import copyfile
-from multi_analysis_2D import *
 from fnmatch import fnmatch
 import emcee
-from diff_methods_functions import *
 import pickle
+
+from diff_methods_functions import *
 from multiprocessing import Pool
 
 #---------------------------
@@ -147,15 +147,18 @@ if verb:
 for run in range(nruns):
     if not run==0:
         p0 = state
-
-        
-    print("---------- Starting the MCMC ---------- \n")
+    # Define the sampler object:
+    ln_prob_args=(parameters,parameters_to_sample,methods_list,exec_command,directories,verb)
+    
+    print("---------- Starting run {} of the MCMC ---------- \n".format(run))
+    
     # Parallelization of the code using pool:
-    with Pool() as pool:
-        # Define the sampler object:
-        ln_prob_args=(parameters,parameters_to_sample,methods_list,exec_command,directories,verb)
+    #with Pool() as pool:
+    if True:
+        
         sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
-                                        a=scale_factor,live_dangerously=True,pool=pool)
+                                        a=scale_factor,live_dangerously=True,
+                                        )#pool=pool)
         # Run the MCMC:
         state = sampler.run_mcmc(p0, nsteps)
         

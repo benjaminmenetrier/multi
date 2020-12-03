@@ -1,7 +1,11 @@
 #!/usr/bin/env python
 
 ################################################################################
-#                        diff_methods_plot                                     #
+# diff_methods_plot
+
+# purpose: Contains functions plotting comparision between the methods
+# Author: Nicolas Baillot d'Etivaux
+
 ################################################################################
 
 # imported pachages:
@@ -12,6 +16,7 @@ import os
 import sys
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
+
 from corner_plot import *
 
 # plot style:

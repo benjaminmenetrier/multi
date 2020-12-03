@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 
+################################################################################
+# analysis_tools.py
+
+# purpose: Concatenates the results of the MCMC sampling.
+# Author: Nicolas Baillot d'Etivaux
+
+################################################################################
+
 #imported packages:
 import os
 import sys
@@ -8,12 +16,14 @@ import numpy as np
 import pickle
 
 
+################################################################################
+################################################################################
 # Results directory
 res_dir=sys.argv[1]
 
 # First run and last run to consider (burnin):
-start_chain=int(sys.argv[3])
-end_chain=int(sys.argv[4])
+start_chain=int(sys.argv[2])
+end_chain=int(sys.argv[3])
 
 all_res=np.load(res_dir+"results_{}.py".format(start_chain))
 
@@ -37,3 +47,5 @@ Res["lnprobs"]=all_lnprobs
 Res["chain"]=all_chains
 
 pickle.dump(Res,open(res_dir+"all_results.py","wb"),protocol=pickle.HIGHEST_PROTOCOL)
+################################################################################
+################################################################################

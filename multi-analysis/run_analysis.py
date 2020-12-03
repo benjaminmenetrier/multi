@@ -13,8 +13,10 @@ import sys
 import numpy as np
 from distutils.dir_util import copy_tree
 from shutil import copyfile
-from multi_analysis_2D import *
 from fnmatch import fnmatch
+from analysis_tools import *
+from analysis_1D_plot import *
+from matrix_plot import *
 
 #---------------------------
 # Default values for the parameters in namelist:
@@ -90,7 +92,7 @@ for no in [4]:
     for ni in [6]:
         for lmp_mode in ['"none"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
-                for nx in ['101,121,151,201']:
+                for nx in ['101']:#['101,121,151,201']:
                     for nobs in [2000]:
                         for sigma_obs in [0.01]:
                             for sigmabvar in [0.1]:
@@ -209,14 +211,14 @@ for r,res_dir in enumerate(res_dir_list):
                     dx=np.array(ds[io][algo]['dx'][ii][:])
                     out_name=res_dir+'/'+algo+'_dx_'+io+'_'+'inner_'+str(ii)
                     field_plot(dx,out_name)
-################################################################################
+# ################################################################################
 # Comparision between the different methods:
 
 methods_list=['theoretical','standard','alternative']
 
 for r,res_dir in enumerate(res_dir_list):
-    #try:
-    if True:    
+    try:
+    #if True:    
         if methods_list[0] in res_dir:
             res_tmp=res_dir.split('theoretical')
             res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
@@ -238,9 +240,9 @@ for r,res_dir in enumerate(res_dir_list):
                 compare_methods_data.append(ds)
             # Comparision for 1D variables (cost functions, rho, beta ...):
             compare_methods_plot(compare_methods_data,methods_list,outer_iterations_list[r],compare_methods_out)
-            #compare_methods_plot2(compare_methods_data,methods_list,outer_iterations_list[r],compare_methods_out)
-            # Comparision for 2D variables:
+            compare_methods_plot2(compare_methods_data,methods_list,compare_methods_out)
+            # Comparision for 2D variables at outer loop level:
             compare_methods_2D_outer(compare_methods_data,methods_list,compare_methods_out)
-    #except:
-    #    print("Cannot compare methods: the following file does not exist:\n",res)
+    except:
+        print("Cannot compare methods: the following file does not exist:\n",res)
 ################################################################################
