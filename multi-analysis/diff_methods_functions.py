@@ -85,7 +85,6 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
             namelist_and_output=namelist_write(p,parameters,parameters_to_sample,directories,verb)
             namelists.append(namelist_and_output['namelist']) 
             outputs.append(namelist_and_output['output'])
-            print(namelist_and_output)
         #except:
         #    print("Error in namelist_write -- fix later: the origin seems to be in parallelization of writing tasks")
         #    return -np.inf
@@ -94,7 +93,7 @@ def ln_prob(p,parameters,parameters_to_sample,methods_list,exec_command,director
         print(command_line)
         os.system(command_line)
         
-        #os.remove(os.path.join(directories["namelists"]+namelists[m]))
+        os.remove(os.path.join(directories["namelists"]+namelists[m]))
         
         # Get the results of the code and store them:
         try:
@@ -198,6 +197,11 @@ def walkers_create(nwalkers,parameters,parameters_to_sample,verb):
                 walker_values.append(p)
         all_walkers.append(walker_values)
     return all_walkers    
+################################################################################
+# def walkers_continue(state):
+#     """Take an existing state of the chain and reuse it as first state for the run.
+#     """
+    
 ################################################################################
 def namelist_write(p,parameters,parameters_to_sample,directories,verb):
     """Write the namelist file according to the position of the walker p in the 

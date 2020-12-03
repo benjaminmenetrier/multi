@@ -194,15 +194,33 @@ integer,intent(in) :: grpid
 integer :: nx_id,ny_id,sigmab_id,dirac_cov_id,dirac_cor_id
 real(8) :: x1(geom%nh),x2(geom%nh)
 real(8) :: x1_2d(geom%nx,geom%ny),x2_2d(geom%nx,geom%ny),sigmab_2d(geom%nx,geom%ny),x2_cor_2d(geom%nx,geom%ny)
+! added to check the B matrix on another pixel inside the domain:
+real(8) :: x1bis_2d(geom%nx,geom%ny),x2bis_2d(geom%nx,geom%ny),x2bis_cor_2d(geom%nx,geom%ny),x1bis(geom%nh),x2bis(geom%nh)
+integer :: dirac_cov_bis_id,dirac_cor_bis_id
 
-! Dirac test
+! Dirac test (at coordinates (1,1) for x1 and x2, and inside the domaine for x1bis,x2bis:
 x1_2d = 0.0
+x1bis_2d = 0.0
 x1_2d(1,1) = 1.0
+x1bis_2d(30,30) = 1.0 !change later for something like geom%nx/3,geom%ny/3, or non diagonal pixel ?
+
 x1 = pack(x1_2d,.true.)
+x1bis = pack(x1bis_2d,.true.)
+
 call bmatrix%apply(geom,x1,x2)
+call bmatrix%apply(geom,x1bis,x2bis)
+
 x2_2d = reshape(x2,(/geom%nx,geom%ny/))
+x2bis_2d = reshape(x2,(/geom%nx,geom%ny/))
+
 sigmab_2d = reshape(bmatrix%sigmab,(/geom%nx,geom%ny/))
+
 x2_cor_2d = x2_2d/(sigmab_2d(1,1)*sigmab_2d)
+x2bis_cor_2d = x2bis_2d/(sigmab_2d(30,30)*sigmab_2d)
+
+! just to check that we are writing the good variables and that they are well plotted:
+!x2bis_cor_2d = 0.0
+!x2bis_2d = 0.0
 
 ! Get dimensions
 call ncerr('bmatrix_write',nf90_inq_dimid(grpid,'nx',nx_id))
@@ -212,11 +230,15 @@ call ncerr('bmatrix_write',nf90_inq_dimid(grpid,'ny',ny_id))
 call ncerr('bmatrix_write',nf90_def_var(grpid,'sigmab',nf90_double,(/nx_id,ny_id/),sigmab_id))
 call ncerr('bmatrix_write',nf90_def_var(grpid,'dirac_cov',nf90_double,(/nx_id,ny_id/),dirac_cov_id))
 call ncerr('bmatrix_write',nf90_def_var(grpid,'dirac_cor',nf90_double,(/nx_id,ny_id/),dirac_cor_id))
+call ncerr('bmatrix_write',nf90_def_var(grpid,'dirac_cov_bis',nf90_double,(/nx_id,ny_id/),dirac_cov_bis_id))
+call ncerr('bmatrix_write',nf90_def_var(grpid,'dirac_cor_bis',nf90_double,(/nx_id,ny_id/),dirac_cor_bis_id))
 
 ! Write variables
 call ncerr('bmatrix_write',nf90_put_var(grpid,sigmab_id,sigmab_2d))
 call ncerr('bmatrix_write',nf90_put_var(grpid,dirac_cov_id,x2_2d))
 call ncerr('bmatrix_write',nf90_put_var(grpid,dirac_cor_id,x2_cor_2d))
+call ncerr('bmatrix_write',nf90_put_var(grpid,dirac_cov_bis_id,x2bis_2d))
+call ncerr('bmatrix_write',nf90_put_var(grpid,dirac_cor_bis_id,x2bis_cor_2d))
 
 ! Write attributes
 call ncerr('bmatrix_write',nf90_put_att(grpid,nf90_global,'Lb',bmatrix%Lb))

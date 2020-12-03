@@ -44,10 +44,14 @@ os.chdir('..')
 cwd=os.getcwd()
 directories["code"]=cwd
 
-
+# Compile the code (penser a le copier ds un autre repo):
 os.chdir('./build')
-cwd=os.getcwd()
-directories["build"]=cwd
+os.system('ecbuild ..')
+os.system('make')
+os.chdir('..')
+
+# cwd=os.getcwd()
+# directories["build"]=cwd
 
 # Root of the results of the analysis:
 results_dir_root=directories["analysis"]+'/diff_methods_results_dev/'
@@ -109,6 +113,7 @@ if verb:
 
 # Define the parameters space to sample:
 parameters_to_sample=['nobs', 'sigma_obs','Lb']
+#parameters_to_sample=['nx','ny']
 
 # Define the methods to compare:
 methods_list=['"standard"','"alternative"']
@@ -118,49 +123,55 @@ methods_list=['"standard"','"alternative"']
 np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
-nwalkers = 60
-nsteps = 100
 ndim=len(parameters_to_sample)
+nwalkers = 6
+
+nsteps = 1
+nruns = int(nsteps/10.)
+if nruns <1:
+    nruns=1
+    
+# Scale factor of the stretch-move algorithm (see the doc: ...pdf)
+scale_factor = 0.2
+
 
 # Run the analysis:
-p0=walkers_create(nwalkers,parameters,parameters_to_sample,verb)
+p0 = walkers_create(nwalkers,parameters,parameters_to_sample,verb)
 if verb:
     print('Generated walker example: \n', p0[0])
     print('shape of p0:',np.shape(p0),'\n')
-
-print("----------- Starting the MCMC ---------- \n")
-
-# Scale factor of the stretch-move algorithm (see the doc: ...pdf)
-scale_factor = 0.2
-#-------------------------------------------------------------------------------
-
 # Test the behavior of the ln_prob:
 #ln_prob(p0[0],parameters,parameters_to_sample,methods_list,exec_command,verb)
 
-ln_prob_args=(parameters,parameters_to_sample,methods_list,exec_command,directories,verb)
-
-# Parallelization of the code using pool:
-with Pool() as pool:
-    # Define the sampler object:
-    sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
-                                    a=scale_factor,live_dangerously=True,pool=pool)
-    # Run the MCMC:
-    state = sampler.run_mcmc(p0, nsteps)
-   
-# sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
-#                                 a=scale_factor,live_dangerously=True)
-# # Run the MCMC:
-# state = sampler.run_mcmc(p0, nsteps)
-
-
 #-------------------------------------------------------------------------------
-# Save the results:
-print("save the results as pickles")
-# Save the chain containing the position (chain) and associated lnprobability (lnprob):
-results={}
-results['chain'] = sampler.chain
-results['ln_prob'] = (-1)*sampler.lnprobability
+for run in range(nruns):
+    if not run==0:
+        p0 = state
 
-pickle.dump(results,open(diff_methods_dir+"results.py","wb"))
-print('results have been saved in:',diff_methods_dir+'results.py')
+        
+    print("---------- Starting the MCMC ---------- \n")
+    # Parallelization of the code using pool:
+    with Pool() as pool:
+        # Define the sampler object:
+        ln_prob_args=(parameters,parameters_to_sample,methods_list,exec_command,directories,verb)
+        sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
+                                        a=scale_factor,live_dangerously=True,pool=pool)
+        # Run the MCMC:
+        state = sampler.run_mcmc(p0, nsteps)
+        
+        # sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
+        #                                 a=scale_factor,live_dangerously=True)
+        # # Run the MCMC:
+        # state = sampler.run_mcmc(p0, nsteps)
+
+
+        #-------------------------------------------------------------------------------
+        # Save the results:
+        print("save the results as pickles")
+        # Save the chain containing the position (chain) and associated lnprobability (lnprob):
+        results={}
+        results['chain'] = sampler.chain
+        results['ln_prob'] = (-1)*sampler.lnprobability
+        pickle.dump(results,open(diff_methods_dir+"results_run_{}.py".format(run),"wb"))
+        print('results have been saved in:',diff_methods_dir+'results_run_{}.py'.format(run))
 ################################################################################

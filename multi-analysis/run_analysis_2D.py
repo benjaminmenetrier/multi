@@ -24,15 +24,15 @@ ni=4
 lmp_mode='"none"'
 test_ortho=".false."
 shutoff_type=0
-shutoff_value=0.0
+shutoff_value=1e-2
 method='"theoretical"'
 transitive_interp=".true."
 projective_Bmatrix=".true."
 
-nx="101,121,151"
-ny="101,121,151"
+nx="11,31,51,101"
+ny="11,31,51,101"
 
-nobs=3000
+nobs=100
 sigma_obs=0.1
 
 sigmabvar=0.0
@@ -88,7 +88,7 @@ outer_iterations_list=[]
 # (future improvement: use itertools)
 for no in [4]:
     for ni in [6]:
-        for lmp_mode in ['"none"']:#['"none"','"ritz"','"spectral"']:
+        for lmp_mode in ['"none"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
                 for nx in ['101,121,151,201']:
                     for nobs in [2000]:
@@ -112,8 +112,10 @@ for no in [4]:
                                     name_string2=name_string2.format(nx,ny,nobs,sigma_obs)
                                     name_string3='_sigbvar{}_Lb{}'
                                     name_string3=name_string3.format(sigmabvar,Lb)
+                                    name_string4='_orth{}_shut_{}-{}_trans{}_proj{}'
+                                    name_string4=name_string4.format(test_ortho,shutoff_type,shutoff_value,transitive_interp,projective_Bmatrix)
                                     
-                                    res_dir=res_dir_raw+name_string1+name_string2+name_string3
+                                    res_dir=res_dir_raw+name_string1+name_string2+name_string3+name_string4
                                     res_dir_list.append(res_dir)
                                     
                                     # Rewrite the results or not:
@@ -193,7 +195,7 @@ for r,res_dir in enumerate(res_dir_list):
     for io in ds.groups:
         x_coord=np.array(ds[io]['x_coord'])
         y_coord=np.array(ds[io]['y_coord'])
-        for field in ['sigmab','dirac_cov','dirac_cor','xb']:
+        for field in ['sigmab','dirac_cov','dirac_cor','dirac_cov_bis','dirac_cor_bis','xb']:
             matrix=np.array(ds[io][field][:])
             out_name=res_dir+'/'+field+'_'+io
             field_plot(matrix,out_name)
@@ -213,7 +215,8 @@ for r,res_dir in enumerate(res_dir_list):
 methods_list=['theoretical','standard','alternative']
 
 for r,res_dir in enumerate(res_dir_list):
-    try:
+    #try:
+    if True:    
         if methods_list[0] in res_dir:
             res_tmp=res_dir.split('theoretical')
             res_tmp1,res_tmp2=res_tmp[0],res_tmp[1]
@@ -222,7 +225,7 @@ for r,res_dir in enumerate(res_dir_list):
             compare_methods_out=compare_methods_out.replace(res_dir_raw,compare_methods_dir)
             if not os.path.exists(compare_methods_out):
                 os.mkdir(compare_methods_out)
-            for met in methods_list[1:]:
+            for met in methods_list:
                 compare_methods_2D_dir = compare_methods_out+"/theoretical_vs_"+met    
                 if not os.path.exists(compare_methods_2D_dir):
                     os.mkdir(compare_methods_2D_dir)
@@ -235,8 +238,9 @@ for r,res_dir in enumerate(res_dir_list):
                 compare_methods_data.append(ds)
             # Comparision for 1D variables (cost functions, rho, beta ...):
             compare_methods_plot(compare_methods_data,methods_list,outer_iterations_list[r],compare_methods_out)
+            #compare_methods_plot2(compare_methods_data,methods_list,outer_iterations_list[r],compare_methods_out)
             # Comparision for 2D variables:
             compare_methods_2D_outer(compare_methods_data,methods_list,compare_methods_out)
-    except:
-        print("Cannot compare methods: the following file does not exist:\n",res)
+    #except:
+    #    print("Cannot compare methods: the following file does not exist:\n",res)
 ################################################################################

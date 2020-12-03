@@ -256,6 +256,38 @@ def compare_methods_plot(compare_methods_data,methods_list,outer_iterations,comp
         compare_plots_2N(obj_list[key],ylabel1,diff_list[key],ylabel2,x,xlabel,outer_iterations,legend,out_name)
 ################################################################################
 ################################################################################
+# a finir!
+def compare_methods2(compare_methods_data,methods_list,compare_methods_dir):
+    """Plots the comparision between the different methods:
+    """
+    diff_dict={}
+    keys=['j_nl','jo_nl','jb_nl','j','jo','jb','rho_sqrt','beta']
+    labels=[r'$J^{nl}$',r'$J_o^{nl}$',r'$J_b^{nl}$',r'$J$',r'$J_o$',r'$J_b$',r'$\sqrt{\rho}$',r'$\beta$']
+    legend=[]
+
+    ds_th=compare_methods_data[0]
+    for io in ds_th.groups:
+        for algo in ds_th[io].groups:
+            diff_dict[algo]={}
+            for key in keys:
+                diff_dict[algo][key]=[]
+                for m,met in enumerate(methods_list):
+                    ds=compare_methods_data[m]
+                    data_to_compare=np.array(ds[io][algo][key][:])
+                    diff_dict[algo][key].append(np.array(data_to_compare))
+                # Compute the difference as a 2D matrix -- diff = (method - theoretical)
+                for m,met in enumerate(methods_list):
+                    diff_matrix=np.zeros(np.shape(diff_dict[algo][key][m]))
+                    for line in range(len(diff_dict[algo][key][m])):
+                        for col in range(len(diff_dict[algo][key][m][line])):
+                            diff=diff_dict[algo][key][m][line][col]-diff_dict[algo][key][0][line][col]
+                            diff_matrix[line][col]=diff
+                    # Plot the difference:
+                    out_name=compare_methods_dir+'/theoretical_vs_{}/{}_{}_{}.png'.format(met,algo,key,io)
+                    print('plotting:',out_name)
+                    field_plot(diff_matrix,out_name)
+################################################################################
+################################################################################
 def compare_methods_2D_outer(compare_methods_data,methods_list,compare_methods_dir):
     """Plots the comparision between the different methods:
     """
@@ -280,7 +312,7 @@ def compare_methods_2D_outer(compare_methods_data,methods_list,compare_methods_d
                     data_to_compare=np.array(ds[io][algo][key][:])
                     diff_dict[algo][key].append(np.array(data_to_compare))
                 # Compute the difference as a 2D matrix -- diff = (method - theoretical)
-                for m,met in enumerate(methods_list[1:]):
+                for m,met in enumerate(methods_list):
                     diff_matrix=np.zeros(np.shape(diff_dict[algo][key][m]))
                     for line in range(len(diff_dict[algo][key][m])):
                         for col in range(len(diff_dict[algo][key][m][line])):
