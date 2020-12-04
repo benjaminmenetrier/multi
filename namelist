@@ -1,13 +1,13 @@
 &solver
-no = 4
-ni = 6
+no = 3
+ni = 2
 lmp_mode = "none"
-test_ortho = .false.
+test_ortho = F
 shutoff_type = 0
 shutoff_value = 0.01
 method = "alternative"
-transitive_interp = .true.
-projective_Bmatrix = .true.
+transitive_interp = T
+projective_Bmatrix = T
 /
 
 &resolutions
@@ -16,7 +16,7 @@ ny = 101
 /
 
 &observations
-nobs = 2000
+nobs = 200
 sigma_obs = 0.01
 /
 
@@ -27,6 +27,6 @@ spvarmin = 1e-05
 /
 
 &miscellanous
-new_seed = .false.
+new_seed = F
 filename = "output.nc"
 /

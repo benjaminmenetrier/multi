@@ -25,7 +25,7 @@ res_dir=sys.argv[1]
 start_chain=int(sys.argv[2])
 end_chain=int(sys.argv[3])
 
-all_res=np.load(res_dir+"results_{}.py".format(start_chain))
+all_res=np.load(res_dir+"results_run_{}.py".format(start_chain))
 
 all_chains=all_res['chain']
 all_ln_probs=all_res['ln_prob']
@@ -34,16 +34,16 @@ nwalkers=len(all_chains)
 
 for run in range(start_chain,end_chain):
     print("Concatenating the run ", run)
-    res = np.load(res_dir+"results_{}.py".format(run))
+    res = np.load(res_dir+"results_run_{}.py".format(run))
     all_chains=np.append(all_chains,res['chain'],axis=1)
     all_ln_probs=np.append(all_ln_probs,res['ln_prob'],axis=1)
 
-print "final chain shape = ", np.shape(all_chains)
-print "final ln_prob shape = ", np.shape(all_ln_probs)
+print("final chain shape = ", np.shape(all_chains))
+print("final ln_prob shape = ", np.shape(all_ln_probs))
 
 # Save the results in a dict:
 Res={}
-Res["lnprobs"]=all_lnprobs
+Res["ln_prob"]=all_ln_probs
 Res["chain"]=all_chains
 
 pickle.dump(Res,open(res_dir+"all_results.py","wb"),protocol=pickle.HIGHEST_PROTOCOL)

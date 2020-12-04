@@ -15,6 +15,7 @@ import matplotlib.ticker as ticker
 from matplotlib import cm
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
+import os
 import netCDF4 as nc
 from analysis_tools import netcdf_extract
 
@@ -23,7 +24,8 @@ plt.rcParams.update({"text.usetex": True, "font.size" : 15})
 
 ################################################################################
 ################################################################################
-def compare_plots(obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,outer_iterations,legend,out_name):
+def compare_plots(obj1, obj2, ylabel12, obj3, ylabel3, x, xlabel,
+                  outer_iterations, legend,out_name):
     """Produces usefull comparision plots bteween obj1 and obj2:
     Args:
         out_name (string): Name of the output png file.
@@ -38,20 +40,21 @@ def compare_plots(obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,outer_iterations,lege
     Return:
         (void): Creates the plot and save it in the png file named by out_name arg.
     """
-    print("plotting:",out_name)
+    print("plotting:", out_name)
     # Create figure window to plot data
     fig = plt.figure(1, figsize=(9,9))
     gs = gridspec.GridSpec(2, 1, height_ratios=[6, 3])
 
     # Top plot: obj1 vs obj2
     ax1 = fig.add_subplot(gs[0])
-    ax1.plot(x[:len(obj1)],obj1,color='black',label=legend[0])
-    ax1.plot(x[:len(obj2)],obj2,color='black',linestyle='dashed',label=legend[1])
+    ax1.plot(x[:len(obj1)], obj1, color='black', label=legend[0])
+    ax1.plot(x[:len(obj2)], obj2, color='black', linestyle='dashed', label=legend[1])
     plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
                ncol=2, mode="expand", borderaxespad=0.)
 
     plt.subplots_adjust(hspace=0.5)
-    ymax=max(max(obj1),max(obj2))
+    
+    ymax = max(max(obj1), max(obj2))
     if ymax > 100:
         plt.yscale("log")
     ax1.set_ylabel(ylabel12)
@@ -60,7 +63,7 @@ def compare_plots(obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,outer_iterations,lege
 
     # Bottom plot: obj3
     ax2 = fig.add_subplot(gs[1])
-    ax2.plot(x[:len(obj3)],obj3,color='black')
+    ax2.plot(x[:len(obj3)], obj3, color='black')
     ax2.axhline(color="gray", zorder=-1)
     ax2.set_xlabel(xlabel)
     ax2.set_ylabel(ylabel3)
@@ -68,149 +71,179 @@ def compare_plots(obj1,obj2,ylabel12,obj3,ylabel3,x,xlabel,outer_iterations,lege
     plt.savefig(out_name)
     plt.clf()
     plt.close()
+    
 ################################################################################
 ################################################################################
-def lanczos_vs_planczosif_plot(ds,res_dir,outer_iterations):
+def lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations):
     """ Plot the J, Jb and Jo:
-        Args: 
-            res_dir (string): result directory in which is stored the netcdf output file.
+        Args:
+            ds (netcdf object): results file.  
+            res_dir (string): result directory in which is stored the netcdf 
+                              output file.
+            outer_iterations (list): position of the outer iterations for
+                                     plotting.
         Return:
-            (void): Plots the cost functions and save them as out_name_J,Jb or Jo.
+            (void): Plots the cost functions.
     """
-    lanczos,planczosif={},{}
-    keys=['j_nl','jo_nl','jb_nl','j','jo','jb','rho_sqrt','beta']
-    labels=[r'$J^{nl}$',r'$J_o^{nl}$',r'$J_b^{nl}$',r'$J$',r'$J_o$',r'$J_b$',r'$\sqrt{\rho}$',r'$\beta$']
+    lanczos, planczosif={}, {}
+    keys = ['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
+
+    labels = [r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
+              r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
+
     for k in keys:
-        lanczos[k]=[]
-        planczosif[k]=[]
+        lanczos[k] = []
+        planczosif[k] = []
     
     for outer in ds.groups:
         for k in keys:
             lanczos[k].append(np.array(ds[outer]['lanczos'][k][:]))
             planczosif[k].append(np.array(ds[outer]['planczosif'][k][:]))
             
-    diff={}    
-    for ik,k in enumerate(lanczos.keys()):
-        diff[k]=[]
-        lanczos[k]=np.reshape(lanczos[k],-1)
-        planczosif[k]=np.reshape(planczosif[k],-1)
-        for i in range(len(lanczos[k])):
-            diff[k].append(lanczos[k][i]-planczosif[k][i])
+    diff = {}    
+    for k,key in enumerate(lanczos.keys()):
+        diff[key] = []
+        lanczos[key] = np.reshape(lanczos[key], -1)
+        planczosif[key] = np.reshape(planczosif[key], -1)
+        for i in range(len(lanczos[key])):
+            diff[key].append(lanczos[key][i] - planczosif[key][i])
     
         # Plot the results:
-        out_name=res_dir+'/compare_{}.png'.format(k)
+        out_name = os.path.join(res_dir + f'/compare_{key}.png')
         print("plotting:", out_name)
-        ylabel12=labels[ik]
-        ylabel3='diff'
-        xmax=max(len(lanczos[k]),len(planczosif[k]))
-        x=range(xmax)
-        xlabel='iterations'
-        legend=['Lanczos','PlanczosIF']
-        compare_plots(lanczos[k],planczosif[k],ylabel12,diff[k],ylabel3,x,xlabel,outer_iterations,legend,out_name)
+        ylabel12 = labels[k]
+        ylabel3 = 'diff'
+        xmax = max(len(lanczos[key]), len(planczosif[key]))
+        x = range(xmax)
+        xlabel = 'iterations'
+        legend = ['Lanczos', 'PlanczosIF']
+        compare_plots(lanczos[key], planczosif[key], ylabel12, diff[key], ylabel3, x,
+                      xlabel, outer_iterations, legend,out_name)
+        
 ################################################################################
 ################################################################################
-def compare_methods_plot(compare_methods_data,methods_list,outer_iterations,compare_methods_dir):
+def compare_methods_plot(compare_methods_data, methods_list, outer_iterations,
+                         compare_methods_dir):
     """Plots the comparision between the different methods:
     """
-    lanczos,planczosif,obj_list,diff_list={},{},{},{}
-    keys=['j_nl','jo_nl','jb_nl','j','jo','jb','rho_sqrt','beta']
-    labels=[r'$J^{nl}$',r'$J_o^{nl}$',r'$J_b^{nl}$',r'$J$',r'$J_o$',r'$J_b$',r'$\sqrt{\rho}$',r'$\beta$']
-    legend=[]
+    lanczos, planczosif, obj_list, diff_list={}, {}, {}, {}
+
+    keys=['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
+
+    labels=[r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$', r'$J_b$',
+            r'$\sqrt{\rho}$', r'$\beta$']
+
+    legend = []
     for met in methods_list:
-        legend_met=[]
-        for space in ['control','model']:
-            legend_met.append(met+'-'+space)
+        legend_met = []
+        for space in ['control', 'model']:
+            legend_met.append(met + '-' + space)
         legend.append(legend_met)
     
     for k,key in enumerate(keys):
-        lanczos[key]=[]
-        planczosif[key]=[]
-        obj_list[key]=[]
-        diff_list[key]=[]
+        lanczos[key] = []
+        planczosif[key] = []
+        obj_list[key] = []
+        diff_list[key] = []
         for i,ds in enumerate(compare_methods_data):
             lanczos[key].append([])
             planczosif[key].append([])
             for io in ds.groups:
                 lanczos[key][i].append(np.array(ds[io]['lanczos'][key][:]))
                 planczosif[key][i].append(np.array(ds[io]['planczosif'][key][:]))
-            lanczos[key][i]=np.reshape(lanczos[key][i],-1)
-            planczosif[key][i]=np.reshape(planczosif[key][i],-1)
+            lanczos[key][i]=np.reshape(lanczos[key][i], -1)
+            planczosif[key][i]=np.reshape(planczosif[key][i], -1)
             obj_list[key].append([lanczos[key][i],planczosif[key][i]])
             # Compute the difference between lanczos and planczosif:
-            diff_tmp=[]
+            diff_tmp = []
             for j in range(len(lanczos[key][i])):
-                diff_tmp.append(lanczos[key][i][j]-planczosif[key][i][j])
+                diff_tmp.append(lanczos[key][i][j] - planczosif[key][i][j])
             diff_list[key].append(diff_tmp)
-        ylabel1=labels[k]
-        ylabel2="diff"
-        xmax=0
+        ylabel1 = labels[k]
+        ylabel2 = "diff"
+        xmax = 0
         for obj in obj_list[key]:
-            xmax=max(len(obj[0]),len(obj[1]))
-        x=list(range(xmax))
-        xlabel="iterations"
-        out_name=compare_methods_dir+'/compare_{}.png'.format(key)
-        print('plotting:',out_name)
-        compare_plots_2N(obj_list[key],ylabel1,diff_list[key],ylabel2,x,xlabel,outer_iterations,legend,out_name)
+            xmax = max(len(obj[0]), len(obj[1]))
+        x = list(range(xmax))
+        xlabel = "iterations"
+        out_name = compare_methods_dir + f'/compare_{key}.png'
+        print('plotting:', out_name)
+        compare_plots_2N(obj_list[key], ylabel1, diff_list[key], ylabel2, x,
+                         xlabel, outer_iterations, legend,out_name)
+        
 ################################################################################
 ################################################################################
-def compare_methods_plot2(compare_methods_data,methods_list,compare_methods_dir):
+def compare_methods_plot2(compare_methods_data, methods_list,
+                          outer_iterations, compare_methods_dir):
     """Plots the comparision between the different methods:
     """
-    diff_dict={}
-    keys=['j_nl','jo_nl','jb_nl','j','jo','jb','rho_sqrt','beta']
-    labels=[r'$J^{nl}$',r'$J_o^{nl}$',r'$J_b^{nl}$',r'$J$',r'$J_o$',r'$J_b$',r'$\sqrt{\rho}$',r'$\beta$']
+    diff_dict = {}
 
-    ds_th=compare_methods_data[0]
-    for k,key in enumerate(keys):    
+    keys=['j_nl', 'jo_nl', 'jb_nl', 'j','jo', 'jb', 'rho_sqrt', 'beta']
+
+    labels=[r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
+            r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
+
+    ds_th = compare_methods_data[0]
+    for k, key in enumerate(keys):
         diff_dict[key] = {}
         for algo in ds_th['outer_1'].groups:
             diff_dict[key][algo] = []
-            for m,met in enumerate(methods_list):
+            for m, met in enumerate(methods_list):
                 ds = compare_methods_data[m]
                 data_to_compare = []
                 outer_iterations = []
-                for j,io in enumerate(ds.groups):
+                for j, io in enumerate(ds.groups):
                     data_to_compare.append(ds[io][algo][key][:])
                     # Get the outer iterations for plotting:
-                    inner_iterations=len(ds[io][algo][key][:])
-                    outer_iterations.append((inner_iterations-1)*(j+1))
-                # Concatenate the outer iterations:    
-                data_to_compare=np.reshape(data_to_compare,-1)
+                    #inner_iterations = len(ds[io][algo][key][:])
+                    #outer_iterations.append((inner_iterations-1) * (j+1))
+                # Concatenate the outer iterations:
+                data_to_compare = np.reshape(data_to_compare,-1)
                 diff_dict[key][algo].append(data_to_compare)
                 
-        for m,met in enumerate(methods_list):
-            fig=plt.figure()
+        # Plotting:
+        color_map = cm.get_cmap('copper', len(ds_th['outer_1'].groups))
+        colors = color_map(range(len(ds_th['outer_1'].groups)))
+        for m, met in enumerate(methods_list):
+            fig = plt.figure()
             #fig = plt.figure(1, figsize=(9,9))
             #gs = gridspec.GridSpec(2, 1, height_ratios=[6, 3])
             # Top plot:
             #ax1 = fig.add_subplot(gs[0])
-            out_name=compare_methods_dir+'/theoretical_vs_{}/{}.png'.format(met,key)
-            label=[]
-            for algo in ds_th['outer_1'].groups:
-                label=met+'-'+algo
-                diff_methods=[]
-                iterations=[]
+            out_name = os.path.join(compare_methods_dir + f'/theoretical_vs_{met}/{key}.png')
+            label = []
+            for a, algo in enumerate(ds_th['outer_1'].groups):
+                label = met + '-' + algo
+                diff_methods_algo = []
+                iterations = []
                 for i in range(len(diff_dict[key][algo][m])):
                     # Compute the difference between met and "theoretical":
-                    diff=diff_dict[key][algo][m][i]-diff_dict[key][algo][0][i]
-                    diff_methods.append(diff)
-                    iterations.append(i) 
-                plt.plot(iterations[:],diff_methods[:],label=label, color='black')
+                    diff = diff_dict[key][algo][m][i] - diff_dict[key][algo][0][i]
+                    diff_methods_algo.append(diff)
+                    iterations.append(i)
+                
+                plt.plot(iterations[:],diff_methods_algo[:],label=label, color=colors[a])
+                
             plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
                        ncol=2, mode="expand", borderaxespad=0.)
-            plt.vlines(outer_iterations, min(diff_methods), max(diff_methods), colors='blue', linestyles='dashed')
-            # Bottom plot: 
-            #ax2 = fig.add_subplot(gs[1])
-            #ax2.plot(x[:len(obj3)],obj3,color='black')
-            #ax2.axhline(color="gray", zorder=-1)
+            
+            plt.vlines(outer_iterations, min(diff_methods_algo), max(diff_methods_algo),
+                       colors='black', linestyles='dashed')
+            # Bottom plot:
+            # ax2 = fig.add_subplot(gs[1])
+            # ax2.plot(iterations[:],diff,color='black')
+            # ax2.axhline(color="gray", zorder=-1)
             plt.xlabel('iterations')
-            plt.ylabel(labels[k]+'({}-theoretical)'.format(met))
+            plt.ylabel(labels[k] + f'({met} - theoretical)')
             plt.legend
             plt.savefig(out_name)
             plt.close()
+            
 ################################################################################
 ################################################################################
-def compare_plots_2N(obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend,out_name):
+def compare_plots_2N(obj_list, ylabel1, diff_list, ylabel2, x, xlabel,
+                     outer_iterations, legend, out_name):
     """Produces usefull comparision with 2N plots:
     Args:
         out_name (string): Name of the output png file.
@@ -223,8 +256,8 @@ def compare_plots_2N(obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iteration
     Return:
         (void): Creates the plot and save it in the png file named by out_name arg.
     """
-    color_map=cm.get_cmap('copper', len(obj_list))
-    colors=color_map(range(len(obj_list)))
+    color_map = cm.get_cmap('copper', len(obj_list))
+    colors = color_map(range(len(obj_list)))
     # Create figure window to plot data:
     fig = plt.figure(1, figsize=(9,9))
     gs = gridspec.GridSpec(2, 1, height_ratios=[6, 2])
@@ -232,25 +265,23 @@ def compare_plots_2N(obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iteration
     # Top plot: [obj_list1,obj_list2,..obj_listN]:
     ax1 = fig.add_subplot(gs[0])
     plt.yscale("log")
-    ymax=0.
-    for o,obj in enumerate(obj_list):
-        ymax_tmp=max(max(obj[0]),max(obj[1]))
-        if (ymax_tmp>ymax):
-            ymax=ymax_tmp
-        ax1.plot(x[:len(obj[0])],obj[0],color=colors[o],label=legend[o][0])
-        ax1.plot(x[:len(obj[1])],obj[1],color=colors[o],linestyle='dashed',label=legend[o][1])
+    ymax = 0.
+    for o, obj in enumerate(obj_list):
+        ymax_tmp = max(max(obj[0]), max(obj[1]))
+        if (ymax_tmp > ymax):
+            ymax = ymax_tmp
+        ax1.plot(x[:len(obj[0])], obj[0], color=colors[o], label=legend[o][0])
+        ax1.plot(x[:len(obj[1])], obj[1], color=colors[o], linestyle='dashed', label=legend[o][1])
         plt.legend(bbox_to_anchor=(0., 1.102 , 1., .102), loc='lower left',
                    ncol=3, mode="expand", borderaxespad=0.1)
         plt.subplots_adjust(top=0.8)
     ax1.set_ylabel(ylabel1)
-    #start, end = ax1.get_xlim()
-    #ax1.xaxis.set_ticks(np.arange(start, end, 1.))
     ax1.vlines(outer_iterations, 0, ymax, colors='blue', linestyles='dashed')
-
     # Bottom plot: diff_list
     ax2 = fig.add_subplot(gs[1])
-    for d,diff in enumerate(diff_list):
-        ax2.plot(x[:len(diff)],diff,color=colors[d])
+    for d, diff in enumerate(diff_list):
+        ax2.plot(x[:len(diff)], diff,color=colors[d])
+        
     ax2.axhline(color="gray", zorder=-1)
     ax2.set_xlabel(xlabel)
     ax2.set_ylabel(ylabel2)
@@ -259,6 +290,7 @@ def compare_plots_2N(obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iteration
     plt.savefig(out_name)
     plt.clf()
     plt.close()
+    
 ################################################################################w
 ################################################################################
 
@@ -267,7 +299,8 @@ def compare_plots_2N(obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iteration
 # Obsolete functions (but might be used later with LMPs):
 ################################################################################
 # /!\ Obsolete: (tmp)
-def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,outer_iterations_list):
+def lmp_compare(out_names, lmp_to_compare, column_of_interest, ylabel1, ylabel2,
+                outer_iterations_list):
     """Compare spectral and ritz lmp modes:
     """
     try:
@@ -299,7 +332,8 @@ def lmp_compare(out_names,lmp_to_compare,column_of_interest,ylabel1,ylabel2,oute
             xlabel='iterations'
             out_name=out_names[r]
             outer_iterations=outer_iterations_list[r]
-            compare_plots_2N(out_name,obj_list,ylabel1,diff_list,ylabel2,x,xlabel,outer_iterations,legend)
+            compare_plots_2N(out_name, obj_list, ylabel1, diff_list, ylabel2, x,
+                             xlabel, outer_iterations, legend)
     except:
         print("Error with lmp comparision of:\n",res_dirs,"\n")
 ##################################################################################

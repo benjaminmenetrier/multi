@@ -33,7 +33,7 @@ plt.rcParams.update({"text.usetex": True, "font.size" : 15})
 
 ################################################################################
 # Path of the results file:
-res_file = './diff_methods_results_dev/diff_methods_analysis_results/results.py'
+res_file = './diff_methods_results_dev/diff_methods_analysis_results/all_results.py'
 
 # Name of the output dir:
 out_dir = './diff_methods_results_dev/diff_methods_analysis_results/'
@@ -78,7 +78,7 @@ figure.clf()
 ################################################################################
 # Convergence of the MCMC:
 # Raw plot with all the walkers:
-out_name='mean_difference.png'
+out_name=out_dir+'/mean_difference.png'
 ylabel='mean difference'
 xlabel='steps'
 
@@ -88,7 +88,8 @@ for step in lnprob.T:
 
 fig=plt.figure()
 plt.plot(mean_lnprob[:], range(len(mean_lnprob)))
-plt.set_xlabel(xlabel)
-plt.set_ylabel(ylabel)
+plt.xlabel(xlabel)
+plt.ylabel(ylabel)
 plt.savefig(out_name)
+plt.close()
 ################################################################################
