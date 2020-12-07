@@ -1,18 +1,17 @@
 &solver
-no = 3
-ni = 2
+no = 2
+ni = 5
 lmp_mode = "none"
 test_ortho = F
 shutoff_type = 0
-shutoff_value = 0.01
-method = "alternative"
+shutoff_value = 0.0
 transitive_interp = T
 projective_Bmatrix = T
 /
 
 &resolutions
-nx = 101
-ny = 101
+nx = 101,101,
+ny = 101,101,
 /
 
 &observations

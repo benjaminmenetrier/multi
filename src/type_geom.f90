@@ -63,7 +63,7 @@ integer :: ix,iy
 real(8) :: dp1,dp2
 real(8),allocatable :: gpsave(:),gp(:),gp1(:),gp2(:)
 real(8),allocatable :: spsave(:),sp(:),sp1(:),sp2(:)
-complex(8),allocatable :: cpsave(:,:),cp(:,:)
+complex(8),allocatable :: cpsave(:,:),cp(:,:),cp_fullsave(:,:),cp_full(:,:)
 
 ! Check dimensions
 if (mod(nx,2)==0) then
@@ -98,6 +98,8 @@ allocate(sp1(geom%nh))
 allocate(sp2(geom%nh))
 allocate(cpsave(geom%kmax+1,geom%ny))
 allocate(cp(geom%kmax+1,geom%ny))
+allocate(cp_fullsave(0:geom%kmax,-geom%lmax:geom%lmax))
+allocate(cp_full(0:geom%kmax,-geom%lmax:geom%lmax))
 
 ! Grid coordinates
 do ix=1,geom%nx
@@ -114,53 +116,66 @@ write(*,'(a,i4,a,i4)') '      Spectral: ',geom%kmax,' x ',geom%lmax
 call random_number(gpsave)
 call geom%gp2sp(gpsave,spsave)
 call geom%real_to_complex(spsave,cpsave)
+call geom%complex_to_full(cp,cp_fullsave)
 
-! Complex to real and back to complex test
+! Complex to real to complex
 cp = cpsave
 call geom%complex_to_real(cp,sp)
 call geom%real_to_complex(sp,cp)
 write(*,'(a,e15.8)') '      Complex to real to complex: ',maxval(abs(cp-cpsave))
 
-! Direct + inverse test
+! Real to complex to real
 sp = spsave
 call geom%real_to_complex(sp,cp)
 call geom%complex_to_real(cp,sp)
 write(*,'(a,e15.8)') '      Real to complex to real:    ',maxval(abs(sp-spsave))
 
-! Direct + inverse test
+! Complex to full to complex
+cp = cpsave
+call geom%complex_to_full(cp,cp_full)
+call geom%full_to_complex(cp_full,cp)
+write(*,'(a,e15.8)') '      Complex to full to complex: ',maxval(abs(cp-cpsave))
+
+! Full to complex to full
+cp_full = cp_fullsave
+call geom%full_to_complex(cp_full,cp)
+call geom%complex_to_full(cp,cp_full)
+write(*,'(a,e15.8)') '      Full to complex to full:    ',maxval(abs(cp_full-cp_fullsave))
+
+! GP to SP to GP
 gp = gpsave
 call geom%gp2sp(gp,sp)
 call geom%sp2gp(sp,gp)
-write(*,'(a,e15.8)') '      GP to SP to GP:              ',maxval(abs(gp-gpsave))
+write(*,'(a,e15.8)') '      GP to SP to GP:             ',maxval(abs(gp-gpsave))
 
-! Inverse + direct test
+! SP to GP to SP
 sp = spsave
 call geom%sp2gp(sp,gp)
 call geom%gp2sp(gp,sp)
-write(*,'(a,e15.8)') '      SP to GP to SP:              ',maxval(abs(sp-spsave))
+write(*,'(a,e15.8)') '      SP to GP to SP:             ',maxval(abs(sp-spsave))
 
-! Dot product test
+! Dot product
 call random_number(gp1)
 call random_number(gp2)
 call geom%gp2sp(gp1,sp1)
 call geom%gp2sp(gp2,sp2)
-dp1 = sum(gp1*gp2)
-dp2 = geom%spdotprod(sp1,sp2)
-write(*,'(a,e15.8)') '      Dot product test:            ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+dp1 = sum(gp1*gp1)
+dp2 = geom%spdotprod(sp1,sp1)
+write(*,'(a,e15.8)') '      Dot product:                ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
-! Adjoint test
+! SP to GP adjoint
 call geom%sp2gp(sp2,gp2)
 dp1 = sum(gp1*gp2)
 dp2 = geom%spdotprod(sp1,sp2)
-write(*,'(a,e15.8)') '      SP to GP adjoint test:        ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+write(*,'(a,e15.8)') '      SP to GP adjoint:           ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
-! Grid-point interpolation test
+! GP interpolation
 call geom%interp_gp(geom,gp1,gp2)
-write(*,'(a,e15.8)') '      GP interpolation test:        ',maxval(abs(gp1-gp2))
+write(*,'(a,e15.8)') '      GP interpolation:           ',maxval(abs(gp1-gp2))
 
-! Spectral interpolation test
+! SP interpolation
 call geom%interp_sp(geom,sp1,sp2)
-write(*,'(a,e15.8)') '      SP interpolation test:        ',maxval(abs(sp1-sp2))
+write(*,'(a,e15.8)') '      SP interpolation:           ',maxval(abs(sp1-sp2))
 
 end subroutine geom_setup
 
@@ -257,7 +272,7 @@ cp(i,j) = dcmplx(sp(isp),0.0)
 do j=2,geom%ny/2+1
    isp = isp+1
    cp(i,j) = dcmplx(sp(isp),sp(isp+1))
-   cp(i,geom%ny-j+2) = conjg(cp(i,j))
+   cp(i,geom%ny-j+2) = dconjg(cp(i,j))
    isp = isp+1
 end do
 do i=2,geom%nx/2+1
@@ -339,8 +354,8 @@ cp = dcmplx(0.0,0.0)
 call dfftw_execute_dft_r2c(plan,gp_2d,cp)
 
 ! Auto-adjoint factor
-cp(1,2:geom%ny) = cp(1,2:geom%ny)*sqrt(2.0)
-cp(2:geom%kmax+1,:) = cp(2:geom%kmax+1,:)*sqrt(2.0)
+cp(1,2:geom%ny) = cp(1,2:geom%ny)*sqrt(2.0_8)
+cp(2:geom%kmax+1,:) = cp(2:geom%kmax+1,:)*sqrt(2.0_8)
 
 ! Normalize
 norm = 1.0/sqrt(real(geom%nh,8))
@@ -376,8 +391,8 @@ complex(8) :: cp(geom%kmax+1,geom%ny)
 call geom%real_to_complex(sp,cp)
 
 ! Auto-adjoint factor
-cp(1,2:geom%ny) = cp(1,2:geom%ny)/sqrt(2.0)
-cp(2:geom%kmax+1,:) = cp(2:geom%kmax+1,:)/sqrt(2.0)
+cp(1,2:geom%ny) = cp(1,2:geom%ny)/sqrt(2.0_8)
+cp(2:geom%kmax+1,:) = cp(2:geom%kmax+1,:)/sqrt(2.0_8)
 
 ! Create plan
 call dfftw_plan_dft_c2r_2d(plan,geom%nx,geom%ny,cp,gp_2d,fftw_estimate)
@@ -427,7 +442,7 @@ call geom%complex_to_full(cp1,cp1_full)
 call geom%complex_to_full(cp2,cp2_full)
 
 ! Dot product
-dp = real(sum(cp1_full*conjg(cp2_full)),8)
+dp = real(sum(cp1_full*dconjg(cp2_full)),8)
 
 end function geom_spdotprod
 

@@ -209,7 +209,7 @@ integer :: dirac_cov_bis_id,dirac_cor_bis_id
 x1_2d = 0.0
 x1bis_2d = 0.0
 x1_2d(1,1) = 1.0
-x1bis_2d(30,30) = 1.0 !change later for something like geom%nx/3,geom%ny/3, or non diagonal pixel ?
+x1bis_2d(geom%nx/2,geom%ny/2) = 1.0 !change later for something like geom%nx/3,geom%ny/3, or non diagonal pixel ?
 
 x1 = pack(x1_2d,.true.)
 x1bis = pack(x1bis_2d,.true.)
@@ -219,11 +219,9 @@ call bmatrix%apply(geom,x1bis,x2bis)
 
 x2_2d = reshape(x2,(/geom%nx,geom%ny/))
 x2bis_2d = reshape(x2bis,(/geom%nx,geom%ny/))
-
-sigmab_2d = reshape(bmatrix%sigmab,(/geom%nx,geom%ny/))
-
 x2_cor_2d = x2_2d/(sigmab_2d(1,1)*sigmab_2d)
-x2bis_cor_2d = x2bis_2d/(sigmab_2d(30,30)*sigmab_2d)
+x2bis_cor_2d = x2bis_2d/(sigmab_2d(geom%nx/2,geom%ny/2)*sigmab_2d)
+sigmab_2d = reshape(bmatrix%sigmab,(/geom%nx,geom%ny/))
 
 ! Get dimensions
 call ncerr('bmatrix_write',nf90_inq_dimid(grpid,'nx',nx_id))
@@ -400,7 +398,7 @@ real(8) :: vtmp(geom%nh)
 
 ! Apply spectral standard-deviation
 vtmp = v
-call bmatrix%spvar_sqrt(geom,vtmp)
+!call bmatrix%spvar_sqrt(geom,vtmp)
 
 ! Adjoint FFT
 call geom%sp2gp(vtmp,x)
@@ -434,7 +432,7 @@ xtmp = x*bmatrix%sigmab
 call geom%gp2sp(xtmp,v)
 
 ! Apply spectral standard-deviation
-call bmatrix%spvar_sqrt(geom,v)
+!call bmatrix%spvar_sqrt(geom,v)
 
 end subroutine bmatrix_apply_sqrt_ad
 
@@ -462,7 +460,7 @@ xtmp = x/bmatrix%sigmab
 call geom%gp2sp(xtmp,v)
 
 ! Apply spectral standard-deviation inverse
-call bmatrix%spvar_sqrt_inv(geom,v)
+!call bmatrix%spvar_sqrt_inv(geom,v)
 
 end subroutine bmatrix_apply_sqrt_inv
 
@@ -485,7 +483,7 @@ real(8) :: vtmp(geom%nh)
 
 ! Apply spectral standard-deviation inverse
 vtmp = v
-call bmatrix%spvar_sqrt_inv(geom,vtmp)
+!call bmatrix%spvar_sqrt_inv(geom,vtmp)
 
 ! FFT inverse
 call geom%sp2gp(vtmp,x)
