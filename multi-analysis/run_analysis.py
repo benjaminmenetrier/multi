@@ -73,7 +73,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/analysis_results_resolution_changing')
+results_dir_root = os.path.join(directories['analysis_results'] + '/analysis_results_no_resolution_changing')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -100,8 +100,8 @@ outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
 # (future improvement: use itertools)
-for no in [1,3]:
-    for ni in [6,2]:
+for no in [1,4]:
+    for ni in [8,2]:
         for lmp_mode in ['"none"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
                 for nx in ['101']:
@@ -117,7 +117,7 @@ for no in [1,3]:
                                     outer_iterations = []
                                     for io in range(no+1):
                                         outer_iterations.append((ni)*io)
-                                        outer_iterations_list.append(outer_iterations)
+                                    outer_iterations_list.append(outer_iterations)
                                         
                                     # Create the results directory:
                                     # use f'' syntaxe here!
@@ -183,6 +183,8 @@ for r, res_dir in enumerate(res_dir_list):
     
     # Plots comparision between lanczos and planczosif:
     lanczos_vs_planczosif_plot(ds,res_dir,outer_iterations_list[r])
+    print('outer', outer_iterations_list[r])
+    print('res', res_dir)
     
     # Plots in model space:
     # At outer loop level:
@@ -270,8 +272,8 @@ for r, res_dir in enumerate(res_dir_list):
                                   outer_iterations_list[r], compare_methods_out)
 
             # Comparision for 2D variables at outer loop level:
-#            compare_methods_2D_outer(compare_methods_data, methods_list,
-#                                     compare_methods_out)
+            compare_methods_2D_outer(compare_methods_data, methods_list,
+                                    compare_methods_out)
     #except:
     #    print("Cannot compare methods: the following file does not exist:\n",res)
 ################################################################################

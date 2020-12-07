@@ -1,5 +1,5 @@
 &solver
-no = 3
+no = 4
 ni = 2
 lmp_mode = "none"
 test_ortho = F

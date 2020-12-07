@@ -160,7 +160,7 @@ def compare_methods_plot(compare_methods_data, methods_list, outer_iterations,
                 diff_tmp.append(lanczos[key][i][j] - planczosif[key][i][j])
             diff_list[key].append(diff_tmp)
         ylabel1 = labels[k]
-        ylabel2 = "diff"
+        ylabel2 = r"lanczos - PlanczosIF"
         xmax = 0
         for obj in obj_list[key]:
             xmax = max(len(obj[0]), len(obj[1]))
@@ -214,7 +214,7 @@ def compare_methods_plot2(compare_methods_data, methods_list,
             out_name = os.path.join(compare_methods_dir + f'/theoretical_vs_{met}/{key}.png')
             label = []
             for a, algo in enumerate(ds_th['outer_1'].groups):
-                label = met + '-' + algo
+                label = algo
                 diff_methods_algo = []
                 iterations = []
                 for i in range(len(diff_dict[key][algo][m])):
@@ -226,7 +226,7 @@ def compare_methods_plot2(compare_methods_data, methods_list,
                 plt.plot(iterations[:],diff_methods_algo[:],label=label, color=colors[a])
                 
             plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-                       ncol=2, mode="expand", borderaxespad=0.)
+                       ncol=2, mode="expand", borderaxespad=0.1)
             
             plt.vlines(outer_iterations, min(diff_methods_algo), max(diff_methods_algo),
                        colors='black', linestyles='dashed')
@@ -236,8 +236,9 @@ def compare_methods_plot2(compare_methods_data, methods_list,
             # ax2.axhline(color="gray", zorder=-1)
             plt.xlabel('iterations')
             plt.ylabel(labels[k] + f'({met} - theoretical)')
-            plt.legend
+            plt.gcf().subplots_adjust(left=0.2, bottom=0.15)
             plt.savefig(out_name)
+            plt.clf()
             plt.close()
             
 ################################################################################
