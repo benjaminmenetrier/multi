@@ -1,6 +1,6 @@
 &solver
-no = 4
-ni = 2
+no = 2
+ni = 8
 lmp_mode = "none"
 test_ortho = F
 shutoff_type = 0
@@ -16,7 +16,7 @@ ny = 101
 /
 
 &observations
-nobs = 200
+nobs = 2000
 sigma_obs = 0.01
 /
 

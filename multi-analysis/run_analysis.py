@@ -68,6 +68,7 @@ exec_command = os.path.join(directories['multi'] + '/build/bin/multi ')
 
 # Location of the raw output of the code:
 code_output = os.path.join(directories['multi'] + '/output.nc')
+#---------------------------
 
 # Analysis results paths:
 out_dirs = []
@@ -100,12 +101,12 @@ outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
 # (future improvement: use itertools)
-for no in [1,4]:
-    for ni in [8,2]:
+for no in [1,2]:
+    for ni in [4,8]:
         for lmp_mode in ['"none"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
                 for nx in ['101']:
-                    for nobs in [200]:
+                    for nobs in [2000]:
                         for sigma_obs in [0.01]:
                             for sigmabvar in [0.1]:
                                 for Lb in [0.1]:
@@ -170,7 +171,7 @@ for no in [1,4]:
 # Analysis:
 print('Starting analysis:')
 
-# Loop over the results directories produced:
+# # Loop over the results directories produced:
 for r, res_dir in enumerate(res_dir_list):
     
     # Get the data:
@@ -183,8 +184,6 @@ for r, res_dir in enumerate(res_dir_list):
     
     # Plots comparision between lanczos and planczosif:
     lanczos_vs_planczosif_plot(ds,res_dir,outer_iterations_list[r])
-    print('outer', outer_iterations_list[r])
-    print('res', res_dir)
     
     # Plots in model space:
     # At outer loop level:
