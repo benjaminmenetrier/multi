@@ -26,17 +26,17 @@ from multiprocessing import Pool
 verb = True
 
 # Analysis results paths:
-out_dirs=[]
+out_dirs = []
 
 # Get the current working directory and define other directories:
-directories={}
-cwd=os.getcwd()
-directories['analysis']=cwd
+directories = {}
+cwd = os.getcwd()
+directories['analysis'] = cwd
 
 # Path to the code multi:
 os.chdir('..')
-cwd=os.getcwd()
-directories['multi']=cwd
+cwd = os.getcwd()
+directories['multi'] = cwd
 
 # Path to the executable from multi:
 exec_command = os.path.join(directories['multi'] + '/build/bin/multi ')
@@ -46,9 +46,6 @@ os.chdir('./build')
 os.system('ecbuild ..')
 os.system('make')
 os.chdir(directories['analysis'])
-
-# cwd=os.getcwd()
-# directories["build"]=cwd
 
 # Root of the results of the analysis:
 results_dir_root = os.path.join(directories['analysis'] + '/diff_methods_results_dev/')
