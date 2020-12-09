@@ -94,38 +94,42 @@ def lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations):
     labels = [r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
               r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
 
-    for k in keys:
-        lanczos[k] = []
-        planczosif[k] = []
-    
-    for j, io in enumerate(ds.groups):
+    for met in ds.groups:
+        met_dir = os.path.join(res_dir + f'/{met}')
+
+        # Initialise lists to contain each outer loops:
         for k in keys:
-            if j == 0:
-                lanczos[k].append(np.array(ds[io]['lanczos'][k][:]))
-                planczosif[k].append(np.array(ds[io]['planczosif'][k][:]))
-            else:
-                lanczos[k].append(np.array(ds[io]['lanczos'][k][1:]))
-                planczosif[k].append(np.array(ds[io]['planczosif'][k][1:]))
-    diff = {}    
-    for k,key in enumerate(lanczos.keys()):
-        diff[key] = []
-        lanczos[key] = list(itertools.chain(*lanczos[key]))
-        planczosif[key] = list(itertools.chain(*planczosif[key]))
-        for i in range(len(lanczos[key])):
-            diff[key].append(lanczos[key][i] - planczosif[key][i])
-    
-        # Plot the results:
-        out_name = os.path.join(res_dir + f'/compare_{key}.png')
-        print("plotting:", out_name)
-        ylabel12 = labels[k]
-        ylabel3 = 'diff'
-        xmax = max(len(lanczos[key]), len(planczosif[key]))
-        x = range(xmax)
-        xlabel = 'iterations'
-        legend = ['Lanczos', 'PlanczosIF']
-        compare_plots(lanczos[key], planczosif[key], ylabel12, diff[key], ylabel3, x,
-                      xlabel, outer_iterations, legend,out_name)
+            lanczos[k] = []
+            planczosif[k] = []
         
+        for j, io in enumerate(ds[met].groups):
+            for key in keys:
+                if j == 0:
+                    lanczos[key].append(np.array(ds[met][io]['lanczos'][key][:]))
+                    planczosif[key].append(np.array(ds[met][io]['planczosif'][key][:]))
+                else:
+                    lanczos[key].append(np.array(ds[met][io]['lanczos'][key][1:]))
+                    planczosif[key].append(np.array(ds[met][io]['planczosif'][key][1:]))
+        diff = {}
+        for k,key in enumerate(lanczos.keys()):
+            diff[key] = []
+            lanczos[key] = list(itertools.chain(*lanczos[key]))
+            planczosif[key] = list(itertools.chain(*planczosif[key]))
+            for i in range(len(lanczos[key])):
+                diff[key].append(lanczos[key][i] - planczosif[key][i])
+                    
+            # Plot the results:
+            out_name = os.path.join(met_dir + f'/compare_{key}.png')
+            print("plotting:", out_name)
+            ylabel12 = labels[k]
+            ylabel3 = 'lanczos - PlanczosIF'
+            xmax = max(len(lanczos[key]), len(planczosif[key]))
+            x = range(xmax)
+            xlabel = 'iterations'
+            legend = ['Lanczos', 'PlanczosIF']
+            compare_plots(lanczos[key], planczosif[key], ylabel12, diff[key], ylabel3, x,
+                          xlabel, outer_iterations, legend,out_name)
+
 ################################################################################
 ################################################################################
 def compare_methods_plot(compare_methods_data, methods_list, outer_iterations,

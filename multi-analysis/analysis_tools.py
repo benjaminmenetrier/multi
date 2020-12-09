@@ -17,6 +17,7 @@ from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import os
 import netCDF4 as nc
+import itertools
 
 # Allow the use of tex format for the labels:
 plt.rcParams.update({"text.usetex": True, "font.size" : 15})
@@ -35,43 +36,48 @@ def netcdf_extract(res_dir):
 ################################################################################
 ################################################################################
 # Write the parameters in namelist file:
-def namelist_write(p,directory):
+def namelist_write(parameters,directory):
+    """Write the namelist file according to the given parameters.
+    """
+    
+    parameters_name={}
+    parameters_name['solver'] = ['nm', 'method', 'na', 'algorithm', 'no', 'ni', 'lmp_mode', 'test_ortho',
+                                 'shutoff_type', 'shutoff_value',
+                                 'transitive_interp', 'projective_Bmatrix',]
+    parameters_name['resolution'] = ['nx', 'ny']
+    parameters_name['obs'] = ['nobs', 'sigma_obs']
+    parameters_name['background'] = ['sigmabvar', 'Lb', 'spvarmin']
+    parameters_name['miscellanous'] = ['new_seed', 'filename']
 
     namelist = open(os.path.join(directory + "/namelist"),"w")
 
     # Solver:
     namelist.write("&solver\n")
-    namelist.write("no = {}\n".format(p[0]))
-    namelist.write("ni = {}\n".format(p[1]))
-    namelist.write("lmp_mode = {}\n".format(p[2]))
-    namelist.write("test_ortho = {}\n".format(p[3]))
-    namelist.write("shutoff_type = {}\n".format(p[4]))
-    namelist.write("shutoff_value = {}\n".format(p[5]))
-    namelist.write("method = {}\n".format(p[6]))
-    namelist.write("transitive_interp = {}\n".format(p[7]))
-    namelist.write("projective_Bmatrix = {}\n".format(p[8]))
+    for p,par in enumerate(parameters['solver']):
+        namelist.write(parameters_name['solver'][p] + " = {}\n".format(par))
+        print(parameters_name['solver'][p] + " = {}\n".format(par))
     namelist.write("/\n\n")
     # Resolutions:
     namelist.write("&resolutions\n")
-    namelist.write("nx = {}\n".format(p[9]))
-    namelist.write("ny = {}\n".format(p[10]))
+    for p,par in enumerate(parameters['resolution']):
+        namelist.write(parameters_name['resolution'][p] + " = {}\n".format(par))
     namelist.write("/\n\n")
     # Observations:
     namelist.write("&observations\n")
-    namelist.write("nobs = {}\n".format(p[11]))
-    namelist.write("sigma_obs = {}\n".format(p[12]))
+    for p,par in enumerate(parameters['obs']):
+        namelist.write(parameters_name['obs'][p] + " = {}\n".format(par))
     namelist.write("/\n\n")
     # Background:
     namelist.write("&background\n")
-    namelist.write("sigmabvar = {}\n".format(p[13]))
-    namelist.write("Lb = {}\n".format(p[14]))
-    namelist.write("spvarmin = {}\n".format(p[15]))
+    for p,par in enumerate(parameters['background']):
+        namelist.write(parameters_name['background'][p] + " = {}\n".format(par))
     namelist.write("/\n\n")
     # Miscellanous:
     namelist.write("&miscellanous\n")
-    namelist.write("new_seed = {}\n".format(p[16]))
-    namelist.write("filename = {}\n".format(p[17]))
+    for p,par in enumerate(parameters['miscellanous']):
+        namelist.write(parameters_name['miscellanous'][p] + " = {}\n".format(par))
     namelist.write("/\n")
+    
     namelist.close()
 
 

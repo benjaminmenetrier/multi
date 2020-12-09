@@ -1,30 +1,30 @@
 &solver
 nm = 3
-method = "theoretical","standard","alternative",
+method = "theoretical", "standard", "alternative"
 na = 2
-algorithm = "lanczos","planczosif",
+algorithm = "lanczos", "planczosif"
 no = 2
-ni = 5
+ni = 4
 lmp_mode = "none"
 test_ortho = F
 shutoff_type = 0
-shutoff_value = 0.0
+shutoff_value = 0.01
 transitive_interp = T
 projective_Bmatrix = T
 /
 
 &resolutions
-nx = 101,121,
-ny = 101,121,
+nx = 101, 101
+ny = 101, 101
 /
 
 &observations
-nobs = 200
+nobs = 100
 sigma_obs = 0.01
 /
 
 &background
-sigmabvar = 0.0
+sigmabvar = 0.1
 Lb = 0.1
 spvarmin = 1e-05
 /
