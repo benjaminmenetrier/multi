@@ -167,6 +167,24 @@ do im=1,nm
    end do
 end do
 
+! Allocation (obs space)
+allocate(d(nobs))
+allocate(hxg(nobs))
+
+! Setup obserations locations
+call hmatrix%setup(nobs)
+call hmatrix%write(ncid,x_obs_id,y_obs_id,nobs_id)
+
+! Setup R matrix
+call rmatrix%setup(nobs,sigma_obs)
+
+! Setup observations
+call rmatrix%randomize(hmatrix%yo)
+
+! Write observations
+call ncerr('main',nf90_def_var(ncid,'obs_val',nf90_double,(/nobs_id/),obs_val_id))
+call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
+
 ! Setup geometries
 do io=1,no
    write(*,'(a,i1)') '   Geometry setup for outer iteration ',io
@@ -184,6 +202,10 @@ allocate(xg_full(geom(no)%nh))
 do io=1,no
    write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
    if (projective_Bmatrix) then
+      if (abs(sigmabvar)>0.0) then
+         write(*,'(a)') 'ERROR: sigmabvar should be 0 for a projective B matrix family'
+         stop
+      end if
       call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb,spvarmin)
    else
       call bmatrix(io)%setup(geom(io),geom(io),sigmabvar,Lb,spvarmin)
@@ -222,25 +244,6 @@ do io=1,no
    deallocate(xb)
    deallocate(xb_2d)
 end do
-
-! Allocation (obs space)
-allocate(d(nobs))
-allocate(hxg(nobs))
-
-! Setup obserations locations
-call hmatrix%setup(nobs)
-call hmatrix%write(ncid,x_obs_id,y_obs_id,nobs_id)
-
-! Setup R matrix
-call rmatrix%setup(nobs,sigma_obs)
-
-! Setup observations
-call rmatrix%randomize(hmatrix%yo)
-! Write observations:
-! Create obs variable
-call ncerr('main',nf90_def_var(ncid,'obs_val',nf90_double,(/nobs_id/),obs_val_id))
-! Write obs variable
-call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
 
 write(*,'(a)') ''
 
@@ -336,36 +339,59 @@ do im=1,nm
                ! Background at full resolution
                xg_full = xb_full
             else
-               ! Allocation
-               allocate(dxa_full(geom(no)%nh))
-               if (trim(algorithm(ia))=='lanczos') then
-                  allocate(dva(geom(io)%nh))
-               elseif (trim(algorithm(ia))=='planczosif') then
-                  allocate(dxabar(geom(io)%nh))
-               end if
-               allocate(dxa(geom(io)%nh))
+               if (transitive_interp) then
+                  if (projective_Bmatrix) then
+                     ! Allocation
+                     allocate(dxa(geom(io-1)%nh))
+                     allocate(dxa_full(geom(no)%nh))
    
-               ! Compute analysis increment of the previous outer iteration at full resolution
-               if (trim(algorithm(ia))=='lanczos') then
-                  call geom(io-1)%interp_sp(geom(io),algo(io-1,ia,im)%dva,dva)
-                  call bmatrix(io)%apply_sqrt(geom(io),dva,dxa)
-               elseif (trim(algorithm(ia))=='planczosif') then
-                  call geom(io-1)%interp_gp(geom(io),algo(io-1,ia,im)%dxabar,dxabar)
-                  call bmatrix(io)%apply(geom(io),dxabar,dxa)
-               end if
-               call geom(io)%interp_gp(geom(no),dxa,dxa_full)
+                     ! Compute analysis increment of the previous outer iteration at full resolution
+                     if (trim(algorithm(ia))=='lanczos') then
+                        call bmatrix(io-1)%apply_sqrt(geom(io-1),algo(io-1,ia,im)%dva,dxa)
+                     elseif (trim(algorithm(ia))=='planczosif') then
+                        call bmatrix(io-1)%apply(geom(io-1),algo(io-1,ia,im)%dxabar,dxa)
+                     end if
+                     call geom(io-1)%interp_gp(geom(no),dxa,dxa_full)
 
-               ! Add analysis increment of the previous outer iteration at full resolution
-               xg_full = xg_full+dxa_full
+                     ! Add analysis increment of the previous outer iteration at full resolution
+                     xg_full = xg_full+dxa_full
     
-               ! Release memory
-               if (trim(algorithm(ia))=='lanczos') then
-                  deallocate(dva)
-               elseif (trim(algorithm(ia))=='planczosif') then
-                  deallocate(dxabar)
+                     ! Release memory
+                     deallocate(dxa)
+                     deallocate(dxa_full)
+                  else
+                     ! Allocation
+                     allocate(dxa_full(geom(no)%nh))
+                     if (trim(algorithm(ia))=='lanczos') then
+                        allocate(dva(geom(io)%nh))
+                     elseif (trim(algorithm(ia))=='planczosif') then
+                        allocate(dxabar(geom(io)%nh))
+                     end if
+                     allocate(dxa(geom(io)%nh))
+   
+                     ! Compute analysis increment of the previous outer iteration at full resolution
+                     if (trim(algorithm(ia))=='lanczos') then
+                        call geom(io-1)%interp_sp(geom(io),algo(io-1,ia,im)%dva,dva)
+                        call bmatrix(io)%apply_sqrt(geom(io),dva,dxa)
+                     elseif (trim(algorithm(ia))=='planczosif') then
+                        call geom(io-1)%interp_gp(geom(io),algo(io-1,ia,im)%dxabar,dxabar)
+                        call bmatrix(io)%apply(geom(io),dxabar,dxa)
+                     end if
+                     call geom(io)%interp_gp(geom(no),dxa,dxa_full)
+
+                     ! Add analysis increment of the previous outer iteration at full resolution
+                     xg_full = xg_full+dxa_full
+    
+                     ! Release memory
+                     if (trim(algorithm(ia))=='lanczos') then
+                        deallocate(dva)
+                     elseif (trim(algorithm(ia))=='planczosif') then
+                        deallocate(dxabar)
+                     end if
+                     deallocate(dxa)
+                     deallocate(dxa_full)
+                  end if
                end if
-               deallocate(dxa)
-               deallocate(dxa_full)
             end if
    
             ! Interpolate guess at current resolution
@@ -622,82 +648,86 @@ write(*,'(a)') ''
 ! Allocation
 allocate(maxdiff(na,na,nm,nm))
 
-! Initialization
-maxdiff = 0.0
+do io=1,no
+   write(*,'(a,i1,a,i4,a,i4)') '   Outer iteration ',io,', resolution: ',geom(io)%nx,' x ',geom(io)%ny
+   write(*,'(a)') ''
 
-! Compute maximum difference
-do im=1,nm
-   do jm=1,nm
-      do ia=1,na
-         do ja=1,na
-            ! Compute max relative difference between methods/preconditionings
-            do io=1,no
+   ! Initialization
+   maxdiff = 0.0
+
+   ! Compute maximum difference
+   do im=1,nm
+      do jm=1,nm
+         do ia=1,na
+            do ja=1,na
+               ! Compute max relative difference between methods/preconditionings
                do ii=0,ni
                   maxdiff(ia,ja,im,jm) = max(maxdiff(ia,ja,im,jm), &
  & 2.0*abs(algo(io,ia,im)%j(ii)-algo(io,ja,jm)%j(ii))/abs(algo(io,ia,im)%j(ii)+algo(io,ja,jm)%j(ii)))
                end do
-           end do
-        end do
+            end do
+         end do
       end do
    end do
-end do
 
-write(*,'(a16)',advance='no') ''
-do ja=1,na
-   do jm=1,nm
-      write(*,'(a16)',advance='no') '################'
-   end do
-end do
-write(*,'(a)') '#'
-write(*,'(a16)',advance='no') ''
-do ja=1,na
-   do jm=1,nm
-      write(*,'(a,a13,a)',advance='no') '# ',algorithm(ja),' '
-   end do
-end do
-write(*,'(a)') '#'
-write(*,'(a16)',advance='no') ''
-do ja=1,na
-   do jm=1,nm
-      write(*,'(a,a13,a)',advance='no') '# ',method(jm),' '
-   end do
-end do
-write(*,'(a)') '#'
-write(*,'(a16)',advance='no') '################'
-do ja=1,na
-   do jm=1,nm
-      write(*,'(a16)',advance='no') '################'
-   end do
-end do
-write(*,'(a)') '#'
-do ia=1,na
-   do im=1,nm
-      write(*,'(a,a13,a)',advance='no') '# ',algorithm(ia),' '
-      do ja=1,na
-         do jm=1,nm
-            write(*,'(a,e13.6,a)',advance='no') '# ',maxdiff(ia,ja,im,jm),' '
-         end do
+   write(*,'(a16)',advance='no') ''
+   do ja=1,na
+      do jm=1,nm
+         write(*,'(a16)',advance='no') '################'
       end do
-      write(*,'(a)') '#'
-      write(*,'(a,a13,a)',advance='no') '# ',method(im),' '
-      do ja=1,na
-         do jm=1,nm
-            if (maxdiff(ia,ja,im,jm)<threshold) then
-               write(*,'(a,a,a13,a,a)',advance='no') '# ',char(27)//'[0;32m','    similar     ',char(27)//'[0;0m',' '
-            else
-               write(*,'(a,a,a13,a,a)',advance='no') '# ',char(27)//'[0;91m','   different    ',char(27)//'[0;0m',' '
-            end if
-         end do
-      end do
-      write(*,'(a)') '#'
-      write(*,'(a16)',advance='no') '################'
-      do ja=1,na
-         do jm=1,nm
-            write(*,'(a16)',advance='no') '################'
-         end do
-      end do
-      write(*,'(a)') '#'
    end do
+   write(*,'(a)') '#'
+   write(*,'(a16)',advance='no') ''
+   do ja=1,na
+      do jm=1,nm
+         write(*,'(a,a13,a)',advance='no') '# ',algorithm(ja),' '
+      end do
+   end do
+   write(*,'(a)') '#'
+   write(*,'(a16)',advance='no') ''
+   do ja=1,na
+      do jm=1,nm
+         write(*,'(a,a13,a)',advance='no') '# ',method(jm),' '
+      end do
+   end do
+   write(*,'(a)') '#'
+   write(*,'(a16)',advance='no') '################'
+   do ja=1,na
+      do jm=1,nm
+         write(*,'(a16)',advance='no') '################'
+      end do
+   end do
+   write(*,'(a)') '#'
+   do ia=1,na
+      do im=1,nm
+         write(*,'(a,a13,a)',advance='no') '# ',algorithm(ia),' '
+         do ja=1,na
+            do jm=1,nm
+               write(*,'(a,e13.6,a)',advance='no') '# ',maxdiff(ia,ja,im,jm),' '
+            end do
+         end do
+         write(*,'(a)') '#'
+         write(*,'(a,a13,a)',advance='no') '# ',method(im),' '
+         do ja=1,na
+            do jm=1,nm
+               if (maxdiff(ia,ja,im,jm)<threshold) then
+                  write(*,'(a,a,a13,a,a)',advance='no') '# ',char(27)//'[0;32m','    similar     ',char(27)//'[0;0m',' '
+               else
+                  write(*,'(a,a,a13,a,a)',advance='no') '# ',char(27)//'[0;91m','   different    ',char(27)//'[0;0m',' '
+               end if
+            end do
+         end do
+         write(*,'(a)') '#'
+         write(*,'(a16)',advance='no') '################'
+         do ja=1,na
+            do jm=1,nm
+               write(*,'(a16)',advance='no') '################'
+            end do
+         end do
+         write(*,'(a)') '#'
+      end do
+   end do
+   write(*,'(a)') ''
 end do
 
 ! Close NetCDF file
