@@ -16,7 +16,10 @@ from matplotlib import cm
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import os
+import sys
 import netCDF4 as nc
+import itertools
+
 from analysis_tools import netcdf_extract
 
 # Allow the use of tex format for the labels:
@@ -95,16 +98,19 @@ def lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations):
         lanczos[k] = []
         planczosif[k] = []
     
-    for outer in ds.groups:
+    for j, io in enumerate(ds.groups):
         for k in keys:
-            lanczos[k].append(np.array(ds[outer]['lanczos'][k][:]))
-            planczosif[k].append(np.array(ds[outer]['planczosif'][k][:]))
-            
+            if j == 0:
+                lanczos[k].append(np.array(ds[io]['lanczos'][k][:]))
+                planczosif[k].append(np.array(ds[io]['planczosif'][k][:]))
+            else:
+                lanczos[k].append(np.array(ds[io]['lanczos'][k][1:]))
+                planczosif[k].append(np.array(ds[io]['planczosif'][k][1:]))
     diff = {}    
     for k,key in enumerate(lanczos.keys()):
         diff[key] = []
-        lanczos[key] = np.reshape(lanczos[key], -1)
-        planczosif[key] = np.reshape(planczosif[key], -1)
+        lanczos[key] = list(itertools.chain(*lanczos[key]))
+        planczosif[key] = list(itertools.chain(*planczosif[key]))
         for i in range(len(lanczos[key])):
             diff[key].append(lanczos[key][i] - planczosif[key][i])
     
@@ -140,19 +146,26 @@ def compare_methods_plot(compare_methods_data, methods_list, outer_iterations,
             legend_met.append(met + '-' + space)
         legend.append(legend_met)
     
-    for k,key in enumerate(keys):
+    for k, key in enumerate(keys):
         lanczos[key] = []
         planczosif[key] = []
         obj_list[key] = []
         diff_list[key] = []
-        for i,ds in enumerate(compare_methods_data):
+        for i, ds in enumerate(compare_methods_data):
             lanczos[key].append([])
             planczosif[key].append([])
-            for io in ds.groups:
-                lanczos[key][i].append(np.array(ds[io]['lanczos'][key][:]))
-                planczosif[key][i].append(np.array(ds[io]['planczosif'][key][:]))
-            lanczos[key][i]=np.reshape(lanczos[key][i], -1)
-            planczosif[key][i]=np.reshape(planczosif[key][i], -1)
+            for j, io in enumerate(ds.groups):
+                # To avoid the problem of repeated values (last val = initial val for
+                # the next outer loop).
+                if j == 0:
+                    lanczos[key][i].append(np.array(ds[io]['lanczos'][key][:]))
+                    planczosif[key][i].append(np.array(ds[io]['planczosif'][key][:]))
+                else:    
+                    lanczos[key][i].append(np.array(ds[io]['lanczos'][key][1:]))
+                    planczosif[key][i].append(np.array(ds[io]['planczosif'][key][1:]))
+            lanczos[key][i] = list(itertools.chain(*lanczos[key][i]))
+            planczosif[key][i] = list(itertools.chain(*planczosif[key][i]))
+#            planczosif[key][i]=np.reshape(planczosif[key][i], -1)
             obj_list[key].append([lanczos[key][i],planczosif[key][i]])
             # Compute the difference between lanczos and planczosif:
             diff_tmp = []
@@ -160,7 +173,7 @@ def compare_methods_plot(compare_methods_data, methods_list, outer_iterations,
                 diff_tmp.append(lanczos[key][i][j] - planczosif[key][i][j])
             diff_list[key].append(diff_tmp)
         ylabel1 = labels[k]
-        ylabel2 = "diff"
+        ylabel2 = r"lanczos - PlanczosIF"
         xmax = 0
         for obj in obj_list[key]:
             xmax = max(len(obj[0]), len(obj[1]))
@@ -194,27 +207,28 @@ def compare_methods_plot2(compare_methods_data, methods_list,
                 data_to_compare = []
                 outer_iterations = []
                 for j, io in enumerate(ds.groups):
-                    data_to_compare.append(ds[io][algo][key][:])
-                    # Get the outer iterations for plotting:
-                    #inner_iterations = len(ds[io][algo][key][:])
-                    #outer_iterations.append((inner_iterations-1) * (j+1))
+                    # To fix the problem of initialisation to the last value for
+                    # the outer loops (repeated values):
+                    data = np.array(ds[io][algo][key][:])
+                    if j == 0:
+                        data_to_compare.append(list(data[:]))
+                    else:
+                        data_to_compare.append(list(data[1:]))
                 # Concatenate the outer iterations:
-                data_to_compare = np.reshape(data_to_compare,-1)
+                data_to_compare=list(itertools.chain(*data_to_compare))
                 diff_dict[key][algo].append(data_to_compare)
-                
         # Plotting:
         color_map = cm.get_cmap('copper', len(ds_th['outer_1'].groups))
         colors = color_map(range(len(ds_th['outer_1'].groups)))
         for m, met in enumerate(methods_list):
             fig = plt.figure()
-            #fig = plt.figure(1, figsize=(9,9))
-            #gs = gridspec.GridSpec(2, 1, height_ratios=[6, 3])
-            # Top plot:
-            #ax1 = fig.add_subplot(gs[0])
+
             out_name = os.path.join(compare_methods_dir + f'/theoretical_vs_{met}/{key}.png')
+            print('plotting :', out_name)
+            
             label = []
             for a, algo in enumerate(ds_th['outer_1'].groups):
-                label = met + '-' + algo
+                label = algo
                 diff_methods_algo = []
                 iterations = []
                 for i in range(len(diff_dict[key][algo][m])):
@@ -223,11 +237,9 @@ def compare_methods_plot2(compare_methods_data, methods_list,
                     diff_methods_algo.append(diff)
                     iterations.append(i)
                 
-                plt.plot(iterations[:],diff_methods_algo[:],label=label, color=colors[a])
-                
+                plt.plot(iterations[:],diff_methods_algo[:],label=label, color=colors[a])    
             plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-                       ncol=2, mode="expand", borderaxespad=0.)
-            
+                       ncol=2, mode="expand", borderaxespad=0.1)
             plt.vlines(outer_iterations, min(diff_methods_algo), max(diff_methods_algo),
                        colors='black', linestyles='dashed')
             # Bottom plot:
@@ -236,8 +248,9 @@ def compare_methods_plot2(compare_methods_data, methods_list,
             # ax2.axhline(color="gray", zorder=-1)
             plt.xlabel('iterations')
             plt.ylabel(labels[k] + f'({met} - theoretical)')
-            plt.legend
+            plt.gcf().subplots_adjust(left=0.2, bottom=0.15)
             plt.savefig(out_name)
+            plt.clf()
             plt.close()
             
 ################################################################################

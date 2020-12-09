@@ -398,7 +398,7 @@ real(8) :: vtmp(geom%nh)
 
 ! Apply spectral standard-deviation
 vtmp = v
-!call bmatrix%spvar_sqrt(geom,vtmp)
+call bmatrix%spvar_sqrt(geom,vtmp)
 
 ! Adjoint FFT
 call geom%sp2gp(vtmp,x)
@@ -432,7 +432,7 @@ xtmp = x*bmatrix%sigmab
 call geom%gp2sp(xtmp,v)
 
 ! Apply spectral standard-deviation
-!call bmatrix%spvar_sqrt(geom,v)
+call bmatrix%spvar_sqrt(geom,v)
 
 end subroutine bmatrix_apply_sqrt_ad
 
@@ -460,7 +460,7 @@ xtmp = x/bmatrix%sigmab
 call geom%gp2sp(xtmp,v)
 
 ! Apply spectral standard-deviation inverse
-!call bmatrix%spvar_sqrt_inv(geom,v)
+call bmatrix%spvar_sqrt_inv(geom,v)
 
 end subroutine bmatrix_apply_sqrt_inv
 
@@ -483,7 +483,7 @@ real(8) :: vtmp(geom%nh)
 
 ! Apply spectral standard-deviation inverse
 vtmp = v
-!call bmatrix%spvar_sqrt_inv(geom,vtmp)
+call bmatrix%spvar_sqrt_inv(geom,vtmp)
 
 ! FFT inverse
 call geom%sp2gp(vtmp,x)

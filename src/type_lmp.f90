@@ -26,7 +26,6 @@ end type outer_type
 
 type lmp_type
    character(len=1024) :: mode
-   character(len=1024) :: space
    integer :: io
    real(8),allocatable :: lancvec_trunc(:,:)
    type(outer_type),allocatable :: outer(:)
@@ -44,7 +43,7 @@ contains
 ! Subroutine: lmp_alloc
 ! Purpose: allocate LMP
 !----------------------------------------------------------------------
-subroutine lmp_alloc(lmp,no,geom,ni,io,mode,space)
+subroutine lmp_alloc(lmp,no,geom,ni,io,mode,algo_name)
 
 implicit none
 
@@ -55,7 +54,7 @@ type(geom_type),intent(in) :: geom(no)
 integer,intent(in) :: ni
 integer,intent(in) :: io
 character(len=*),intent(in) :: mode
-character(len=*),intent(in) :: space
+character(len=*),intent(in) :: algo_name
 
 ! Local variables
 integer :: jo
@@ -79,7 +78,6 @@ end if
 
 ! Allocation
 lmp%mode = trim(mode)
-lmp%space = trim(space)
 lmp%io = io
 if (io>1) then
    allocate(lmp%lancvec_trunc(geom(io-1)%nh,ni+1))
@@ -91,7 +89,7 @@ if (io>1) then
          allocate(lmp%outer(jo)%eigenvec(ni,ni))
          allocate(lmp%outer(jo)%lancvec(geom(io)%nh,ni+1))
          allocate(lmp%outer(jo)%ritzvec(geom(io)%nh,ni))
-         if (trim(lmp%space)=='model') then
+         if (trim(algo_name)=='planczosif') then
             allocate(lmp%outer(jo)%lancvec1(geom(io)%nh,ni+1))
             allocate(lmp%outer(jo)%lancvec2(geom(io)%nh,ni+1))
             allocate(lmp%outer(jo)%ritzvec1(geom(io)%nh,ni))
@@ -103,9 +101,6 @@ if (io>1) then
 end if
 
 ! Initialization at missing value
-lmp%mode = ''
-lmp%space = ''
-lmp%io = -999
 if (io>1) then
    lmp%lancvec_trunc = -999.0
    do jo=2,io
@@ -115,7 +110,7 @@ if (io>1) then
          lmp%outer(jo)%eigenvec = -999.0
          lmp%outer(jo)%lancvec = -999.0
          lmp%outer(jo)%ritzvec = -999.0
-         if (trim(lmp%space)=='model') then
+         if (trim(algo_name)=='planczosif') then
             lmp%outer(jo)%lancvec1 = -999.0
             lmp%outer(jo)%lancvec2 = -999.0
             lmp%outer(jo)%ritzvec1 = -999.0

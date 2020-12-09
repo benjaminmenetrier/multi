@@ -68,12 +68,13 @@ exec_command = os.path.join(directories['multi'] + '/build/bin/multi ')
 
 # Location of the raw output of the code:
 code_output = os.path.join(directories['multi'] + '/output.nc')
+#---------------------------
 
 # Analysis results paths:
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/analysis_results_resolution_changing')
+results_dir_root = os.path.join(directories['analysis_results'] + '/analysis_results_no_resolution_changing')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -100,12 +101,12 @@ outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
 # (future improvement: use itertools)
-for no in [1,3]:
-    for ni in [6,2]:
+for no in [1,2]:
+    for ni in [4,8]:
         for lmp_mode in ['"none"']:
             for method in ['"theoretical"','"standard"','"alternative"']:
                 for nx in ['101']:
-                    for nobs in [200]:
+                    for nobs in [2000]:
                         for sigma_obs in [0.01]:
                             for sigmabvar in [0.1]:
                                 for Lb in [0.1]:
@@ -117,7 +118,7 @@ for no in [1,3]:
                                     outer_iterations = []
                                     for io in range(no+1):
                                         outer_iterations.append((ni)*io)
-                                        outer_iterations_list.append(outer_iterations)
+                                    outer_iterations_list.append(outer_iterations)
                                         
                                     # Create the results directory:
                                     # use f'' syntaxe here!
@@ -170,7 +171,7 @@ for no in [1,3]:
 # Analysis:
 print('Starting analysis:')
 
-# Loop over the results directories produced:
+# # Loop over the results directories produced:
 for r, res_dir in enumerate(res_dir_list):
     
     # Get the data:
@@ -270,8 +271,8 @@ for r, res_dir in enumerate(res_dir_list):
                                   outer_iterations_list[r], compare_methods_out)
 
             # Comparision for 2D variables at outer loop level:
-#            compare_methods_2D_outer(compare_methods_data, methods_list,
-#                                     compare_methods_out)
+            compare_methods_2D_outer(compare_methods_data, methods_list,
+                                    compare_methods_out)
     #except:
     #    print("Cannot compare methods: the following file does not exist:\n",res)
 ################################################################################

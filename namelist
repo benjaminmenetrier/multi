@@ -1,4 +1,8 @@
 &solver
+nm = 3
+method = "theoretical","standard","alternative",
+na = 2
+algorithm = "lanczos","planczosif",
 no = 2
 ni = 5
 lmp_mode = "none"
@@ -10,8 +14,8 @@ projective_Bmatrix = T
 /
 
 &resolutions
-nx = 101,101,
-ny = 101,101,
+nx = 101,121,
+ny = 101,121,
 /
 
 &observations
@@ -20,7 +24,7 @@ sigma_obs = 0.01
 /
 
 &background
-sigmabvar = 0.1
+sigmabvar = 0.0
 Lb = 0.1
 spvarmin = 1e-05
 /
