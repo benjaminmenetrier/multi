@@ -78,7 +78,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/reso_101_vs_401')
+results_dir_root = os.path.join(directories['analysis_results'] + '/nobs100_vs_3000')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -86,8 +86,8 @@ res_dir_raw = os.path.join(results_dir_root + '/raw_results')
 out_dirs.append(res_dir_raw)
 
 # Results for the comparision between LMP modes:
-compare_methods_dir = os.path.join(results_dir_root + '/compare_methods/')
-out_dirs.append(compare_methods_dir)
+# compare_methods_dir = os.path.join(results_dir_root + '/compare_methods/')
+# out_dirs.append(compare_methods_dir)
 
 # Creates the results directories:
 for dir in out_dirs:
@@ -104,12 +104,12 @@ res_dir_list = []
 outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
-i_no = [2]
-i_ni = [2,4]
+i_no = [2,3]
+i_ni = [4,6]
 
-i_nx = ['101, 101']
+i_nx = ['101, 101, 101']
 
-i_nobs = [100]
+i_nobs = [100, 3000]
 i_sigma_obs = [0.01]
 
 i_sigmabvar = [0.1]
@@ -126,7 +126,7 @@ for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb in iter_params:
     outer_iterations = []
     for io in range(no+1):
         outer_iterations.append((ni)*io)
-        outer_iterations_list.append(outer_iterations)
+    outer_iterations_list.append(outer_iterations)
         
     # Create the results directory:
     name_string = f'res_no{no}_ni{ni}'
@@ -179,13 +179,13 @@ for r, res_dir in enumerate(res_dir_list):
     ds = netcdf_extract(res_dir)
     
     # Plots in observation space:
-    # obs_plot(ds, res_dir)
-    # hxg_plot(ds, res_dir)
-    # innovation_plot(ds, res_dir)
+    obs_plot(ds, res_dir)
+    hxg_plot(ds, res_dir)
+    innovation_plot(ds, res_dir)
     
-    # Plots comparision between lanczos and planczosif:
-    # lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations_list[r])
-    # lanczos_vs_planczosif_2D_outer(ds, res_dir)
+    # # Plots comparision between lanczos and planczosif:
+    lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations_list[r])
+    lanczos_vs_planczosif_2D_outer(ds, res_dir)
     # Plots in model space:
     # At outer loop level:
     for met in ds.groups:
@@ -243,7 +243,7 @@ for r, res_dir in enumerate(res_dir_list):
                             for ii in range(ds[met][io][algo].dimensions['nimax'].size):
                                 try:
                                     dx = np.array(ds[met][io][algo][field][ii][:])
-                                    out_name = os.path.join(inner_field_dir + f'/{algo}_{field}_{io}_{ii}')
+                                    out_name = os.path.join(inner_field_dir + f'/{algo}_{field}_{io}_inner_{ii}')
                                     field_plot(dx, out_name)
                                 except:
                                     print('Cannot plot matrix for ', met, io, field)    
@@ -251,43 +251,18 @@ for r, res_dir in enumerate(res_dir_list):
 ################################################################################
 # Comparision between the different methods:
 
-methods_list = ['theoretical', 'standard', 'alternative']
-sys.exit()
 for r, res_dir in enumerate(res_dir_list):
     #try:
-    if True:    
-        if methods_list[0] in res_dir:
-            res_tmp = res_dir.split('theoretical')
-            res_tmp1, res_tmp2 = res_tmp[0], res_tmp[1]
-            # Store the output files names
-            compare_methods_out = res_tmp1 + 'compare' + res_tmp2
-            compare_methods_out = compare_methods_out.replace(res_dir_raw, compare_methods_dir)
-            if not os.path.exists(compare_methods_out):
-                os.mkdir(compare_methods_out)
-            for met in methods_list:
-                compare_methods_2D_dir = os.path.join(compare_methods_out + "/theoretical_vs_"+met)
-                if not os.path.exists(compare_methods_2D_dir):
-                    os.mkdir(compare_methods_2D_dir)
-                    
-            compare_methods=[]
-            for method in methods_list:
-                compare_methods.append(res_tmp1 + method + res_tmp2)
+    if True:                        
+        ds = netcdf_extract(res_dir)
+        # Comparision for 1D variables (cost functions, rho, beta ...):
+        compare_methods_plot(ds, outer_iterations_list[r], res_dir)
 
-            compare_methods_data = []
-            for res in compare_methods:
-                ds = netcdf_extract(res)
-                compare_methods_data.append(ds)
+        compare_methods_plot2(ds, outer_iterations_list[r], res_dir)
 
-            # Comparision for 1D variables (cost functions, rho, beta ...):
-            compare_methods_plot(compare_methods_data, methods_list,
-                                 outer_iterations_list[r], compare_methods_out)
-
-            compare_methods_plot2(compare_methods_data, methods_list,
-                                  outer_iterations_list[r], compare_methods_out)
-
-            # Comparision for 2D variables at outer loop level:
-            compare_methods_2D_outer(compare_methods_data, methods_list,
-                                    compare_methods_out)
+        # Comparision for 2D variables at outer loop level:
+        compare_methods_2D_outer(ds, res_dir)
     #except:
     #    print("Cannot compare methods: the following file does not exist:\n",res)
+print('analysis completed')    
 ################################################################################

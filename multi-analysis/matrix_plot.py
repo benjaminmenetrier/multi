@@ -135,8 +135,7 @@ def field_plot2(matrix, x_coord, y_coord, out_name):
     plt.close()
 ################################################################################
 ################################################################################
-def compare_methods_2D_outer(compare_methods_data, methods_list,
-                             compare_methods_dir):
+def compare_methods_2D_outer(ds,res_dir):
     """Plots the comparision between the different methods:
     """
     diff_dict = {}
@@ -144,26 +143,27 @@ def compare_methods_2D_outer(compare_methods_data, methods_list,
     keys = ['xg']
     labels = [r'$x^g$']
 
-    ds_th = compare_methods_data[0]
+    ds_th = ds['theoretical']
     for io in ds_th.groups:
         for algo in ds_th[io].groups:
             diff_dict[algo] = {}
             for key in keys:
-                diff_dict[algo][key] = []
-                for m, met in enumerate(methods_list):
-                    ds = compare_methods_data[m]
-                    data_to_compare = np.array(ds[io][algo][key][:])
-                    diff_dict[algo][key].append(np.array(data_to_compare))
+                diff_dict[algo][key] = {}
+                for m, met in enumerate(ds.groups):
+                    data_to_compare = np.array(ds[met][io][algo][key][:])
+                    diff_dict[algo][key][met] = np.array(data_to_compare)
                 # Compute the difference as a 2D matrix -- diff = (method - theoretical)
-                for m,met in enumerate(methods_list):
-                    diff_matrix = np.zeros(np.shape(diff_dict[algo][key][m]))
-                    for line in range(len(diff_dict[algo][key][m])):
-                        for col in range(len(diff_dict[algo][key][m][line])):
-                            diff = diff_dict[algo][key][m][line][col] - diff_dict[algo][key][0][line][col]
+                for m, met in enumerate(ds.groups):
+                    diff_matrix = np.zeros(np.shape(diff_dict[algo][key][met]))
+                    for line in range(len(diff_dict[algo][key][met])):
+                        for col in range(len(diff_dict[algo][key][met][line])):
+                            diff = diff_dict[algo][key][met][line][col] - diff_dict[algo][key]['theoretical'][line][col]
                             diff_matrix[line][col] = diff
                     # Plot the difference:
-                    out_name = f'/theoretical_vs_{met}/{algo}_{key}_{io}.png'
-                    out_name = os.path.join(compare_methods_dir + out_name)
+                    compare_dir = os.path.join(res_dir + f'/theoretical_vs_{met}')
+                    if not os.path.exists(compare_dir):
+                        os.mkdir(compare_dir)
+                    out_name = os.path.join(compare_dir + f'/{algo}_{key}_{io}.png')
                     print('plotting:', out_name)
                     field_plot(diff_matrix, out_name)
 ################################################################################

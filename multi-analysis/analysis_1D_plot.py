@@ -89,32 +89,31 @@ def lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations):
             (void): Plots the cost functions.
     """
     lanczos, planczosif={}, {}
-    keys = ['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
 
+    keys = ['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
+    
     labels = [r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
               r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
 
     for met in ds.groups:
         met_dir = os.path.join(res_dir + f'/{met}')
 
-        # Initialise lists to contain each outer loops:
-        for k in keys:
-            lanczos[k] = []
-            planczosif[k] = []
-        
-        for j, io in enumerate(ds[met].groups):
-            for key in keys:
+        diff = {}
+        for k, key in enumerate(keys):
+            lanczos[key] = []
+            planczosif[key] = []
+            for j, io in enumerate(ds[met].groups):
                 if j == 0:
                     lanczos[key].append(np.array(ds[met][io]['lanczos'][key][:]))
                     planczosif[key].append(np.array(ds[met][io]['planczosif'][key][:]))
                 else:
                     lanczos[key].append(np.array(ds[met][io]['lanczos'][key][1:]))
                     planczosif[key].append(np.array(ds[met][io]['planczosif'][key][1:]))
-        diff = {}
-        for k,key in enumerate(lanczos.keys()):
+        
             diff[key] = []
             lanczos[key] = list(itertools.chain(*lanczos[key]))
             planczosif[key] = list(itertools.chain(*planczosif[key]))
+            
             for i in range(len(lanczos[key])):
                 diff[key].append(lanczos[key][i] - planczosif[key][i])
                     
@@ -132,22 +131,21 @@ def lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations):
 
 ################################################################################
 ################################################################################
-def compare_methods_plot(compare_methods_data, methods_list, outer_iterations,
-                         compare_methods_dir):
+def compare_methods_plot(ds, outer_iterations, res_dir):
     """Plots the comparision between the different methods:
     """
     lanczos, planczosif, obj_list, diff_list={}, {}, {}, {}
 
     keys=['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
-
+    
     labels=[r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$', r'$J_b$',
             r'$\sqrt{\rho}$', r'$\beta$']
 
     legend = []
-    for met in methods_list:
+    for met in ds.groups:
         legend_met = []
-        for space in ['control', 'model']:
-            legend_met.append(met + '-' + space)
+        for algo in ds[met]['outer_1'].groups:
+            legend_met.append(f'{met}-{algo}')
         legend.append(legend_met)
     
     for k, key in enumerate(keys):
@@ -155,26 +153,25 @@ def compare_methods_plot(compare_methods_data, methods_list, outer_iterations,
         planczosif[key] = []
         obj_list[key] = []
         diff_list[key] = []
-        for i, ds in enumerate(compare_methods_data):
+        for m, met in enumerate(ds.groups): 
             lanczos[key].append([])
             planczosif[key].append([])
-            for j, io in enumerate(ds.groups):
-                # To avoid the problem of repeated values (last val = initial val for
-                # the next outer loop).
+            for j, io in enumerate(ds[met].groups):
                 if j == 0:
-                    lanczos[key][i].append(np.array(ds[io]['lanczos'][key][:]))
-                    planczosif[key][i].append(np.array(ds[io]['planczosif'][key][:]))
+                    lanczos[key][m].append(np.array(ds[met][io]['lanczos'][key][:]))
+                    planczosif[key][m].append(np.array(ds[met][io]['planczosif'][key][:]))
                 else:    
-                    lanczos[key][i].append(np.array(ds[io]['lanczos'][key][1:]))
-                    planczosif[key][i].append(np.array(ds[io]['planczosif'][key][1:]))
-            lanczos[key][i] = list(itertools.chain(*lanczos[key][i]))
-            planczosif[key][i] = list(itertools.chain(*planczosif[key][i]))
-#            planczosif[key][i]=np.reshape(planczosif[key][i], -1)
-            obj_list[key].append([lanczos[key][i],planczosif[key][i]])
+                    lanczos[key][m].append(np.array(ds[met][io]['lanczos'][key][1:]))
+                    planczosif[key][m].append(np.array(ds[met][io]['planczosif'][key][1:]))
+            # Reshape the lists along iteration axis:        
+            lanczos[key][m] = list(itertools.chain(*lanczos[key][m]))
+            planczosif[key][m] = list(itertools.chain(*planczosif[key][m]))
+            
+            obj_list[key].append([lanczos[key][m],planczosif[key][m]])
             # Compute the difference between lanczos and planczosif:
             diff_tmp = []
-            for j in range(len(lanczos[key][i])):
-                diff_tmp.append(lanczos[key][i][j] - planczosif[key][i][j])
+            for j in range(len(lanczos[key][m])):
+                diff_tmp.append(lanczos[key][m][j] - planczosif[key][m][j])
             diff_list[key].append(diff_tmp)
         ylabel1 = labels[k]
         ylabel2 = r"lanczos - PlanczosIF"
@@ -183,15 +180,14 @@ def compare_methods_plot(compare_methods_data, methods_list, outer_iterations,
             xmax = max(len(obj[0]), len(obj[1]))
         x = list(range(xmax))
         xlabel = "iterations"
-        out_name = compare_methods_dir + f'/compare_{key}.png'
+        out_name = os.path.join(res_dir + f'/compare_{key}.png')
         print('plotting:', out_name)
         compare_plots_2N(obj_list[key], ylabel1, diff_list[key], ylabel2, x,
-                         xlabel, outer_iterations, legend,out_name)
+                         xlabel, outer_iterations, legend, out_name)
         
 ################################################################################
 ################################################################################
-def compare_methods_plot2(compare_methods_data, methods_list,
-                          outer_iterations, compare_methods_dir):
+def compare_methods_plot2(ds, outer_iterations, res_dir):
     """Plots the comparision between the different methods:
     """
     diff_dict = {}
@@ -201,33 +197,33 @@ def compare_methods_plot2(compare_methods_data, methods_list,
     labels=[r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
             r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
 
-    ds_th = compare_methods_data[0]
+    ds_th = ds['theoretical']
     for k, key in enumerate(keys):
         diff_dict[key] = {}
         for algo in ds_th['outer_1'].groups:
-            diff_dict[key][algo] = []
-            for m, met in enumerate(methods_list):
-                ds = compare_methods_data[m]
+            diff_dict[key][algo] = {}
+            for m, met in enumerate(ds.groups):
                 data_to_compare = []
                 outer_iterations = []
-                for j, io in enumerate(ds.groups):
-                    # To fix the problem of initialisation to the last value for
-                    # the outer loops (repeated values):
-                    data = np.array(ds[io][algo][key][:])
+                for j, io in enumerate(ds[met].groups):
+                    data = np.array(ds[met][io][algo][key][:])
                     if j == 0:
                         data_to_compare.append(list(data[:]))
                     else:
                         data_to_compare.append(list(data[1:]))
                 # Concatenate the outer iterations:
                 data_to_compare=list(itertools.chain(*data_to_compare))
-                diff_dict[key][algo].append(data_to_compare)
+                diff_dict[key][algo][met] = data_to_compare
         # Plotting:
         color_map = cm.get_cmap('copper', len(ds_th['outer_1'].groups))
         colors = color_map(range(len(ds_th['outer_1'].groups)))
-        for m, met in enumerate(methods_list):
+        for m, met in enumerate(ds.groups):
             fig = plt.figure()
 
-            out_name = os.path.join(compare_methods_dir + f'/theoretical_vs_{met}/{key}.png')
+            compare_dir = os.path.join(res_dir + f'/theoretical_vs_{met}')
+            if not os.path.exists(compare_dir):
+                os.mkdir(compare_dir)
+            out_name = os.path.join(compare_dir + f'/{key}.png')
             print('plotting :', out_name)
             
             label = []
@@ -235,9 +231,9 @@ def compare_methods_plot2(compare_methods_data, methods_list,
                 label = algo
                 diff_methods_algo = []
                 iterations = []
-                for i in range(len(diff_dict[key][algo][m])):
+                for i in range(len(diff_dict[key][algo][met])):
                     # Compute the difference between met and "theoretical":
-                    diff = diff_dict[key][algo][m][i] - diff_dict[key][algo][0][i]
+                    diff = diff_dict[key][algo][met][i] - diff_dict[key][algo]['theoretical'][i]
                     diff_methods_algo.append(diff)
                     iterations.append(i)
                 
@@ -247,9 +243,6 @@ def compare_methods_plot2(compare_methods_data, methods_list,
             plt.vlines(outer_iterations, min(diff_methods_algo), max(diff_methods_algo),
                        colors='black', linestyles='dashed')
             # Bottom plot:
-            # ax2 = fig.add_subplot(gs[1])
-            # ax2.plot(iterations[:],diff,color='black')
-            # ax2.axhline(color="gray", zorder=-1)
             plt.xlabel('iterations')
             plt.ylabel(labels[k] + f'({met} - theoretical)')
             plt.gcf().subplots_adjust(left=0.2, bottom=0.15)
@@ -281,12 +274,16 @@ def compare_plots_2N(obj_list, ylabel1, diff_list, ylabel2, x, xlabel,
 
     # Top plot: [obj_list1,obj_list2,..obj_listN]:
     ax1 = fig.add_subplot(gs[0])
-    plt.yscale("log")
+    
     ymax = 0.
     for o, obj in enumerate(obj_list):
         ymax_tmp = max(max(obj[0]), max(obj[1]))
         if (ymax_tmp > ymax):
             ymax = ymax_tmp
+    if ymax > 100:
+        plt.yscale("log")
+
+    for o, obj in enumerate(obj_list):
         ax1.plot(x[:len(obj[0])], obj[0], color=colors[o], label=legend[o][0])
         ax1.plot(x[:len(obj[1])], obj[1], color=colors[o], linestyle='dashed', label=legend[o][1])
         plt.legend(bbox_to_anchor=(0., 1.102 , 1., .102), loc='lower left',

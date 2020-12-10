@@ -80,17 +80,16 @@ parameters = {}
 # Improvement: use class for the parameters.
 
 # Solver:
+parameters['nm']                 = {'min':1 ,'max':3 ,'type':'int', 'val':3}
+parameters['method']             = {'val':'"theoretical", "standard", "alternative"'}
+parameters['na']                 = {'min':1 ,'max':2 ,'type':'int', 'val':2}
+parameters['algorithm']               = {'val':'"lanczos", "planczosif"'}
 parameters['no']                 = {'min':1 ,'max':10 ,'type':'int', 'val':4}
 parameters['ni']                 = {'min':2 ,'max':10 ,'type':'int', 'val':6}
-
-# lmps: none, ritz or spectral
 parameters['lmp_mode']           = {'val':'"none"'}
 parameters['test_ortho']         = {'val':"F"}
 parameters['shutoff_type']       = {'val':0}
 parameters['shutoff_value']      = {'min':1e-4 ,'max':0.1 ,'type':'float' ,'val':1e-2}
-
-# methods: theoretical, standard or alternative
-parameters['method']             = {'val':'"theoretical"'}
 parameters['transitive_interp']  = {'val':"T"}
 parameters['projective_Bmatrix'] = {'val':"T"}
 
@@ -115,10 +114,7 @@ if verb:
     print('initial parameters: \n', parameters, '\n')
 
 # Define the parameters space to sample:
-parameters_to_sample = ['nobs', 'sigma_obs', 'Lb']
-
-# Define the methods to compare:
-methods_list = ['"standard"', '"alternative"']
+parameters_to_sample = ['nobs']
 
 #-------------------------------------------------------------------------------
 # set the seed:
@@ -126,16 +122,15 @@ np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
 ndim = len(parameters_to_sample)
-nwalkers = 32
+nwalkers = 4
 
-nsteps = 100
+nsteps = 1
 nruns = int(nsteps/10.)
 if nruns < 1:
     nruns = 1
     
 # Scale factor of the stretch-move algorithm (see the doc: ...pdf)
 scale_factor = 0.2
-
 
 # Run the analysis:
 p0 = walkers_create(nwalkers, parameters, parameters_to_sample, verb)
@@ -151,7 +146,7 @@ for run in range(nruns):
     if not run == 0:
         p0 = state
     # Define the sampler object:
-    ln_prob_args = (parameters, parameters_to_sample, methods_list, exec_command,
+    ln_prob_args = (parameters, parameters_to_sample, exec_command,
                     directories,verb)
     
     print("---------- Starting run {} of the MCMC ---------- \n".format(run))
