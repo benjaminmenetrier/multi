@@ -802,10 +802,6 @@ $  $\\
 \path [arrow,dashed] (d3.east) -- (t1.west) node[] {};
 \end{tikzpicture}
 
-
-
-\end{document}
-
 \section{Preconditionings equivalence}
 
 When the resolution changes between outer iterations, the equivalence between full $\mathbf{B}$ and square-root $\mathbf{B}$ preconditionings is not guaranteed anymore. This section looks for equivalence conditions.
@@ -823,19 +819,22 @@ If the previous outer iterations were equivalent for both preconditionings, then
 \begin{align}
 \mathbf{U}^\mathrm{T}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{U}^\mathrm{T}_i
 \end{align}
-Interpolators in model and control spaces are linked via the $\mathbf{B}$ matrix square-root adjoint.
+which is the condtion for a projective $\mathbf{B}$ matrix family.
 \end{enumerate}
 
 Depending on the method, the equivalence conditions may vary:
 \begin{itemize}
 \item Theoretical method: condition 1. is sufficient since the first term of the right-hand side is deduced from the full resolution guess
-\item Standard method:
-\begin{itemize}
-\item Inconsistent case: both conditions 1. and 2. are required since the full resolution guess and the first term of the right-hand side are computed independently.
-\item Consistent case: condition 2. is sufficient, since the full resolution guess is computed consistently with the first term of the right-hand side.
-\end{itemize}
+\item Standard method: both conditions 1. and 2. are required since the full resolution guess and the first term of the right-hand side are computed independently.
 \item Alternative method: condition 2. is sufficient, since the full resolution guess is deduced from the first term of the right-hand side.
 \end{itemize}
+
+
+
+
+
+\end{document}
+
 
 \subsection{Equivalence condition on Ritz vectors}
 If the resolution changes, the equivalence condition for preconditioners \eqref{eq:eq_cond_1} must be adapted since $\mathbf{U}$ depends on $k$:

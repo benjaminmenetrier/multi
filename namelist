@@ -10,7 +10,7 @@ test_ortho = F
 shutoff_type = 0
 shutoff_value = 0.01
 transitive_interp = T
-projective_Bmatrix = T
+projective_Bmatrix = F
 /
 
 &resolutions
