@@ -24,7 +24,7 @@ def netcdf_extract(output):
     """Extract the netCDF data from output file:
     """
     # option 'r' or 'rb' can cause errors: (fix later)
-    ds = nc.Dataset(output,"r")
+    ds = nc.Dataset(output,"r+")
     return ds
 ################################################################################
 ################################################################################
@@ -42,8 +42,9 @@ def walkers_create(nwalkers, parameters, parameters_to_sample, verb):
                 par_type = parameters[key]['type']
                 if par_type=='float':
                     p = np.random.uniform(par_min, par_max)
+                # /!\ keep float here to avoid conflict of concurrent processing:    
                 elif par_type == 'int':
-                    p = int(np.random.uniform(par_min, par_max))
+                    p = np.random.uniform(par_min, par_max)
                 elif par_type == 'geom':
                     print("do the geometry parameters later")
                 else:
@@ -89,8 +90,8 @@ def namelist_and_output_write(p, parameters, parameters_to_sample,
         else:
             namelist_id += str(parameters[key]['val']) + "_"
             output_id += str(parameters[key]['val']) + "_"
-    namelist_id = namelist_id.replace('"','')
-    output_id = output_id.replace('"','')
+    namelist_id = namelist_id.replace('"','').replace(',','-').replace(' ','')
+    output_id = output_id.replace('"','').replace(',','-').replace(' ','')
     output_id += '.nc'
     
     # Write the parameters in namelist file:

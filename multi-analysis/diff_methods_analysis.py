@@ -17,9 +17,10 @@ from shutil import copyfile
 from fnmatch import fnmatch
 import emcee
 import pickle
+from multiprocessing import Pool
 
 from diff_methods_functions import *
-from multiprocessing import Pool
+from diff_methods_lnlike import *
 
 #---------------------------
 # Verbose mode:
@@ -102,7 +103,7 @@ parameters['nobs']               = {'min':10 ,'max':1000 ,'type':'int', 'val':10
 parameters['sigma_obs']          = {'min':0. ,'max':1. ,'type':'float', 'val':0.01}
 
 # Background:
-parameters['sigmabvar']          = {'min':0. ,'max':1. ,'type':'float', 'val':0.1}
+parameters['sigmabvar']          = {'min':0. ,'max':1. ,'type':'float', 'val':0.}
 parameters['Lb']                 = {'min':1e-15 ,'max':10. ,'type':'float', 'val':0.1}
 parameters['spvarmin']           = {'min':0. ,'max':1. ,'type':'float', 'val':1e-5}
 
@@ -122,9 +123,9 @@ np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
 ndim = len(parameters_to_sample)
-nwalkers = 4
+nwalkers = 8
 
-nsteps = 1
+nsteps = 10
 nruns = int(nsteps/10.)
 if nruns < 1:
     nruns = 1
@@ -139,7 +140,7 @@ if verb:
     print('shape of p0:', np.shape(p0),'\n')
 
 # Test the behavior of the ln_prob:
-#ln_prob(p0[0],parameters,parameters_to_sample,methods_list,exec_command,verb)
+#ln_prob(p0[0], parameters, parameters_to_sample, exec_command, verb)
 
 #-------------------------------------------------------------------------------
 for run in range(nruns):
@@ -172,8 +173,10 @@ for run in range(nruns):
         results = {}
         results['chain'] = sampler.chain
         results['ln_prob'] = (-1)*sampler.lnprobability
-        results_file = open(os.path.join(diff_methods_dir + f'results_run_{run}.py'))
-        pickle.dump(results, results_file, "wb")
+        results_file = os.path.join(diff_methods_dir + f'results_run_{run}.py')
+        print(results, results_file)
+        with open(results_file, 'wb') as handle:
+            pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
         print('results have been saved in:', results_file)
         
 ################################################################################
