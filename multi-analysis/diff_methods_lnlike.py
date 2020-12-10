@@ -21,12 +21,18 @@ from diff_methods_functions import *
 
 
 ################################################################################
-def ln_23(p):
-    namelist=open("../namelists_tmp/"+str(p[0]),"w")
-    print("../namelists_tmp/"+str(p[0]))
-    namelist.close()
-    #os.remove("../namelists_tmp/"+str(p))
-    return 0
+def ln_23(p, parameters_dict, parameters_to_sample, exec_command,
+            directories, verb):
+    """Computes the log prob and monitor it:
+    """
+    res = ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
+            directories, verb)
+    if not np.isfinite(res):
+        print('ln_prob = ', res)
+        return -np.inf
+    else:
+        print('ln_prob = ', res)
+        return res
 ################################################################################
 ################################################################################
 def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
@@ -75,8 +81,8 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
     #    return -np.inf
     os.chdir(directories['multi'])
     path_to_namelist = os.path.join(directories["namelists"] + namelist)
-    #command_line = 'nohup ' + exec_command + path_to_namelist + ' > test.log'
-    command_line = exec_command + path_to_namelist
+    command_line = 'nohup ' + exec_command + path_to_namelist + ' > test.log'
+    #command_line = exec_command + path_to_namelist
     if verb:
         print(command_line)
     os.system(command_line)
@@ -84,50 +90,40 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
     os.remove(os.path.join(directories["namelists"] + namelist))
     
     # Get the results of the code and store them:
-    #try:
-    if True:
+    #if True:
+    try:    
         ds = netcdf_extract(output)
         os.remove(output)
-    #except:
-    #    print("Error with output of the following command line:")
-    #    print(command_line)
-    #    return -np.inf
-    os.chdir(os.path.join(directories["analysis"]))
-
-    return -parameters['nobs']['val']
-
-    #-----------------------------------------------------------------------
-    # Compute the difference:
-    algo = 'lanczos'
-    cost_func_id = 'j_nl'
-    try:
-        diff = diff_compute_cost_function(results, algo,methods_list, cost_func_id)
-    except:
+        os.chdir(os.path.join(directories["analysis"]))
+        #-----------------------------------------------------------------------
+        # Compute the difference:
+        algo = 'lanczos'
+        method = 'alternative'
+        cost_func_id = 'j'
+        diff = diff_compute_cost_function(ds, algo, cost_func_id)
+    except:     
        print("Error in diff_compute with the following parameters:")
        print('par=',parameters)
        return -np.inf
     #-----------------------------------------------------------------------
-    # return diff
+    return diff
     
 ################################################################################
 ################################################################################
-def diff_compute_cost_function(results,algo,methods_list,cost_func_id):
+def diff_compute_cost_function(ds, algo, cost_func_id):
     """Compute the difference between the costs functions.
     """
     # Get the cost functions:
-    
     cost_function={}
-    for m,method in enumerate(results):
-        cost_function[method]=[]
-        ds=results[method]
-        for io in ds.groups:
-            cost_function[method].append(np.array(ds[io][algo][cost_func_id][:]))
-        #cost_function[m]=np.reshape(cost_function[m],-1)
-        cost_function[method]=np.reshape(cost_function[method],-1)
+    for m, met in enumerate(ds.groups):
+        cost_function[met] = []
+        for io in ds[met].groups:
+            cost_function[met].append(np.array(ds[met][io][algo][cost_func_id][:]))
+        cost_function[met]=np.reshape(cost_function[met],-1)
         
     # Compute the difference and return it:
-    diff=0
-    for i in range(len(cost_function[methods_list[0]])):
-        diff+=abs(cost_function[methods_list[0]][i]-cost_function[methods_list[1]][i])
+    diff=0.
+    for i in range(len(cost_function['theoretical'])):
+        diff += abs(cost_function['alternative'][i] - cost_function['theoretical'][i])
     return diff
 ################################################################################

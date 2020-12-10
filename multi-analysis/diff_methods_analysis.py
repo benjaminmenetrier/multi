@@ -85,8 +85,10 @@ parameters['nm']                 = {'min':1 ,'max':3 ,'type':'int', 'val':3}
 parameters['method']             = {'val':'"theoretical", "standard", "alternative"'}
 parameters['na']                 = {'min':1 ,'max':2 ,'type':'int', 'val':2}
 parameters['algorithm']               = {'val':'"lanczos", "planczosif"'}
-parameters['no']                 = {'min':1 ,'max':10 ,'type':'int', 'val':4}
+
+parameters['no']                 = {'min':1 ,'max':10 ,'type':'int', 'val':3}
 parameters['ni']                 = {'min':2 ,'max':10 ,'type':'int', 'val':6}
+
 parameters['lmp_mode']           = {'val':'"none"'}
 parameters['test_ortho']         = {'val':"F"}
 parameters['shutoff_type']       = {'val':0}
@@ -95,8 +97,8 @@ parameters['transitive_interp']  = {'val':"T"}
 parameters['projective_Bmatrix'] = {'val':"T"}
 
 # Resolutions:
-parameters['nx']                 = {'min':1 ,'max':1001 ,'type':'geom', 'val':'11,31,51,101'}
-parameters['ny']                 = {'min':1 ,'max':1001 ,'type':'geom', 'val':'11,31,51,101'}
+parameters['nx']                 = {'min':1 ,'max':1001 ,'type':'geom', 'val':'51,101,201'}
+parameters['ny']                 = {'min':1 ,'max':1001 ,'type':'geom', 'val':'51,101,201'}
 
 # Observations:
 parameters['nobs']               = {'min':10 ,'max':1000 ,'type':'int', 'val':100}
@@ -115,7 +117,7 @@ if verb:
     print('initial parameters: \n', parameters, '\n')
 
 # Define the parameters space to sample:
-parameters_to_sample = ['nobs']
+parameters_to_sample = ['nobs', 'Lb']
 
 #-------------------------------------------------------------------------------
 # set the seed:
@@ -123,9 +125,9 @@ np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
 ndim = len(parameters_to_sample)
-nwalkers = 8
+nwalkers = 80
 
-nsteps = 10
+nsteps = 100
 nruns = int(nsteps/10.)
 if nruns < 1:
     nruns = 1
@@ -153,18 +155,18 @@ for run in range(nruns):
     print("---------- Starting run {} of the MCMC ---------- \n".format(run))
     
     # Parallelization of the code using pool:
-    with Pool() as pool:
-    #if True:
-        sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
-                                        a=scale_factor,live_dangerously=True,
-                                        pool=pool)
+    #with Pool() as pool:
+    if True:
+        #sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_23,args=ln_prob_args,
+ #                                       a=scale_factor,live_dangerously=True,
+#                                        pool=pool)
+        # Run the MCMC:
+        #state = sampler.run_mcmc(p0, nsteps)
+        
+        sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_23,args=ln_prob_args,
+                                        a=scale_factor,live_dangerously=True)
         # Run the MCMC:
         state = sampler.run_mcmc(p0, nsteps)
-        
-        # sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
-        #                                 a=scale_factor,live_dangerously=True)
-        # # Run the MCMC:
-        # state = sampler.run_mcmc(p0, nsteps)
 
         #-------------------------------------------------------------------------------
         # Save the results:
