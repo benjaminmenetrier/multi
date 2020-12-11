@@ -53,7 +53,7 @@ results_dir_root = os.path.join(directories['analysis'] + '/diff_methods_results
 out_dirs.append(results_dir_root)
 
 # Results directory:
-diff_methods_dir = os.path.join(results_dir_root + '/diff_methods_analysis_results/')
+diff_methods_dir = os.path.join(results_dir_root + '/diff_nobs_vs_sigmao_vs_Lb/')
 out_dirs.append(diff_methods_dir)
 
 # Location of the raw outputs of the code (temporary stored):
@@ -125,9 +125,9 @@ np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
 ndim = len(parameters_to_sample)
-nwalkers = 80
+nwalkers = 8
 
-nsteps = 100
+nsteps = 1
 nruns = int(nsteps/10.)
 if nruns < 1:
     nruns = 1
@@ -154,29 +154,31 @@ for run in range(nruns):
     
     print("---------- Starting run {} of the MCMC ---------- \n".format(run))
     
+    # if True:
+
     # Parallelization of the code using pool:
-    #with Pool() as pool:
-    if True:
-        #sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_23,args=ln_prob_args,
- #                                       a=scale_factor,live_dangerously=True,
-#                                        pool=pool)
-        # Run the MCMC:
-        #state = sampler.run_mcmc(p0, nsteps)
-        
+    with Pool() as pool:
         sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_23,args=ln_prob_args,
-                                        a=scale_factor,live_dangerously=True)
-        # Run the MCMC:
+                                       a=scale_factor,live_dangerously=True,
+                                       pool=pool)
+        # # Run the MCMC:
         state = sampler.run_mcmc(p0, nsteps)
+        
+        # sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_23,args=ln_prob_args,
+        #                                 a=scale_factor,live_dangerously=True)
+        # # Run the MCMC:
+        # state = sampler.run_mcmc(p0, nsteps)
 
         #-------------------------------------------------------------------------------
-        # Save the results:
-        print("save the results as pickles")
         # Save the chain containing the position (chain) and associated lnprobability (lnprob):
+        print("save the results as pickles")
+
         results = {}
         results['chain'] = sampler.chain
         results['ln_prob'] = (-1)*sampler.lnprobability
+
         results_file = os.path.join(diff_methods_dir + f'results_run_{run}.py')
-        print(results, results_file)
+        
         with open(results_file, 'wb') as handle:
             pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
         print('results have been saved in:', results_file)

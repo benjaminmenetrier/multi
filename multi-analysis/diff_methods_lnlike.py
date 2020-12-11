@@ -28,10 +28,10 @@ def ln_23(p, parameters_dict, parameters_to_sample, exec_command,
     res = ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
             directories, verb)
     if not np.isfinite(res):
-        print('ln_prob = ', res)
+        #print('ln_prob = ', res)
         return -np.inf
     else:
-        print('ln_prob = ', res)
+        #print('ln_prob = ', res)
         return res
 ################################################################################
 ################################################################################
@@ -43,7 +43,7 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
     # Set the parameters:
     parameters = dict(parameters_dict)
     i = 0
-    print('p=',p)
+    # print('p=',p)
     for k, key in enumerate(parameters):
         if key in parameters_to_sample:
             # Check the boundaries:
@@ -81,8 +81,8 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
     #    return -np.inf
     os.chdir(directories['multi'])
     path_to_namelist = os.path.join(directories["namelists"] + namelist)
-    command_line = 'nohup ' + exec_command + path_to_namelist + ' > test.log'
-    #command_line = exec_command + path_to_namelist
+    # command_line = 'nohup ' + exec_command + path_to_namelist + ' > test.log'
+    command_line = exec_command + path_to_namelist
     if verb:
         print(command_line)
     os.system(command_line)

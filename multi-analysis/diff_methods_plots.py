@@ -87,7 +87,7 @@ for step in lnprob.T:
     mean_lnprob.append(sum(step)/(nsteps*1.))
 
 fig=plt.figure()
-plt.plot(mean_lnprob[:], range(len(mean_lnprob)))
+plt.plot(range(len(mean_lnprob), mean_lnprob[:]))
 plt.xlabel(xlabel)
 plt.ylabel(ylabel)
 plt.savefig(out_name)

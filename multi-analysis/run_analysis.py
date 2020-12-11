@@ -112,7 +112,7 @@ i_nx = ['101, 101, 101']
 i_nobs = [100, 3000]
 i_sigma_obs = [0.01]
 
-i_sigmabvar = [0.1]
+i_sigmabvar = [0.]
 i_Lb = [0.1]
 
 iter_params = itertools.product(i_no, i_ni, i_nx, i_nobs, i_sigma_obs,
