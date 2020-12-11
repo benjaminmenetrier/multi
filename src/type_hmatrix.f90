@@ -7,10 +7,23 @@
 !----------------------------------------------------------------------
 module type_hmatrix
 
+use netcdf
+use tools_netcdf
+use type_geom
+
 implicit none
 
 type hmatrix_type
-   integer,allocatable :: ind(:)
+   integer             :: nobs
+   real(8),allocatable :: x_obs(:)
+   real(8),allocatable :: y_obs(:)
+   real(8),allocatable :: yo(:)
+contains
+   procedure :: setup => hmatrix_setup
+   procedure :: write => hmatrix_write
+   procedure :: apply => hmatrix_apply
+   procedure :: apply_ad => hmatrix_apply_ad
+   procedure :: test => hmatrix_test
 end type hmatrix_type
 
 contains
@@ -19,52 +32,77 @@ contains
 ! Subroutine: hmatrix_setup
 ! Purpose: setup H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_setup(hmatrix,nn,nobs)
+subroutine hmatrix_setup(hmatrix,nobs)
 
 implicit none
 
 ! Passed variables
-type(hmatrix_type),intent(inout) :: hmatrix
-integer,intent(in) :: nn
+class(hmatrix_type),intent(inout) :: hmatrix
 integer,intent(in) :: nobs
 
-! Local variables
-integer :: iobs
-
-! Release memory
-if (allocated(hmatrix%ind)) deallocate(hmatrix%ind)
+! Copy dimension
+hmatrix%nobs = nobs
 
 ! Allocation
-allocate(hmatrix%ind(nobs))
+allocate(hmatrix%x_obs(hmatrix%nobs))
+allocate(hmatrix%y_obs(hmatrix%nobs))
+allocate(hmatrix%yo(hmatrix%nobs))
 
-! Set indices
-do iobs=1,nobs
-   hmatrix%ind(iobs) = (iobs-1)*nn/nobs+1
-end do
+! Grid coordinates
+call random_number(hmatrix%x_obs)
+call random_number(hmatrix%y_obs)
 
 end subroutine hmatrix_setup
+
+!----------------------------------------------------------------------
+! Subroutine: hmatrix_write
+! Purpose: write H matrix
+!----------------------------------------------------------------------
+subroutine hmatrix_write(hmatrix,ncid,x_obs_id,y_obs_id,nobs_id)
+
+implicit none
+
+! Passed variables
+class(hmatrix_type),intent(inout) :: hmatrix
+integer,intent(in) :: ncid
+integer,intent(inout) :: nobs_id,x_obs_id,y_obs_id
+
+! Local variables
+!integer :: nobs_id,x_obs_id,y_obs_id
+
+! Create dimensions
+call ncerr('hmatrix_write',nf90_def_dim(ncid,'nobs',hmatrix%nobs,nobs_id))
+
+! Create variables
+call ncerr('hmatrix_write',nf90_def_var(ncid,'x_obs',nf90_double,(/nobs_id/),x_obs_id))
+call ncerr('hmatrix_write',nf90_def_var(ncid,'y_obs',nf90_double,(/nobs_id/),y_obs_id))
+
+! Write variables
+call ncerr('hmatrix_write',nf90_put_var(ncid,x_obs_id,hmatrix%x_obs))
+call ncerr('hmatrix_write',nf90_put_var(ncid,y_obs_id,hmatrix%y_obs))
+
+end subroutine hmatrix_write
 
 !----------------------------------------------------------------------
 ! Subroutine: hmatrix_apply
 ! Purpose: apply H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_apply(hmatrix,nn,x,nobs,y)
+subroutine hmatrix_apply(hmatrix,geom,x,y)
 
 implicit none
 
 ! Passed variables
-type(hmatrix_type),intent(in) :: hmatrix
-integer,intent(in) :: nn
-real(8),intent(in) :: x(nn)
-integer,intent(in) :: nobs
-real(8),intent(out) :: y(nobs)
+class(hmatrix_type),intent(in) :: hmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: y(hmatrix%nobs)
 
 ! Local variables
 integer :: iobs
 
 ! Apply observation operator
-do iobs=1,nobs
-   y(iobs) = x(hmatrix%ind(iobs))
+do iobs=1,hmatrix%nobs
+   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x,y(iobs))
 end do
 
 end subroutine hmatrix_apply
@@ -73,56 +111,54 @@ end subroutine hmatrix_apply
 ! Subroutine: hmatrix_apply_ad
 ! Purpose: apply adjoint of the H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_apply_ad(hmatrix,nobs,y,nn,x)
+subroutine hmatrix_apply_ad(hmatrix,geom,y,x)
 
 implicit none
 
 ! Passed variables
-type(hmatrix_type),intent(in) :: hmatrix
-integer,intent(in) :: nobs
-real(8),intent(in) :: y(nobs)
-integer,intent(in) :: nn
-real(8),intent(out) :: x(nn)
+class(hmatrix_type),intent(in) :: hmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: y(hmatrix%nobs)
+real(8),intent(out) :: x(geom%nh)
 
 ! Local variables
 integer :: iobs
 
-! Apply observation operator
+! Apply observation operator adjoint
 x = 0.0
-do iobs=1,nobs
-   x(hmatrix%ind(iobs)) = y(iobs)
+do iobs=1,hmatrix%nobs
+   call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
 end do
 
 end subroutine hmatrix_apply_ad
 
 !----------------------------------------------------------------------
 ! Subroutine: hmatrix_test
-! Purpose: test H matrix
+! Purpose: setup H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_test(hmatrix,nn,nobs)
+subroutine hmatrix_test(hmatrix,geom)
 
 implicit none
 
 ! Passed variables
-type(hmatrix_type),intent(in) :: hmatrix
-integer,intent(in) :: nn
-integer,intent(in) :: nobs
+class(hmatrix_type),intent(in) :: hmatrix
+type(geom_type),intent(in) :: geom
 
 ! Local variables
-real(8) :: x1(nn),x2(nn)
-real(8) :: y1(nobs),y2(nobs)
-real(8) :: sumx,sumy
+real(8) :: x1(geom%nh),x2(geom%nh)
+real(8) :: y1(hmatrix%nobs),y2(hmatrix%nobs)
+real(8) :: dp1,dp2
 
 ! Initialization
 call random_number(x1)
 call random_number(y2)
 
 ! Direct H + adjoint H test
-call hmatrix_apply(hmatrix,nn,x1,nobs,y1)
-call hmatrix_apply_ad(hmatrix,nobs,y2,nn,x2)
-sumx = sum(x1*x2)
-sumy = sum(y1*y2)
-write(*,'(a,e15.8)') 'Direct H + adjoint H test:               ',sumx-sumy
+call hmatrix%apply(geom,x1,y1)
+call hmatrix%apply_ad(geom,y2,x2)
+dp1 = sum(x1*x2)
+dp2 = sum(y1*y2)
+write(*,'(a,e15.8)') '         Direct H + adjoint H test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
 end subroutine hmatrix_test
 

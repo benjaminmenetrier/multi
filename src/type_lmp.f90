@@ -7,6 +7,8 @@
 !----------------------------------------------------------------------
 module type_lmp
 
+use type_geom
+
 implicit none
 
 type outer_type
@@ -14,7 +16,6 @@ type outer_type
    real(8),allocatable :: eigenval(:)
    real(8),allocatable :: eigenvec(:,:)
    real(8),allocatable :: omega(:)
-   real(8),allocatable :: lancvec_trunc(:,:)
    real(8),allocatable :: lancvec(:,:)
    real(8),allocatable :: lancvec1(:,:)
    real(8),allocatable :: lancvec2(:,:)
@@ -25,9 +26,15 @@ end type outer_type
 
 type lmp_type
    character(len=1024) :: mode
-   character(len=1024) :: space
    integer :: io
+   real(8),allocatable :: lancvec_trunc(:,:)
    type(outer_type),allocatable :: outer(:)
+contains
+   procedure :: alloc => lmp_alloc
+   procedure :: apply => lmp_apply
+   procedure :: apply_ad => lmp_apply_ad
+   procedure :: apply_sqrt => lmp_apply_sqrt
+   procedure :: apply_sqrt_ad => lmp_apply_sqrt_ad
 end type lmp_type
 
 contains
@@ -36,28 +43,29 @@ contains
 ! Subroutine: lmp_alloc
 ! Purpose: allocate LMP
 !----------------------------------------------------------------------
-subroutine lmp_alloc(lmp,nn,ni,io,mode,space)
+subroutine lmp_alloc(lmp,no,geom,ni,io,mode,algo_name)
 
 implicit none
 
 ! Passed variables
-type(lmp_type),intent(inout) :: lmp
-integer,intent(in) :: nn
+class(lmp_type),intent(inout) :: lmp
+integer,intent(in) :: no
+type(geom_type),intent(in) :: geom(no)
 integer,intent(in) :: ni
 integer,intent(in) :: io
 character(len=*),intent(in) :: mode
-character(len=*),intent(in) :: space
+character(len=*),intent(in) :: algo_name
 
 ! Local variables
 integer :: jo
 
 ! Release memory
 if (allocated(lmp%outer)) then
-   do jo=1,lmp%io
+   if (allocated(lmp%lancvec_trunc)) deallocate(lmp%lancvec_trunc)
+   do jo=2,lmp%io
       if (allocated(lmp%outer(jo)%eigenval)) deallocate(lmp%outer(jo)%eigenval)
       if (allocated(lmp%outer(jo)%eigenvec)) deallocate(lmp%outer(jo)%eigenvec)
       if (allocated(lmp%outer(jo)%omega)) deallocate(lmp%outer(jo)%omega)
-      if (allocated(lmp%outer(jo)%lancvec_trunc)) deallocate(lmp%outer(jo)%lancvec_trunc)
       if (allocated(lmp%outer(jo)%lancvec)) deallocate(lmp%outer(jo)%lancvec)
       if (allocated(lmp%outer(jo)%lancvec1)) deallocate(lmp%outer(jo)%lancvec1)
       if (allocated(lmp%outer(jo)%lancvec2)) deallocate(lmp%outer(jo)%lancvec2)
@@ -70,26 +78,48 @@ end if
 
 ! Allocation
 lmp%mode = trim(mode)
-lmp%space = trim(space)
 lmp%io = io
-allocate(lmp%outer(io))
-do jo=2,io
-   select case (trim(lmp%mode))
-   case ('spectral','ritz')
-      allocate(lmp%outer(jo)%eigenval(ni))
-      allocate(lmp%outer(jo)%eigenvec(ni,ni))
-      allocate(lmp%outer(jo)%lancvec_trunc(nn,ni+1))
-      allocate(lmp%outer(jo)%lancvec(nn,ni+1))
-      allocate(lmp%outer(jo)%ritzvec(nn,ni))
-      if (trim(lmp%space)=='model') then
-         allocate(lmp%outer(jo)%lancvec1(nn,ni+1))
-         allocate(lmp%outer(jo)%lancvec2(nn,ni+1))
-         allocate(lmp%outer(jo)%ritzvec1(nn,ni))
-         allocate(lmp%outer(jo)%ritzvec2(nn,ni))
-      end if
-      allocate(lmp%outer(jo)%omega(ni))
-   end select
-end do
+if (io>1) then
+   allocate(lmp%lancvec_trunc(geom(io-1)%nh,ni+1))
+   allocate(lmp%outer(2:io))
+   do jo=2,io
+      select case (trim(lmp%mode))
+      case ('spectral','ritz')
+         allocate(lmp%outer(jo)%eigenval(ni))
+         allocate(lmp%outer(jo)%eigenvec(ni,ni))
+         allocate(lmp%outer(jo)%lancvec(geom(io)%nh,ni+1))
+         allocate(lmp%outer(jo)%ritzvec(geom(io)%nh,ni))
+         if (trim(algo_name)=='planczosif') then
+            allocate(lmp%outer(jo)%lancvec1(geom(io)%nh,ni+1))
+            allocate(lmp%outer(jo)%lancvec2(geom(io)%nh,ni+1))
+            allocate(lmp%outer(jo)%ritzvec1(geom(io)%nh,ni))
+            allocate(lmp%outer(jo)%ritzvec2(geom(io)%nh,ni))
+         end if
+         allocate(lmp%outer(jo)%omega(ni))
+      end select
+   end do
+end if
+
+! Initialization at missing value
+if (io>1) then
+   lmp%lancvec_trunc = -999.0
+   do jo=2,io
+      select case (trim(lmp%mode))
+      case ('spectral','ritz')
+         lmp%outer(jo)%eigenval = -999.0
+         lmp%outer(jo)%eigenvec = -999.0
+         lmp%outer(jo)%lancvec = -999.0
+         lmp%outer(jo)%ritzvec = -999.0
+         if (trim(algo_name)=='planczosif') then
+            lmp%outer(jo)%lancvec1 = -999.0
+            lmp%outer(jo)%lancvec2 = -999.0
+            lmp%outer(jo)%ritzvec1 = -999.0
+            lmp%outer(jo)%ritzvec2 = -999.0
+         end if
+         lmp%outer(jo)%omega = -999.0
+      end select
+   end do
+end if
 
 end subroutine lmp_alloc
 
@@ -97,17 +127,17 @@ end subroutine lmp_alloc
 ! Subroutine: lmp_apply
 ! Purpose: apply LMP
 !----------------------------------------------------------------------
-subroutine lmp_apply(lmp,nn,ni,io,x,px)
+subroutine lmp_apply(lmp,geom,ni,io,x,px)
 
 implicit none
 
 ! Passed variables
-type(lmp_type),intent(in) :: lmp
-integer,intent(in) :: nn
+class(lmp_type),intent(in) :: lmp
+type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 integer,intent(in) :: io
-real(8),intent(in) :: x(nn)
-real(8),intent(out) :: px(nn)
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: px(geom%nh)
 
 ! Local variables
 integer :: jo,ii
@@ -132,7 +162,9 @@ do jo=2,io
             tmp = tmp+lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec1(:,ii)*x)
          end do
          do ii=1,ni
-            px = px-lmp%outer(jo)%ritzvec2(:,ii)*lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%lancvec1(:,ni+1)*x)-lmp%outer(jo)%lancvec2(:,ni+1)*lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec1(:,ii)*x)+lmp%outer(jo)%ritzvec2(:,ii)*lmp%outer(jo)%omega(ii)*tmp
+            px = px-lmp%outer(jo)%ritzvec2(:,ii)*lmp%outer(jo)%omega(ii) &
+ & *sum(lmp%outer(jo)%lancvec1(:,ni+1)*x)-lmp%outer(jo)%lancvec2(:,ni+1)*lmp%outer(jo)%omega(ii) &
+ & *sum(lmp%outer(jo)%ritzvec1(:,ii)*x)+lmp%outer(jo)%ritzvec2(:,ii)*lmp%outer(jo)%omega(ii)*tmp
          end do
       end if
    end select
@@ -144,17 +176,17 @@ end subroutine lmp_apply
 ! Subroutine: lmp_apply_ad
 ! Purpose: apply LMP adjoint
 !----------------------------------------------------------------------
-subroutine lmp_apply_ad(lmp,nn,ni,io,x,px)
+subroutine lmp_apply_ad(lmp,geom,ni,io,x,px)
 
 implicit none
 
 ! Passed variables
-type(lmp_type),intent(in) :: lmp
-integer,intent(in) :: nn
+class(lmp_type),intent(in) :: lmp
+type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 integer,intent(in) :: io
-real(8),intent(in) :: x(nn)
-real(8),intent(out) :: px(nn)
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: px(geom%nh)
 
 ! Local variables
 integer :: jo,ii
@@ -179,7 +211,9 @@ do jo=io,2,-1
             tmp = tmp+lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec2(:,ii)*x)
          end do
          do ii=1,ni
-            px = px-lmp%outer(jo)%lancvec1(:,ni+1)*lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec2(:,ii)*x)-lmp%outer(jo)%ritzvec1(:,ii)*lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%lancvec2(:,ni+1)*x)+lmp%outer(jo)%ritzvec1(:,ii)*lmp%outer(jo)%omega(ii)*tmp
+            px = px-lmp%outer(jo)%lancvec1(:,ni+1)*lmp%outer(jo)%omega(ii) &
+ & *sum(lmp%outer(jo)%ritzvec2(:,ii)*x)-lmp%outer(jo)%ritzvec1(:,ii)*lmp%outer(jo)%omega(ii) &
+ & *sum(lmp%outer(jo)%lancvec2(:,ni+1)*x)+lmp%outer(jo)%ritzvec1(:,ii)*lmp%outer(jo)%omega(ii)*tmp
          end do
       end if
    end select
@@ -191,21 +225,21 @@ end subroutine lmp_apply_ad
 ! Subroutine: lmp_apply_sqrt
 ! Purpose: apply LMP square-root
 !----------------------------------------------------------------------
-subroutine lmp_apply_sqrt(lmp,nn,ni,io,x,px)
+subroutine lmp_apply_sqrt(lmp,geom,ni,io,x,px)
 
 implicit none
 
 ! Passed variables
-type(lmp_type),intent(in) :: lmp
-integer,intent(in) :: nn
+class(lmp_type),intent(in) :: lmp
+type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 integer,intent(in) :: io
-real(8),intent(in) :: x(nn)
-real(8),intent(out) :: px(nn)
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: px(geom%nh)
 
 ! Local variables
 integer :: jo,ii
-real(8) :: pxtmp(nn)
+real(8) :: pxtmp(geom%nh)
 
 ! Initialization
 px = x
@@ -240,21 +274,21 @@ end subroutine lmp_apply_sqrt
 ! Subroutine: lmp_apply_sqrt_ad
 ! Purpose: apply LMP square-root adjoint
 !----------------------------------------------------------------------
-subroutine lmp_apply_sqrt_ad(lmp,nn,ni,io,x,px)
+subroutine lmp_apply_sqrt_ad(lmp,geom,ni,io,x,px)
 
 implicit none
 
 ! Passed variables
-type(lmp_type),intent(in) :: lmp
-integer,intent(in) :: nn
+class(lmp_type),intent(in) :: lmp
+type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 integer,intent(in) :: io
-real(8),intent(in) :: x(nn)
-real(8),intent(out) :: px(nn)
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: px(geom%nh)
 
 ! Local variables
 integer :: jo,ii
-real(8) :: pxtmp(nn)
+real(8) :: pxtmp(geom%nh)
 
 ! Initialization
 px = x

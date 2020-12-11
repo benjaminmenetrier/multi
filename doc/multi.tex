@@ -26,11 +26,51 @@
 \usepackage[pdftex,pdfborder={0 0 0}]{hyperref}
 \usepackage{pdfpages}
 \usepackage{tikz}
-\usetikzlibrary{shapes,backgrounds,fit,positioning}
+\usetikzlibrary{shapes,backgrounds,fit,shadows,arrows,positioning}
 \usepackage{mathtools}
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{placeins}
+% Define the layers to draw the diagram
+\pgfdeclarelayer{background}
+\pgfdeclarelayer{foreground}
+\pgfsetlayers{background,main,foreground}
+\pagenumbering{gobble}
+
+% Define block styles
+\tikzstyle{process} = [draw, fill=blue!20, text centered, text width=13em, minimum width=8em, minimum height=3em, rounded corners, drop shadow,font=\bfseries]
+\tikzstyle{inputdata} = [draw, fill=green!20, text centered, text width=4em, minimum width=3em, minimum height=3em, drop shadow,font=\bfseries]
+\tikzstyle{tmpdata} = [draw, fill=orange!20, text centered, text width=4em, minimum width=3em, minimum height=3em, drop shadow,font=\bfseries]
+\tikzstyle{outputdata} = [draw, fill=red!20, text centered, text width=4em, minimum width=3em, minimum height=3em, drop shadow,font=\bfseries]
+\tikzstyle{indexdata} = [draw, text centered, text width=2.5em, minimum width=2em, minimum height=2em, rounded corners, font=\bfseries]
+\tikzstyle{arrow} = [draw, ultra thick, color=black!50, -latex']
+\tikzstyle{line} = [draw, ultra thick, color=black!50]
+\tikzstyle{dash} = [dotted, draw, ultra thick, color=black!50, -latex']
+\tikzstyle{layer} = [draw, fill=blue!20, text centered, text width=\linewidth, minimum width=8em, minimum height=3em, rounded corners, drop shadow,font=\bfseries]
+
+% Define distances for bordering
+\newcommand{\blockdist}{1.3}
+\newcommand{\edgedist}{1.5}
+\newcommand{\inputdata}[2]{node (i#1) [inputdata] {#2}}
+\newcommand{\tmpdata}[2]{node (t#1) [tmpdata] {#2}}
+\newcommand{\outputdata}[2]{node (o#1) [outputdata] {#2}}
+\newcommand{\indexdata}[2]{node (d#1) [indexdata] {#2}}
+\newcommand{\process}[2]{node (p#1) [process] {#2}}
+\newcommand{\layer}[2]{node (l#1) [layer] {#2}}
+\newcommand{\background}[7]{%
+\begin{pgfonlayer}{background}
+% Left-top corner of the background rectangle
+\path (#1.west |- #2.north)+(-0.5,0.25) node (a1) {};
+% Right-bottom corner of the background rectanle
+\path (#3.east |- #4.south)+(+0.5,-0.25) node (a2) {};
+% Draw the background
+\path[fill=#6!20,rounded corners, draw=black!50, dashed] (a1) rectangle (a2);
+\path (#3.east |- #2.north)+(0,0.25)--(#1.west |- #2.north) node[midway] (#5-n) {};
+\path (#3.east |- #2.south)+(0,-0.35)--(#1.west |- #2.south) node[midway] (#5-s) {};
+\path (#3.east |- #2.north)+(0.7,0)--(#3.east |- #4.south) node[midway] (#5-w) {};
+% Write test
+\node[below of=#4,node distance = 1.3cm, text centered, text width=12em, minimum width=8em, minimum height=3em,font=\bfseries] (tmp) {#7};
+\end{pgfonlayer}}
 
 \renewcommand*{\familydefault}{\sfdefault}
 
@@ -40,16 +80,6 @@
 \addtolength{\evensidemargin}{-0.5cm}
 \addtolength{\textwidth}{1.0cm}
 \parindent=0em
-
-% New math commands
-\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}\DeclareMathOperator{\diag}{diag}
-\DeclareMathOperator{\Diag}{Diag}
-\DeclareMathOperator{\tr}{tr}
-\DeclareMathOperator{\Cov}{Cov}
-\DeclareMathOperator{\Cor}{Cor}
-\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
-\def\independenT#1#2{\mathrel{\setbox0\hbox{$#1#2$}%
-\copy0\kern-\wd0\mkern4mu\box0}} 
 
 % Appropriate font for \mathcal{}
 \DeclareSymbolFont{cmmathcal}{OMS}{cmsy}{m}{n}
@@ -84,6 +114,8 @@
 \maketitle
 
 \tableofcontents
+
+\clearpage
 
 \section{Problem linearization}
 
@@ -141,16 +173,13 @@ Setting the gradient of $J(\delta \mathbf{x}_k)$ to zero gives the analysis incr
 \label{eq:inc}
 & \ \mathbf{B}^{-1} \left(\delta \mathbf{x}^a_k - \delta \mathbf{x}^b_k\right) - \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \left(\mathbf{d}_k - \mathbf{H}_k \delta \mathbf{x}^a_k\right) = 0 \nonumber \\
 \Leftrightarrow & \ \left(\mathbf{B}^{-1} + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k\right) \delta \mathbf{x}^a_k = \mathbf{B}^{-1} \delta \mathbf{x}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k \nonumber \\
-\Leftrightarrow & \ \mathbf{A}^\mathbf{x}_k \delta \mathbf{x}^a_k = \mathbf{b}^\mathbf{x}_k
+\Leftrightarrow & \ \boxed{\mathbf{A}^\mathbf{x}_k \delta \mathbf{x}^a_k = \mathbf{b}^\mathbf{x}_k}
 \end{align}
 with $\mathbf{A}^\mathbf{x}_k \in \mathbb{R}^{n \times n}$ and $\mathbf{b}^\mathbf{x}_k \in \mathbb{R}^{n}$ defined as:
 \begin{align}
 \mathbf{A}^\mathbf{x}_k & = \mathbf{B}^{-1} + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \\
 \mathbf{b}^\mathbf{x}_k & = \mathbf{B}^{-1} \delta \mathbf{x}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k
 \end{align}
-
-
-
 
 \section{Iterative solvers and preconditionings}
 For high-dimensional problems, linear system \eqref{eq:inc} can be solved with iterative methods, for instance the Lanczos method. Preconditioners are useful to accelerate the convergence. This section is based on \citet{gurol_phd_2013}.
@@ -163,7 +192,7 @@ A new variable $\delta \overline{\mathbf{x}}_k \in \mathbb{R}^n$ is defined as:
 Linear system \eqref{eq:inc} is transformed into:
 \begin{align}
 \label{eq:inc_B}
-\mathbf{A}^{\overline{\mathbf{x}}}_k \delta \overline{\mathbf{x}}^a_k = \mathbf{b}^{\overline{\mathbf{x}}}_k
+\boxed{\mathbf{A}^{\overline{\mathbf{x}}}_k \delta \overline{\mathbf{x}}^a_k = \mathbf{b}^{\overline{\mathbf{x}}}_k}
 \end{align}
 with $\mathbf{A}^{\overline{\mathbf{x}}}_k \in \mathbb{R}^{n \times n}$ and $\mathbf{b}^{\overline{\mathbf{x}}}_k \in \mathbb{R}^{n}$ defined as:
 \begin{align}
@@ -174,7 +203,7 @@ with $\mathbf{A}^{\overline{\mathbf{x}}}_k \in \mathbb{R}^{n \times n}$ and $\ma
 
 The PLanczosIF method with a preconditioner $\mathbf{P}_k = \mathbf{B}\mathbf{C}_k$, where $\mathbf{C}_k \in \mathbb{R}^{n \times n}$ and $\mathbf{P}_k \in \mathbb{R}^{n \times n}$ is detailed in algorithm \ref{algo:planczosif}.\\
 
-A common (but not unique) way to define the preconditioner $\mathbf{P}_k = \mathbf{B}\mathbf{C}_k$ is to use the spectral Limited Memory Preconditioner (LMP) approximated from the Ritz pairs:
+A common (but not unique) way to define the preconditioner $\mathbf{P}_k = \mathbf{B}\mathbf{C}_k$ consists in using the spectral Limited Memory Preconditioner (LMP) approximated from the Ritz pairs:
 \begin{itemize}
 \item For the first outer iteration ($k=1$): $\mathbf{C}_1 = \mathbf{I}_n$.
 \item For subsequent outer iteration ($k>1$):
@@ -212,7 +241,7 @@ As a consequence, the inverse of $\mathbf{C}_{k+1}$ can be easily computed from 
 \STATE $  $
 \STATE Initialization:
 \STATE $\mathbf{v}_0 = 0$
-\STATE $\mathbf{r}_0 = \delta \overline{\mathbf{x}}^b_k + \mathbf{K}_k^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k$
+\STATE $\mathbf{r}_0 = \delta \overline{\mathbf{x}}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k$
 \STATE $\overline{\mathbf{t}}_0 = \mathbf{C}_k \mathbf{r}_0$
 \STATE $\mathbf{t}_0 = \mathbf{B} \overline{\mathbf{t}}_0$
 \STATE $\beta_0 = \sqrt{\mathbf{r}_0^\mathrm{T} \mathbf{t}_0}$
@@ -224,7 +253,7 @@ As a consequence, the inverse of $\mathbf{C}_{k+1}$ can be easily computed from 
 \FOR{$1 \le i \le I_k$}
 \STATE Store the Lanczos vector $\mathbf{v}_i$ as the $i^\text{th}$ column of $\underline{\mathbf{V}}$
 \STATE Update scalars and vectors:
-\STATE $\mathbf{q}_i = \overline{\mathbf{z}}_i + \mathbf{K}_k^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \mathbf{K}_k \mathbf{z}_i - \beta_i \mathbf{v}_{i-1}$ 
+\STATE $\mathbf{q}_i = \overline{\mathbf{z}}_i + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \mathbf{z}_i - \beta_i \mathbf{v}_{i-1}$ 
 \STATE $\alpha_i = \mathbf{q}_i^\mathrm{T} \mathbf{z}_i$
 \STATE $\mathbf{w}_i = \mathbf{q}_i - \alpha_i \mathbf{v}_i$
 \STATE $\overline{\mathbf{t}}_i = \mathbf{C}_k \mathbf{w}_i$
@@ -259,7 +288,7 @@ A new variable $\delta \mathbf{v}_k \in \mathbb{R}^m$ is defined as:
 Linear system \eqref{eq:inc} is transformed into:
 \begin{align}
 \label{eq:inc_U}
-\mathbf{A}^\mathbf{v}_k \delta \mathbf{v}^a_k = \mathbf{b}^\mathbf{v}_k &
+\boxed{\mathbf{A}^\mathbf{v}_k \delta \mathbf{v}^a_k = \mathbf{b}^\mathbf{v}_k}
 \end{align}
 with $\mathbf{A}^\mathbf{v}_k \in \mathbb{R}^{m \times m}$ and $\mathbf{b}^\mathbf{v}_k \in \mathbb{R}^{m}$ defined as:
 \begin{align}
@@ -269,7 +298,7 @@ with $\mathbf{A}^\mathbf{v}_k \in \mathbb{R}^{m \times m}$ and $\mathbf{b}^\math
 
 The Lanczos method with a preconditioner $\mathbf{Q}_k = \mathbf{Q}_k^{1/2} \mathbf{Q}_k^{\mathrm{T}/2}$, where $\mathbf{Q}_k^{1/2} \in \mathbb{R}^{m \times m}$, is detailed in algorithm \ref{algo:lanczos}.\\
 
-A common (but not unique) way to define the preconditioner $\mathbf{Q}_k$ is to use the spectral Limited Memory Preconditioner (LMP) approximated from the Ritz pairs:
+A common (but not unique) way to define the preconditioner $\mathbf{Q}_k$ consists in using the spectral Limited Memory Preconditioner (LMP) approximated from the Ritz pairs:
 \begin{itemize}
 \item For the first outer iteration ($k=1$): $\mathbf{Q}^{1/2}_1 = \mathbf{I}_m$.
 \item For subsequent outer iteration ($k>1$):
@@ -336,7 +365,7 @@ where
 \end{algorithmic}
 \end{algorithm}
 
-\FloatBarrier
+\clearpage
 
 \subsection{Equivalence condition for preconditioners}
 Both approaches are equivalent if the preconditioners are linked via:
@@ -433,7 +462,7 @@ Thus:
 & = \delta \mathbf{x}^b_{k-1} - \delta \mathbf{x}^a_{k-1}
 \end{align}
 \end{itemize}
-As a conclusion:
+which can be combined recursively to yield:
 \begin{align}
 \label{eq:back_inc}
 \delta \mathbf{x}^b_k & = - \sum_{i=1}^{k-1} \delta \mathbf{x}^a_i
@@ -441,90 +470,240 @@ As a conclusion:
 With the full $\mathbf{B}$ preconditioning, $\mathbf{B}^{-1}$ can be applied on both side of equation \eqref{eq:back_inc}:
 \begin{align}
 \label{eq:back_inc_B}
-\delta \overline{\mathbf{x}}^b_k & = - \sum_{i=1}^{k-1} \delta \overline{\mathbf{x}}^a_i
+\boxed{\delta \overline{\mathbf{x}}^b_k = - \sum_{i=1}^{k-1} \delta \overline{\mathbf{x}}^a_i}
 \end{align}
 and with the square-root $\mathbf{B}$ preconditioning, $\mathbf{U}^\mathrm{T} \mathbf{B}^{-1}$ can be applied on both side of equation \eqref{eq:back_inc}:
 \begin{align}
 \label{eq:back_inc_U}
-\delta \mathbf{v}^b_k & = - \sum_{i=1}^{k-1} \delta \mathbf{v}^a_i
+\boxed{\delta \mathbf{v}^b_k = - \sum_{i=1}^{k-1} \delta \mathbf{v}^a_i}
 \end{align}
-Equations \eqref{eq:back_inc_B} and \eqref{eq:back_inc_U} can be used to compute $\mathbf{b}^{\overline{\mathbf{x}}}_k$ and $\mathbf{b}^\mathbf{v}_k$ respectively, without needing $\mathbf{B}^{-1}$.
+Equations \eqref{eq:back_inc_B} and \eqref{eq:back_inc_U} can be used to compute $\mathbf{b}^{\overline{\mathbf{x}}}_k$ and $\mathbf{b}^\mathbf{v}_k$ respectively, without requiring $\mathbf{B}^{-1}$.
+
+\subsection{Changing $\mathbf{B}$}
+In special cases, the background error covariance matrix can be updated between outer iterations. Thus, $\mathbf{B}$ now depends on iteration $k$. Hereafter, it is denoted $\mathbf{B}_k$, and its square-root is denoted $\mathbf{U}_k$.
+
+In this case, the previous trick to get rid of $\mathbf{B}^{-1}$ does not work systematically. Equation \eqref{eq:back_inc} is valid and yield:
+\begin{itemize}
+\item With the full $\mathbf{B}$ preconditioning:
+\begin{align}
+\label{eq:back_inc_B_diff}
+\delta \overline{\mathbf{x}}^b_k & = - \mathbf{B}_k^{-1}\sum_{i=1}^{k-1} \delta \mathbf{x}^a_i \nonumber \\
+& = - \sum_{i=1}^{k-1} \mathbf{B}_k^{-1} \mathbf{B}_i \delta \overline{\mathbf{x}}^a_i
+\end{align}
+If $\mathbf{B}_k^{-1} \mathbf{B}_i \delta \overline{\mathbf{x}}^a_i \ne \delta \overline{\mathbf{x}}^a_i$, equation \eqref{eq:back_inc_B} cannot be used consistently.
+\item With the square-root $\mathbf{B}$ preconditioning:
+\begin{align}
+\label{eq:back_inc_U_diff}
+\delta \mathbf{v}^b_k & = - \mathbf{U}_k^\mathrm{T} \mathbf{B}_k^{-1} \sum_{i=1}^{k-1} \delta \mathbf{x}^a_i \nonumber \\
+& = - \sum_{i=1}^{k-1} \mathbf{U}_k^\mathrm{T} \mathbf{B}_k^{-1} \mathbf{U}_i \delta \mathbf{v}^a_i
+\end{align}
+If $\mathbf{U}_k^\mathrm{T} \mathbf{B}_k^{-1} \mathbf{U}_i \delta \mathbf{v}^a_i \ne \delta \mathbf{v}^a_i$, equation \eqref{eq:back_inc_U} cannot be used consistently.
+\end{itemize}
 
 \subsection{Changing the resolution}
-For computational efficiency, it is common to start the optimization at a lower resolution, and to increase it at each iteration $k$. At resolution $\mathcal{R}_k$, the model space size is denoted $n_k$ and the control space size $m_k$. It is assumed that the full resolution is obtained at the last iteration $K$.\\
+For computational efficiency, it is common to start the optimization at a lower resolution, and to increase it at each outer iteration $k$. At resolution $\mathcal{R}_k$, the model space size is denoted $n_k$ and the control space size $m_k$. It is assumed that the full resolution is obtained at the last iteration $K$.\\
 
-Obviously, $\mathbf{B}$ now depends on iteration $k$. Hereafter, it is denoted $\mathbf{B}_k$, and its square-root is denoted $\mathbf{U}_k$.\\
-
-For $i < k$, we define two interpolation operators from resolution $\mathcal{R}_i$ to resolution $\mathcal{R}_k$:
+Obviously, $\mathbf{B}$ also depends on iteration $k$.\\
+$  $\\
+We define two interpolators from resolution $\mathcal{R}_i$ to resolution $\mathcal{R}_k$:
 \begin{itemize}
 \item $\mathbf{T}^\mathbf{x}_{i \rightarrow k} \in \mathbb{R}^{n_k \times n_i}$ in model space,
 \item $\mathbf{T}^\mathbf{v}_{i \rightarrow k} \in \mathbb{R}^{m_k \times m_i}$ in control space,
 \end{itemize}
-and the corresponding simplification operators from resolution $\mathcal{R}_k$ to resolution $\mathcal{R}_i$:
+$  $\\
+A special class of interpolators called ``transitive interpolators'' have two extra properties:
 \begin{itemize}
-\item $\mathbf{T}^\mathbf{x}_{k \rightarrow i} \in \mathbb{R}^{n_i \times n_k}$ in model space,
-\item $\mathbf{T}^\mathbf{v}_{k \rightarrow i} \in \mathbb{R}^{m_i \times m_k}$ in control space.
+\item Transitivity:
+\begin{itemize}
+\item For $n_i \le n_j$ and $n_i \le n_k$:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{j \rightarrow k} \mathbf{T}^\mathbf{x}_{i \rightarrow j} = \mathbf{T}^\mathbf{x}_{i \rightarrow k}
+\end{align}
+\item For $n_i \le n_j \le n_k$:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{j \rightarrow i} \mathbf{T}^\mathbf{x}_{k \rightarrow j} = \mathbf{T}^\mathbf{x}_{k \rightarrow i}
+\end{align}
+\end{itemize}
+\item Right-inverse: for $n_i \le n_k$
+\begin{align}
+\mathbf{T}^\mathbf{x}_{k \rightarrow i} \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{I}_{n_i}
+\end{align}
+\end{itemize}
+and similarly for $\mathbf{T}^\mathbf{v}_{i \rightarrow k}$ in control space.\\
+$  $\\
+Associated to the various resolution, we qualify a $\mathbf{B}$ matrix family as ``projective'' if the low-resolution members can be defined as a projection of the high-resolution one, using transitive interpolators. For $n_i \le n_k$, that would mean:
+\begin{align}
+\mathbf{B}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{T}^\mathbf{x}_{i \rightarrow k} \mathbf{B}_i
+\end{align}
+and for the square-root of $\mathbf{B}$:
+\begin{align}
+\mathbf{U}_k \mathbf{T}^\mathbf{v}_{i \rightarrow k} = \mathbf{T}^\mathbf{x}_{i \rightarrow k} \mathbf{U}_i
+\end{align}
+
+\subsection{General requirements}
+The multi-resolution problem should be solved with the following requirements in mind:
+\begin{itemize}
+\item The background $\mathbf{x}^b$ is provided at full resolution, but it can be simplified at resolution $\mathcal{R}_k$:
+\begin{align}
+\boxed{\mathbf{x}^b_k = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^b}
+\end{align}
+\item A full resolution guess denoted $\mathbf{x}^{g+}_k$ has to be computed at each outer iteration to run model trajectories used in the operators linearization. This full resolution guess can be simplified at resolution $\mathcal{R}_k$ to give the actual guess of the outer iteration $k$:
+\begin{align}
+\boxed{\mathbf{x}^g_k = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^{g+}_k}
+\end{align}
+\item Only $\delta$-quantities should be interpolated to higher resolution, and then possibly added to full quantities at high resolution.
 \end{itemize}
 
-It should be noted that the interpolation operator $\mathbf{T}^\mathbf{x}_{i \rightarrow k}$ is only the right-inverse of the simplification operator $\mathbf{T}^\mathbf{x}_{k \rightarrow i}$. For $i < k$, $n_i < n_k$ and:
-\begin{align}
-\mathbf{T}^\mathbf{x}_{k \rightarrow i} \mathbf{T}^\mathbf{x}_{i \rightarrow k} & = \mathbf{I}_{n_i} \\
-\mathbf{T}^\mathbf{x}_{i \rightarrow k} \mathbf{T}^\mathbf{x}_{k \rightarrow i} & \ne \mathbf{I}_{n_k}
-\end{align}
-and similarly in control space.
+\section{Guess consistency}
+In the linear systems solved at each outer iteration, the guess appears in two main places:
+\begin{enumerate}
+\item explicitely as the linearization state for nonlinear operators and to compute the innovation,
+\item implicitely in the first term of the right-hand side.
+\end{enumerate}
+This section details how to define all occurences consistently.
 
-\subsection{Usual but inconsistent strategy}
-It is a usual strategy to define a full resolution guess at each iteration $k$, denoted $\mathbf{x}^{g+}_k$. This full resolution guess can be simplified at resolution $\mathcal{R}_k$ if required:
-\begin{align}
-\mathbf{x}^g_k = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^{g+}_k 
-\end{align}
-
+\subsection{Theoretical method}
 For the first iteration, the full resolution guess is the background state, also provided at full resolution:
 \begin{align}
+\label{eq:usual_full_res_first}
 \mathbf{x}^{g+}_1 = \mathbf{x}^b
 \end{align}
+At the end of iteration $k$, an analysis increment $\delta \mathbf{x}^a_k$ is produced at resolution $\mathcal{R}_k$. In the previous section, the guess of iteration $k$ was defined as the analysis of iteration $k-1$, which is not possible anymore since the resolution increases. Some interpolation of the output of the previous outer iteration is required to generate the analysis increment at full resolution $\delta \mathbf{x}^{a+}_{k-1}$, which updates the full resolution guess:
+\begin{align}
+\label{eq:usual_full_res_next}
+\mathbf{x}^{g+}_k = \mathbf{x}^{g+}_{k-1} + \delta \mathbf{x}^{a+}_{k-1}
+\end{align}
+How the analysis increment at full resolution $\delta \mathbf{x}^{a+}_{k-1}$ is obtained does not matter at this point. The first term of the right-hand side as:
+\begin{align}
+\label{eq:correct_dxb}
+\delta \overline{\mathbf{x}}^b_k & = \mathbf{B}^{-1}_k \delta \mathbf{x}^b_k \nonumber \\
+& = \mathbf{B}^{-1}_k \left(\mathbf{x}^b_k - \mathbf{x}^g_k\right)
+\end{align}
+or
+\begin{align}
+\label{eq:correct_dvb}
+\delta \mathbf{v}^b_k & = \mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \delta \mathbf{x}^b_k \nonumber \\
+& = \mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \left(\mathbf{x}^b_k - \mathbf{x}^g_k\right)
+\end{align}
+Here, both explicit and implicit guesses are consistent, thanks to the use of $\mathbf{B}^{-1}$.
 
-At the end of iteration $k$, an analysis increment $\delta \mathbf{x}^a_k$ is produced at resolution $\mathcal{R}_k$. In the previous section, the guess of iteration $k$ has been defined as the analysis of iteration $k-1$, which is not possible anymore since the resolution increases. A common practice is to interpolate the analysis increment $\delta \mathbf{x}^a_{k-1}$ at full resolution, in order to compute the full resolution guess $\mathbf{x}^{g+}_k$:
-\begin{align}
-\mathbf{x}^{g+}_k = \mathbf{x}^{g+}_{k-1} + \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \delta \mathbf{x}^a_{k-1}
-\end{align}
-However, $\mathbf{x}^{g+}_{k-1} \ne \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \mathbf{x}^g_{k-1}$, so $\mathbf{x}^{g+}_k$ is different from the analysis of iteration $k-1$ interpolated at full resolution:
-\begin{align}
-\mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \mathbf{x}^a_{k-1} = \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \left(\mathbf{x}^g_{k-1} + \delta \mathbf{x}^a_{k-1} \right) \ne \mathbf{x}^{g+}_k
-\end{align}
-
-It is possible to define the background increment at full resolution for each iteration $k$:
-\begin{align}
-\delta \mathbf{x}^{b+}_k & = \mathbf{x}^b - \mathbf{x}^{g+}_k
-\end{align}
-which can be simplified at resolution $\mathcal{R}_k$:
-\begin{align}
-\delta \mathbf{x}^b_k & = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{b+}_k \nonumber \\
-& = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^b - \mathbf{x}^{g}_k
-\end{align}
-
-This strategy would normally require $\mathbf{B}^{-1}_k$ to compute the right-hand sides $\mathbf{b}^{\overline{\mathbf{x}}}_k$ and $\mathbf{b}^\mathbf{v}_k$. In practice, transformed versions of equations \eqref{eq:back_inc_B} and \eqref{eq:back_inc_U} are used:
+\subsection{Standard method}
+If $\mathbf{B}^{-1}$ is not available, the first term of the right-hand side is computed separately, using transformed versions of equations \eqref{eq:back_inc_B} and \eqref{eq:back_inc_U} with appropriate interpolations:
 \begin{align}
 \label{eq:back_inc_Bvar}
-\delta \underline{\overline{\mathbf{x}}}^b_k & = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i
+\boxed{\delta \underline{\overline{\mathbf{x}}}^b_k = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i}
 \end{align}
 and 
 \begin{align}
 \label{eq:back_inc_Uvar}
-\delta \underline{\mathbf{v}}^b_k & = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i
+\boxed{\delta \underline{\mathbf{v}}^b_k = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i}
 \end{align}
+Underlines emphasize the fact that these quantities are not necessarily equal to their exact counterparts of equations \eqref{eq:correct_dxb} and \eqref{eq:correct_dvb}.\\
+$  $\\
+We are looking for sufficient conditions to make sure that both explicit and implicit guesses are consistent, i.e. $\delta \underline{\overline{\mathbf{x}}}^b_k = \delta \overline{\mathbf{x}}^b_k$ and $\delta \underline{\mathbf{v}}^b_k = \delta \mathbf{v}^b_k$.
 
-\textbf{It should be emphasized that this strategy is inconsistent}:
+\subsubsection{General condition}
+Merging equations \eqref{eq:usual_full_res_first} and \eqref{eq:usual_full_res_next}, the guess at full resolution can be expressed as:
 \begin{align}
-\delta \underline{\overline{\mathbf{x}}}^b_k & \ne \mathbf{B}^{-1}_k \delta \mathbf{x}^b_k
+\label{eq:usual_full_res}
+\mathbf{x}^{g+}_k = \mathbf{x}^{b} + \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i
+\end{align}
+which can be introduced into equations \eqref{eq:correct_dxb} and \eqref{eq:correct_dvb} to get background increments as functions of the analysis increment at full resolution $\delta \mathbf{x}^{a+}_i$:
+\begin{align}
+\label{eq:correct_dxb_2}
+\delta \overline{\mathbf{x}}^b_k & = \mathbf{B}^{-1}_k \left(\mathbf{x}^b_k - \mathbf{x}^g_k\right) \nonumber \\
+& = \mathbf{B}^{-1}_k \mathbf{T}^\mathbf{x}_{K \rightarrow k} \left(\mathbf{x}^b - \mathbf{x}^{g+}_k\right) \nonumber \\
+& = -\mathbf{B}^{-1}_k \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i
 \end{align}
 and
 \begin{align}
-\delta \underline{\mathbf{v}}^b_k & \ne \mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \delta \mathbf{x}^b_k
+\label{eq:correct_dvb_2}
+\delta \mathbf{v}^b_k & = \mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \left(\mathbf{x}^b_k - \mathbf{x}^g_k\right) \nonumber \\
+& = \mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \mathbf{T}^\mathbf{x}_{K \rightarrow k} \left(\mathbf{x}^b - \mathbf{x}^{g+}_k\right) \nonumber \\
+& = -\mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i
+\end{align}
+$  $\\
+Comparing equations \eqref{eq:back_inc_Bvar} and \eqref{eq:correct_dxb_2}, $\delta \underline{\overline{\mathbf{x}}}^b_k = \delta \overline{\mathbf{x}}^b_k$ if:
+\begin{align}
+\label{eq:general_condition_B}
+\mathbf{B}^{-1}_k \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i & = \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i \nonumber \\
+\Leftrightarrow \ \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i & = \mathbf{B}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i \nonumber \\
+\Leftrightarrow \ \mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_{k-1} & =  \mathbf{B}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i
+\end{align}
+Similarly in control space, comparing equations \eqref{eq:back_inc_Uvar} and \eqref{eq:correct_dvb_2}, $\delta \underline{\mathbf{v}}^b_k = \delta \mathbf{v}^b_k$ if and only if:
+\begin{align}
+\label{eq:general_condition_U}
+\mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i & = \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i \nonumber \\
+\Leftrightarrow \ \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i & = \mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i \nonumber \\
+\Leftrightarrow \ \mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_{k-1} & = \mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i
+\end{align}
+Conditions \eqref{eq:general_condition_B} and \eqref{eq:general_condition_U} on $\delta \mathbf{x}^{a+}_{k-1}$ are based on its interpolation at full resolution, and do not provide an explicit expression.
+
+\subsubsection{Case of transitive interpolators}
+For transitive interpolators, an explicit expression of $\delta \mathbf{x}^{a+}_{k-1}$ is available:
+\begin{align}
+\label{eq:transitive_condition_B}
+\delta \mathbf{x}^{a+}_{k-1} = \mathbf{T}^\mathbf{x}_{k \rightarrow K} \left(\mathbf{B}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i\right)
+\end{align}
+that verifies equation \eqref{eq:general_condition_B}:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_{k-1} & = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{T}^\mathbf{x}_{k \rightarrow K} \left(\mathbf{B}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i\right) \nonumber \\
+& = \mathbf{B}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i
+\end{align}
+and
+\begin{align}
+\label{eq:transitive_condition_U}
+\delta \mathbf{x}^{a+}_{k-1} & = \mathbf{T}^\mathbf{x}_{k \rightarrow K} \left(\mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i\right)
+\end{align}
+that verifies equation \eqref{eq:general_condition_U}:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_{k-1} & = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{T}^\mathbf{x}_{k \rightarrow K} \left(\mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i\right) \nonumber \\
+& = \mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i
+\end{align}
+Conditions \eqref{eq:transitive_condition_B} and \eqref{eq:transitive_condition_U} on $\delta \mathbf{x}^{a+}_{k-1}$ depends on results from outer iterations 1 to $k-1$, not only outer iteration $k-1$.
+
+\subsubsection{Case of projective $\mathbf{B}$ matrix family}
+If we split the right-hand side of equation \eqref{eq:transitive_condition_B} to extract the term coming from outer iteration $k-1$, we get:
+\begin{align}
+\delta \mathbf{x}^{a+}_{k-1} = \mathbf{T}^\mathbf{x}_{k \rightarrow K} \mathbf{B}_k \mathbf{T}^\mathbf{x}_{k-1 \rightarrow k} \delta \overline{\mathbf{x}}^a_{k-1} + \mathbf{T}^\mathbf{x}_{k \rightarrow K} \sum_{i=1}^{k-2} \left(\mathbf{B}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_i\right)
+\end{align}
+If the $\mathbf{B}$ matrix family is projective, then:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{k \rightarrow K} \mathbf{B}_k \mathbf{T}^\mathbf{x}_{k-1 \rightarrow k} = \mathbf{T}^\mathbf{x}_{k \rightarrow K} \mathbf{T}^\mathbf{x}_{k-1 \rightarrow k} \mathbf{B}_{k-1} = \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \mathbf{B}_{k-1}
+\end{align}
+so a simplified expression of $\delta \mathbf{x}^{a+}_{k-1}$ is:
+\begin{align}
+\label{eq:projective_condition_B}
+\delta \mathbf{x}^{a+}_{k-1} = \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \mathbf{B}_{k-1} \delta \overline{\mathbf{x}}^a_{k-1}
+\end{align}
+that verifies \eqref{eq:transitive_condition_B} since both terms inside the summation cancel each other:
+\begin{align}
+\mathbf{B}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_i & = \mathbf{B}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k}  \mathbf{T}^\mathbf{x}_{i \rightarrow K} \mathbf{B}_i \delta \overline{\mathbf{x}}^a_i \nonumber \\
+& = \left(\mathbf{B}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} - \mathbf{T}^\mathbf{x}_{i \rightarrow k} \mathbf{B}_i \right) \delta \overline{\mathbf{x}}^a_i \nonumber \\
+& = 0
+\end{align}
+Similarly, the right-hand side of equation \eqref{eq:transitive_condition_U} can be split to extract the term coming from outer iteration $k-1$:
+\begin{align}
+\delta \mathbf{x}^{a+}_{k-1} & = \mathbf{T}^\mathbf{x}_{k \rightarrow K} \mathbf{U}_k \mathbf{T}^\mathbf{v}_{k-1 \rightarrow k} \delta \mathbf{v}^a_{k-1} + \mathbf{T}^\mathbf{x}_{k \rightarrow K} \sum_{i=1}^{k-2} \left(\mathbf{U}_k \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_i\right)
+\end{align}
+If the $\mathbf{B}$ matrix family is projective, then:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{k \rightarrow K} \mathbf{U}_k \mathbf{T}^\mathbf{v}_{k-1 \rightarrow k} = \mathbf{T}^\mathbf{x}_{k \rightarrow K} \mathbf{T}^\mathbf{x}_{k-1 \rightarrow k} \mathbf{U}_{k-1} = \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \mathbf{U}_{k-1}
+\end{align}
+so a simplified expression of $\delta \mathbf{x}^{a+}_{k-1}$ is:
+\begin{align}
+\label{eq:projective_condition_U}
+\delta \mathbf{x}^{a+}_{k-1} = \mathbf{T}^\mathbf{x}_{k-1 \rightarrow K} \mathbf{U}_{k-1} \delta \mathbf{v}^a_{k-1}
+\end{align}
+that verifies \eqref{eq:transitive_condition_U} since both terms inside the summation cancel each other:
+\begin{align}
+\mathbf{U}_k \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_i & = \mathbf{U}_k \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{T}^\mathbf{x}_{i \rightarrow K} \mathbf{U}_i \delta \mathbf{v}^a_i \nonumber \\
+& = \left(\mathbf{U}_k \mathbf{T}^\mathbf{v}_{i \rightarrow k} - \mathbf{T}^\mathbf{x}_{i \rightarrow k} \mathbf{U}_i \right) \delta \mathbf{v}^a_i \nonumber \\
+& = 0
 \end{align}
 
-\subsection{Consistent strategy}
-A consistent strategy would start from equations \eqref{eq:back_inc_Bvar} or \eqref{eq:back_inc_Uvar} to define the background increment:
+\subsection{Alternative method}
+Reversing the order of computations yields the same results as the consistent standard method, but with fewer and simpler computations. The first term of the right-hand side is computed first from equations \eqref{eq:back_inc_Bvar} or \eqref{eq:back_inc_Uvar}. Then, the background increment is given by:
 \begin{align}
 \delta \mathbf{x}^b_k & = \mathbf{B}_k \delta \underline{\overline{\mathbf{x}}}^b_k
 \end{align}
@@ -532,34 +711,130 @@ or
 \begin{align}
 \delta \mathbf{x}^b_k & = \mathbf{U}_k \delta \underline{\mathbf{v}}^b_k
 \end{align}
-The guess would be defined as:
+Finally, the explicit guess is deduced at resolution $\mathcal{R}_k$ as:
 \begin{align}
-\mathbf{x}^g_k = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^b - \delta \mathbf{x}^b_k
+\mathbf{x}^g_k = \mathbf{x}^b_k - \delta \mathbf{x}^b_k
 \end{align}
-and the full resolution guess as:
+and at full resolution as:
 \begin{align}
 \mathbf{x}^{g+}_k = \mathbf{x}^b - \mathbf{T}^\mathbf{x}_{k \rightarrow K} \delta \mathbf{x}^b_k
 \end{align}
 
-\subsection{Equivalence condition on the background increment}
-The consistent strategy detailed in the previous section could yield different results depending on the interpolation operators. A first condition required to ensure that both full $\mathbf{B}$ and square-root $\mathbf{B}$ preconditionings give the same result can be derived from the background increment implied by equations \eqref{eq:back_inc_Bvar} and \eqref{eq:back_inc_Uvar}:
+\subsection{Graphical summary}
+
+From left to right: theoretical method, standard method and alternative method. The potential inconsistency of the standard method (center) comes from the fork in the use of the minimization output, to compute the full resolution guess and the first term of the right-hand side independently.\\
+$  $\\
+\begin{tikzpicture}[scale=0.7,transform shape]
+\path \inputdata{1}{$\mathbf{x}^b$};
+\path (i1)+(2.5,0.0) \inputdata{2}{$\mathbf{y}^o$};
+\path (i1)+(0.0,-1.5) \indexdata{1}{$k = 1$};
+\path [line,dashed] (i1.south) -- (d1.north) node[] {};
+\path (d1)+(0.0,-1.7) \tmpdata{1}{$\mathbf{x}^{g+}_k$};
+\path [arrow,dashed] (d1.south) -- (t1.north) node[] {};
+\path (i2)+(0.0,-3.2) \tmpdata{2}{$\mathbf{d}_k$};
+\path [arrow] (i2.south) -- (t2.north) node[] {};
+\path [arrow] (t1.east) -- (t2.west) node[] {};
+\path (t1)+(-1.5,-2.0) \tmpdata{3}{$\delta \overline{\mathbf{x}}^b_k$ or $\delta \mathbf{v}^b_k$};
+\path [arrow] ([yshift=-0.2cm]t1.west) -| ([xshift=0.2cm]t3.north) node[] {};
+\path [arrow] (i1.west) -| ([xshift=-0.2cm]t3.north) node[] {};
+
+\path (t1)+(0.6,-4.5) \process{1}{Minimization};
+\path [arrow] (t1.south) -- ([xshift=-0.6cm]p1.north) node[] {};
+\path [arrow] (t2.south) -- ([xshift=1.9cm]p1.north) node[] {};
+\path [arrow] (t3.south) -- ([xshift=-2.1cm]p1.north) node[] {};
+
+\path (p1)+(0.0,-2.0) \outputdata{1}{$\delta \overline{\mathbf{x}}^a_k$ or $\delta \mathbf{v}^a_k$};
+\path [arrow] (p1.south) -- (o1.north) node[] {};
+
+\path (t3)+(-2.0,-1.0) \indexdata{2}{$k > 1$};
+\path [line,dashed] (o1.west) -| (d2.south) node[] {};
+\path [arrow,dashed] (d2.north) |- ([yshift=0.2cm]t1.west) node[] {};
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.7,transform shape]
+\path \inputdata{1}{$\mathbf{x}^b$};
+\path (i1)+(2.5,0.0) \inputdata{2}{$\mathbf{y}^o$};
+\path (i1)+(0.0,-1.5) \indexdata{1}{$k = 1$};
+\path [line,dashed] (i1.south) -- (d1.north) node[] {};
+\path (d1)+(0.0,-1.7) \tmpdata{1}{$\mathbf{x}^{g+}_k$};
+\path [arrow,dashed] (d1.south) -- (t1.north) node[] {};
+\path (i2)+(0.0,-3.2) \tmpdata{2}{$\mathbf{d}_k$};
+\path [arrow] (i2.south) -- (t2.north) node[] {};
+\path [arrow] (t1.east) -- (t2.west) node[] {};
+\path (t1)+(-1.5,-2.0) \tmpdata{3}{$\delta \overline{\mathbf{x}}^b_k$ or $\delta \mathbf{v}^b_k$};
+
+\path (t1)+(0.6,-4.5) \process{1}{Minimization};
+\path [arrow] (t1.south) -- ([xshift=-0.6cm]p1.north) node[] {};
+\path [arrow] (t2.south) -- ([xshift=1.9cm]p1.north) node[] {};
+\path [arrow] (t3.south) -- ([xshift=-2.1cm]p1.north) node[] {};
+
+\path (p1)+(0.0,-2.0) \outputdata{1}{$\delta \overline{\mathbf{x}}^a_k$ or $\delta \mathbf{v}^a_k$};
+\path [arrow] (p1.south) -- (o1.north) node[] {};
+
+\path (t3)+(-2.0,-1.0) \indexdata{2}{$k > 1$};
+\path [line,dashed] (o1.west) -| (d2.south) node[] {};
+\path [arrow,dashed] (d2.north) |- (t1.west) node[] {};
+\path [arrow,dashed] (d2.north) |- (t3.west) node[] {};
+\end{tikzpicture}
+\begin{tikzpicture}[scale=0.7,transform shape]
+\path \inputdata{1}{$\mathbf{x}^b$};
+\path (i1)+(2.5,0.0) \inputdata{2}{$\mathbf{y}^o$};
+\path (i1)+(0.0,-3.2) \tmpdata{1}{$\mathbf{x}^{g+}_k$};
+\path [arrow] (i1.south) -- (t1.north) node[] {};
+\path (i2)+(0.0,-3.2) \tmpdata{2}{$\mathbf{d}_k$};
+\path [arrow] (i2.south) -- (t2.north) node[] {};
+\path [arrow] (t1.east) -- (t2.west) node[] {};
+\path (t1)+(-1.5,-2.0) \tmpdata{3}{$\delta \overline{\mathbf{x}}^b_k$ or $\delta \mathbf{v}^b_k$};
+
+\path (t1)+(0.6,-4.5) \process{1}{Minimization};
+\path [arrow] (t1.south) -- ([xshift=-0.6cm]p1.north) node[] {};
+\path [arrow] (t2.south) -- ([xshift=1.9cm]p1.north) node[] {};
+\path [arrow] (t3.south) -- ([xshift=-2.1cm]p1.north) node[] {};
+
+\path (p1)+(0.0,-2.0) \outputdata{1}{$\delta \overline{\mathbf{x}}^a_k$ or $\delta \mathbf{v}^a_k$};
+\path [arrow] (p1.south) -- (o1.north) node[] {};
+
+\path (t3)+(-2.0,-1.0) \indexdata{2}{$k > 1$};
+\path [line,dashed] (o1.west) -| (d2.south) node[] {};
+\path [arrow,dashed] (d2.north) |- (t3.west) node[] {};
+
+\path (t1)+(-2.3,-0.0) \indexdata{3}{$k > 1$};
+\path [line,dashed] ([xshift=-0.5cm]t3.north) -- ([xshift=0.3cm]d3.south) node[] {};
+\path [arrow,dashed] (d3.east) -- (t1.west) node[] {};
+\end{tikzpicture}
+
+\section{Preconditionings equivalence}
+
+When the resolution changes between outer iterations, the equivalence between full $\mathbf{B}$ and square-root $\mathbf{B}$ preconditionings is not guaranteed anymore. This section looks for equivalence conditions.
+
+\subsection{Equivalence condition on the guess}
+Two kinds of conditions can be required to get similar results with both preconditionings:
+\begin{enumerate}
+\item $\delta \mathbf{x}^{a+}_i$ is computed in a similar way for both preconditionings, whatever the interpolation space and the order of interpolations and $\mathbf{B}$ matrix (or its square-root) applications.
+\item Equations \eqref{eq:back_inc_Bvar} and \eqref{eq:back_inc_Uvar} are related with:
 \begin{align}
-\label{eq:back_inc_B2}
-\delta \mathbf{x}^b_k & = \mathbf{B}_k \delta \underline{\overline{\mathbf{x}}}^b_k \nonumber \\
- & = - \mathbf{B}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i
+\mathbf{U}^\mathrm{T}_k \delta \underline{\overline{\mathbf{x}}}^b_k & = \delta \underline{\mathbf{v}}^b_k \nonumber \\
+\Leftrightarrow \ - \mathbf{U}^\mathrm{T}_k  \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i & = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i
 \end{align}
-whereas:
+If the previous outer iterations were equivalent for both preconditionings, then $\delta \mathbf{v}^a_i = \mathbf{U}^\mathrm{T}_i \delta \overline{\mathbf{x}}^a_i$ so this condition becomes:
 \begin{align}
-\label{eq:back_inc_U2}
-\delta \mathbf{x}^b_k & = \mathbf{U}_k \delta \underline{\mathbf{v}}^b_k \nonumber \\
- & = -\mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i \nonumber \\
- & = -\mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{U}_i^\mathrm{T} \delta \overline{\mathbf{x}}^a_i
+\mathbf{U}^\mathrm{T}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{U}^\mathrm{T}_i
 \end{align}
-Background increments of equations \eqref{eq:back_inc_B2} and \eqref{eq:back_inc_U2} are equal if and only if:
-\begin{align}
-\label{eq:eq_cond_2}
-\mathbf{U}_k^\mathrm{T} \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{U}_i^\mathrm{T}
-\end{align}
+which is the condtion for a projective $\mathbf{B}$ matrix family.
+\end{enumerate}
+
+Depending on the method, the equivalence conditions may vary:
+\begin{itemize}
+\item Theoretical method: condition 1. is sufficient since the first term of the right-hand side is deduced from the full resolution guess
+\item Standard method: both conditions 1. and 2. are required since the full resolution guess and the first term of the right-hand side are computed independently.
+\item Alternative method: condition 2. is sufficient, since the full resolution guess is deduced from the first term of the right-hand side.
+\end{itemize}
+
+
+
+
+
+\end{document}
+
 
 \subsection{Equivalence condition on Ritz vectors}
 If the resolution changes, the equivalence condition for preconditioners \eqref{eq:eq_cond_1} must be adapted since $\mathbf{U}$ depends on $k$:
@@ -592,10 +867,64 @@ and
 \left(\mathbf{T}^\mathbf{v}_{i \rightarrow k} \underline{\widetilde{\mathbf{V}}}_i\right)^\mathrm{T} \left(\mathbf{T}^\mathbf{v}_{i \rightarrow k} \underline{\widetilde{\mathbf{V}}}_i\right) = \mathbf{I}_{I_k}
 \end{align}
 
-\subsection{Example of equivalence}
-An example of equivalence is the following:
+\section{Examples}
+
+\subsection{Transitive interpolators}
+The most simple transitive interpolator is based on zero-padding surrounded by an orthogonal transform. For instance in model space:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{S}^\mathrm{T}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{S}_i
+\end{align}
+where
 \begin{itemize}
-\item The vector $\boldsymbol{\gamma} \in \mathbb{R}^{n_K}$ of positive coefficients is used to define the diagonal matrices $\boldsymbol{\Gamma}_k \in \mathbb{R}^{n_k \times n_k}$:
+\item $\boldsymbol{\Delta}_{i \rightarrow k} \in \mathbb{R}^{n_k \times n_i}$ is a zero-padding operator:
+\begin{align}
+\Delta_{i \rightarrow k, \alpha \beta} = \left\{
+\begin{array}{ccc}
+1 & \text{ if } & \alpha = \beta \\
+0 & \text{ if } & \alpha \ne \beta
+\end{array}\right.
+\end{align}
+\item $\mathbf{S}_k \in \mathbb{R}^{n_k \times n_k}$ is any orthogonal transform:
+\begin{align}
+\mathbf{S}_k \mathbf{S}_k^\mathrm{T} = \mathbf{S}_k^\mathrm{T} \mathbf{S}_k = \mathbf{I}_{n_k}
+\end{align}
+\end{itemize}
+It is easy to check that:
+\begin{itemize}
+\item Transitivity:
+\begin{itemize}
+\item For $n_i \le n_j$ and $n_i \le n_k$:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{j \rightarrow k} \mathbf{T}^\mathbf{x}_{i \rightarrow j} & = \mathbf{S}^\mathrm{T}_k \boldsymbol{\Delta}_{j \rightarrow k} \mathbf{S}_j \mathbf{S}^\mathrm{T}_j  \boldsymbol{\Delta}_{i \rightarrow j} \mathbf{S}_i \nonumber \\
+& = \mathbf{S}^\mathrm{T}_k \boldsymbol{\Delta}_{j \rightarrow k} \boldsymbol{\Delta}_{i \rightarrow j} \mathbf{S}_i \nonumber \\
+& = \mathbf{S}^\mathrm{T}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{S}_i \nonumber \\
+& = \mathbf{T}^\mathbf{x}_{i \rightarrow k}
+\end{align}
+\item For $n_i \le n_j \le n_k$:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{j \rightarrow i} \mathbf{T}^\mathbf{x}_{k \rightarrow j} & = \mathbf{S}^\mathrm{T}_i \boldsymbol{\Delta}_{j \rightarrow i} \mathbf{S}_j \mathbf{S}^\mathrm{T}_j \boldsymbol{\Delta}_{k \rightarrow j} \mathbf{S}_k \nonumber \\
+& = \mathbf{S}^\mathrm{T}_i \boldsymbol{\Delta}_{j \rightarrow i} \boldsymbol{\Delta}_{k \rightarrow j} \mathbf{S}_k \nonumber \\
+& = \mathbf{S}^\mathrm{T}_i \boldsymbol{\Delta}_{k \rightarrow i} \mathbf{S}_k \nonumber \\
+& = \mathbf{T}^\mathbf{x}_{k \rightarrow i}
+\end{align}
+\end{itemize}
+\item Right-inverse: for $n_i \le n_k$
+\begin{align}
+\mathbf{T}^\mathbf{x}_{k \rightarrow i} \mathbf{T}^\mathbf{x}_{i \rightarrow k} & = \mathbf{S}^\mathrm{T}_i \boldsymbol{\Delta}_{k \rightarrow i} \mathbf{S}_k \mathbf{S}^\mathrm{T}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{S}_i \nonumber \\
+& = \mathbf{S}^\mathrm{T}_i \boldsymbol{\Delta}_{k \rightarrow i} \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{S}_i \nonumber \\
+& = \mathbf{S}^\mathrm{T}_i \mathbf{S}_i \nonumber \\
+& = \mathbf{I}_{n_i}
+\end{align}
+\end{itemize}
+and similarly in control space.
+
+
+
+
+\end{document}
+
+
+The vector $\boldsymbol{\gamma} \in \mathbb{R}^{n_K}$ of positive coefficients is used to define the diagonal matrices $\boldsymbol{\Gamma}_k \in \mathbb{R}^{n_k \times n_k}$:
 \begin{align}
 \Gamma_{k,\alpha \beta} = \left\{
 \begin{array}{ccc}
@@ -607,35 +936,11 @@ At resolution $\mathcal{R}_k$, the background error covariance matrix $\mathbf{B
 \begin{align}
 \mathbf{B}_k = \mathbf{S}_k \boldsymbol{\Gamma}_k \mathbf{S}_k^{-1}
 \end{align}
-where $\mathbf{S}_k \in \mathbb{R}^{n_k \times n_k}$ is orthogonal:
-\begin{align}
-\mathbf{S}_k \mathbf{S}_k^\mathrm{T} = \mathbf{S}_k^\mathrm{T} \mathbf{S}_k = \mathbf{I}_{n_k}
-\end{align}
 Its square-root $\mathbf{U}_k$ is simply:
 \begin{align}
 \mathbf{U}_k = \mathbf{S}_k \boldsymbol{\Gamma}_k^{1/2} \mathbf{G}_k
 \end{align}
-where $\mathbf{G} \in \mathbb{R}^{n_k \times m_k}$ is any matrix verifying:
-\begin{align}
-\mathbf{G}_k \mathbf{G}_k^\mathrm{T} = \mathbf{I}_{n_k}
-\end{align}
-\item The interpolators are defined as: 
-\begin{align}
-\mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{S}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{S}^\mathrm{T}_i
-\end{align}
-and
-\begin{align}
-\mathbf{T}^\mathbf{v}_{i \rightarrow k} = \mathbf{G}^\mathrm{T}_k \boldsymbol{\Delta}_{i \rightarrow k} \mathbf{G}_i
-\end{align}
-where $\boldsymbol{\Delta}_{i \rightarrow k} \in \mathbb{R}^{n_k \times n_i}$ is a zero-padding operator:
-\begin{align}
-\Delta_{i \rightarrow k, \alpha \beta} = \left\{
-\begin{array}{ccc}
-1 & \text{ if } & \alpha = \beta \\
-0 & \text{ if } & \alpha \ne \beta
-\end{array}\right.
-\end{align}
-\end{itemize}
+
 
 Thus:
 \begin{align}
