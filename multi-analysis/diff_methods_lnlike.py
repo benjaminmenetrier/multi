@@ -25,14 +25,15 @@ def ln_23(p, parameters_dict, parameters_to_sample, exec_command,
             directories, verb):
     """Computes the log prob and monitor it:
     """
-    res = ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
+    output = ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
             directories, verb)
-    if not np.isfinite(res):
+    
+    if not np.isfinite(output[0]):
         #print('ln_prob = ', res)
         return -np.inf
     else:
         #print('ln_prob = ', res)
-        return res
+        return output
 ################################################################################
 ################################################################################
 def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
@@ -42,6 +43,7 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
     #----------------------------------------------------------------------------
     # Set the parameters:
     parameters = dict(parameters_dict)
+    default_blobs = {'fail':parameters}
     i = 0
     # print('p=',p)
     for k, key in enumerate(parameters):
@@ -51,7 +53,7 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
             par_max = parameters[key]['max']
             if p[i] < par_min or p[i] > par_max:
                 print(f'param {i} out of [{par_min}:{par_max}] with value: {p[i]}')
-                return -np.inf
+                return -np.inf, ['tricky', default_blobs]
             else:
                 # Put the sampled value in the parameters:
                 par_type = parameters[key]['type']
@@ -64,10 +66,10 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
                     i+=1
                 elif par_type=='geom':
                     print("do the geometry parameters later")
-                    return -np.inf
+                    return -np.inf, ['tricky', default_blobs]
                 else:
                     print("type error in ln_prob")
-                    return -np.inf
+                    return -np.inf, ['tricky', default_blobs]
     #--------------------------------------------------------------------------
     # Run the two methods:
 
@@ -90,27 +92,33 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
     os.remove(os.path.join(directories["namelists"] + namelist))
     
     # Get the results of the code and store them:
+    #-----------------------------------------------------------------------
     #if True:
-    try:    
+    try:
         ds = netcdf_extract(output)
         os.remove(output)
         os.chdir(os.path.join(directories["analysis"]))
-        #-----------------------------------------------------------------------
         # Compute the difference:
-        algo = 'lanczos'
-        method = 'alternative'
+        algorithms = 'lanczos'
+        methods = ['alternative', 'standard']
         cost_func_id = 'j'
-        diff = diff_compute_cost_function(ds, algo, cost_func_id)
+        diff = diff_compute_cost_function(ds, algorithms, methods, cost_func_id)
+        
+        # Store all the results and return them as blobs:
+        blobs = netcdf_pickler(ds)
     except:     
        print("Error in diff_compute with the following parameters:")
        print('par=',parameters)
-       return -np.inf
-    #-----------------------------------------------------------------------
-    return diff
+       return -np.inf, ['tricky', default_blobs]
+   #-----------------------------------------------------------------------
+       
+    # emcee does not accept the blobs[0] to be a dictionnary because
+    # they use .dtype attribute on it, hence the following trick works....
+    return diff, ['tricky', blobs]
     
 ################################################################################
 ################################################################################
-def diff_compute_cost_function(ds, algo, cost_func_id):
+def diff_compute_cost_function(ds, algo, methods, cost_func_id):
     """Compute the difference between the costs functions.
     """
     # Get the cost functions:
@@ -119,11 +127,21 @@ def diff_compute_cost_function(ds, algo, cost_func_id):
         cost_function[met] = []
         for io in ds[met].groups:
             cost_function[met].append(np.array(ds[met][io][algo][cost_func_id][:]))
-        cost_function[met]=np.reshape(cost_function[met],-1)
+        cost_function[met]=np.reshape(cost_function[met], -1)
         
     # Compute the difference and return it:
-    diff=0.
-    for i in range(len(cost_function['theoretical'])):
-        diff += abs(cost_function['alternative'][i] - cost_function['theoretical'][i])
-    return diff
+    diff = 0.
+    diff_max = 0.
+    
+    for i in range(len(cost_function[methods[0]])):
+        # Cumulative difference:
+        #diff += abs(cost_function['alternative'][i] - cost_function['theoretical'][i])
+
+        # Relative maximum difference:
+        diff_i = abs(2 * (cost_function[methods[0]][i] - cost_function[methods[1]][i]))
+        diff_i = diff_i / (1. * abs(cost_function[methods[0]][i] + cost_function[methods[1]][i]))
+        diff_max = max(diff_max, diff_i)
+        
+    #return diff / (len(cost_function['theoretical']) * 1.)
+    return diff_max
 ################################################################################

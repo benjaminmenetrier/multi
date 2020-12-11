@@ -18,6 +18,7 @@ from fnmatch import fnmatch
 import emcee
 import pickle
 from multiprocessing import Pool
+import time
 
 from diff_methods_functions import *
 from diff_methods_lnlike import *
@@ -102,7 +103,7 @@ parameters['ny']                 = {'min':1 ,'max':1001 ,'type':'geom', 'val':'5
 
 # Observations:
 parameters['nobs']               = {'min':10 ,'max':1000 ,'type':'int', 'val':100}
-parameters['sigma_obs']          = {'min':0. ,'max':1. ,'type':'float', 'val':0.01}
+parameters['sigma_obs']          = {'min':1e-5 ,'max':1. ,'type':'float', 'val':0.01}
 
 # Background:
 parameters['sigmabvar']          = {'min':0. ,'max':1. ,'type':'float', 'val':0.}
@@ -117,7 +118,7 @@ if verb:
     print('initial parameters: \n', parameters, '\n')
 
 # Define the parameters space to sample:
-parameters_to_sample = ['nobs', 'Lb']
+parameters_to_sample = ['Lb', 'sigma_obs']
 
 #-------------------------------------------------------------------------------
 # set the seed:
@@ -125,7 +126,7 @@ np.random.seed(42)
 
 # Number of walkers, steps, dimensions and threads:
 ndim = len(parameters_to_sample)
-nwalkers = 8
+nwalkers = 16
 
 nsteps = 1
 nruns = int(nsteps/10.)
@@ -142,8 +143,10 @@ if verb:
     print('shape of p0:', np.shape(p0),'\n')
 
 # Test the behavior of the ln_prob:
-#ln_prob(p0[0], parameters, parameters_to_sample, exec_command, verb)
+#ln_prob(p0[0], parameters, parameters_to_sample, exec_command, directories, verb)
+#sys.exit()
 
+start = time.perf_counter()
 #-------------------------------------------------------------------------------
 for run in range(nruns):
     if not run == 0:
@@ -151,36 +154,45 @@ for run in range(nruns):
     # Define the sampler object:
     ln_prob_args = (parameters, parameters_to_sample, exec_command,
                     directories,verb)
+    dtype = [("blobs", dict)]
     
     print("---------- Starting run {} of the MCMC ---------- \n".format(run))
     
-    # if True:
+    if True:
 
     # Parallelization of the code using pool:
-    with Pool() as pool:
-        sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_23,args=ln_prob_args,
-                                       a=scale_factor,live_dangerously=True,
-                                       pool=pool)
-        # # Run the MCMC:
-        state = sampler.run_mcmc(p0, nsteps)
+    # with Pool() as pool:
+    #     sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_23,args=ln_prob_args,
+    #                                     a=scale_factor,live_dangerously=True,
+    #                                     blobs_dtype=dtype,
+    #                                     pool=pool)
+    #     # # Run the MCMC:
+    #     state = sampler.run_mcmc(p0, nsteps)
         
-        # sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_23,args=ln_prob_args,
-        #                                 a=scale_factor,live_dangerously=True)
-        # # Run the MCMC:
-        # state = sampler.run_mcmc(p0, nsteps)
+        sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
+                                        a=scale_factor,live_dangerously=True)
+        # Run the MCMC:
+        state = sampler.run_mcmc(p0, nsteps)
 
         #-------------------------------------------------------------------------------
+        stop = time.perf_counter()
+        perf_time = stop - start
+        print(f'Finished in {perf_time} seconds')
+
         # Save the chain containing the position (chain) and associated lnprobability (lnprob):
         print("save the results as pickles")
-
         results = {}
         results['chain'] = sampler.chain
-        results['ln_prob'] = (-1)*sampler.lnprobability
+        results['ln_prob'] = (-1) * sampler.lnprobability
 
+        # Save the other outputs as blobs:
+        blobs = sampler.get_blobs()
+        results['blobs'] = blobs
+        
         results_file = os.path.join(diff_methods_dir + f'results_run_{run}.py')
         
         with open(results_file, 'wb') as handle:
             pickle.dump(results, handle, protocol=pickle.HIGHEST_PROTOCOL)
         print('results have been saved in:', results_file)
-        
+        print(blobs)
 ################################################################################

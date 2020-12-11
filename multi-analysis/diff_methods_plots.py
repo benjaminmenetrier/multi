@@ -53,41 +53,48 @@ nsteps = int(len(chain[0])*(1-burnin))
 nwalkers = len(chain)
 
 # MCMC parameters (walkers coordinates):
-flat_chain = chain[:,:nsteps,:].reshape((-1, npars))
+flat_chain = chain[:, :nsteps, :].reshape((-1, npars))
 print ("Shape of flattened chain:",np.shape(flat_chain))
 
 # MCMC log-likelyhood:
 lnprob = np.array(res["ln_prob"])
 print("Shape of ln_prob: ", np.shape(lnprob))
-flat_lnprob = lnprob[:,:nsteps].reshape(-1)
-print ("Shape of lnprob_data: ",np.shape(flat_lnprob))
+flat_lnprob = lnprob[:, :nsteps].reshape(-1)
+print ("Shape of flattened lnprob: ",np.shape(flat_lnprob))
 
 # Defines the quantiles to plot on the cornerplots:
-quant=(0.02275,0.16, 0.84,0.97725)
+quant = (0.02275, 0.16, 0.84, 0.97725)
 
 ################################################################################
 # Corner plot for the chain:
 print("plotting cornerplot for the chain:")
 
-labels=[r'$N_{obs}$',r'$\sigma^o$',r'$L_b$']
+flat_lnprob = np.atleast_2d(flat_lnprob)
 
-out_name=out_dir+"/cornerplot_test.png"
-figure=make_corner_plot(flat_chain,labels,quant,smoothing)
+chain_vs_lnprob = np.append(flat_lnprob.T, flat_chain, axis = 1)
+print('shape of chain_vs_lnprob', np.shape(chain_vs_lnprob))
+
+labels = [ r'$diff$', r'$N_{obs}$', r'$L_b$']
+
+out_name = out_dir + "/cornerplot_test.png"
+figure = make_corner_plot(chain_vs_lnprob, labels, quant, smoothing)
 figure.savefig(out_name)
 figure.clf()
 ################################################################################
 # Convergence of the MCMC:
 # Raw plot with all the walkers:
-out_name=out_dir+'/mean_difference.png'
-ylabel='mean difference'
-xlabel='steps'
+out_name = out_dir + '/mean_difference.png'
+ylabel = 'mean difference'
+xlabel = 'steps'
 
-mean_lnprob=[]
+print(lnprob[0][0])
+print(chain[0][0][:])
+mean_lnprob = []
 for step in lnprob.T:
-    mean_lnprob.append(sum(step)/(nsteps*1.))
+    mean_lnprob.append(sum(step) / (nwalkers * 18.))
 
-fig=plt.figure()
-plt.plot(range(len(mean_lnprob), mean_lnprob[:]))
+fig = plt.figure()
+plt.plot(range(len(mean_lnprob)), mean_lnprob[:])
 plt.xlabel(xlabel)
 plt.ylabel(ylabel)
 plt.savefig(out_name)

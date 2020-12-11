@@ -28,6 +28,28 @@ def netcdf_extract(output):
     return ds
 ################################################################################
 ################################################################################
+def netcdf_pickler(ds):
+    """
+    """
+    blobs = {}
+    for var in ds.variables:
+        blobs[var] = np.array(ds[var][:])
+        
+    for met in ds.groups:
+        blobs[met] = {}
+        for met_var in ds[met].variables:
+            blobs[met][met_var] = np.array(ds[met][met_var][:])
+        for io in ds[met].groups:
+            blobs[met][io] = {}
+            for io_var in ds[met][io].variables:
+                blobs[met][io][io_var] = np.array(ds[met][io][io_var][:])
+            for algo in ds[met][io].groups:
+                blobs[met][io][algo] = {}
+                for algo_var in ds[met][io][algo].variables:
+                    blobs[met][io][algo][algo_var] = np.array(ds[met][io][algo][algo_var][:])
+    return blobs
+################################################################################
+################################################################################
 def walkers_create(nwalkers, parameters, parameters_to_sample, verb):
     """Generates the walkers in the parameter space to sample:
     """
