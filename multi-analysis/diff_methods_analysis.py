@@ -170,6 +170,7 @@ for run in range(nruns):
     #     state = sampler.run_mcmc(p0, nsteps)
         
         sampler = emcee.EnsembleSampler(nwalkers,ndim,ln_prob,args=ln_prob_args,
+                                        blobs_dtype=dtype,
                                         a=scale_factor,live_dangerously=True)
         # Run the MCMC:
         state = sampler.run_mcmc(p0, nsteps)

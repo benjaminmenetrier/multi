@@ -53,7 +53,7 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
             par_max = parameters[key]['max']
             if p[i] < par_min or p[i] > par_max:
                 print(f'param {i} out of [{par_min}:{par_max}] with value: {p[i]}')
-                return -np.inf, ['tricky', default_blobs]
+                return -np.inf#, ['tricky', default_blobs]
             else:
                 # Put the sampled value in the parameters:
                 par_type = parameters[key]['type']
@@ -66,13 +66,13 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
                     i+=1
                 elif par_type=='geom':
                     print("do the geometry parameters later")
-                    return -np.inf, ['tricky', default_blobs]
+                    return -np.inf#, ['tricky', default_blobs]
                 else:
                     print("type error in ln_prob")
-                    return -np.inf, ['tricky', default_blobs]
+                    return -np.inf#, ['tricky', default_blobs]
     #--------------------------------------------------------------------------
     # Run the two methods:
-
+    
     # Store the results and namelists:
     
     namelist_and_output = namelist_and_output_write(p, parameters, parameters_to_sample, directories, verb)
@@ -109,12 +109,13 @@ def ln_prob(p, parameters_dict, parameters_to_sample, exec_command,
     except:     
        print("Error in diff_compute with the following parameters:")
        print('par=',parameters)
-       return -np.inf, ['tricky', default_blobs]
-   #-----------------------------------------------------------------------
-       
+       return -np.inf#, ['tricky', default_blobs]
+    #-----------------------------------------------------------------------
+    
     # emcee does not accept the blobs[0] to be a dictionnary because
     # they use .dtype attribute on it, hence the following trick works....
-    return diff, ['tricky', blobs]
+    print(diff)
+    return float(diff)#, ['tricky', blobs]
     
 ################################################################################
 ################################################################################
