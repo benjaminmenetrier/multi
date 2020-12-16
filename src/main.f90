@@ -53,7 +53,7 @@ real(8),allocatable            :: maxdiff(:,:,:,:)
 real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:,:)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:),dvb(:),dva(:),dxa(:),dxa_tmp(:),dxabar(:),dxa_prev(:)
 real(8),allocatable            :: xb_2d(:,:),xg_2d(:,:)
-real(8),allocatable            :: d(:),hxg(:)
+real(8),allocatable            :: d(:),hxg(:),hxg2(:)
 character(len=1024)            :: grpname
 type(algo_type),allocatable    :: algo(:,:,:)
 type(bmatrix_type),allocatable :: bmatrix(:)
@@ -170,6 +170,7 @@ end do
 ! Allocation (obs space)
 allocate(d(nobs))
 allocate(hxg(nobs))
+allocate(hxg2(nobs))
 
 ! Setup obserations locations
 call hmatrix%setup(nobs)
@@ -519,7 +520,10 @@ do im=1,nm
          end if
    
          ! Compute innovation
-         call hmatrix%apply(geom(io),xg,hxg)
+         call hmatrix%apply_nl(geom(io),xg,hxg)
+         !call hmatrix%apply(geom(io),xg,xg,hxg2)
+         !write(*,'(a,e13.6)') 'diff bteween hnl and h:', sum(hxg-hxg2)
+         
          d = hmatrix%yo-hxg
       
          ! Copy and interpolate LMP vectors
@@ -604,10 +608,10 @@ do im=1,nm
          ! Minimization
          write(*,'(a)') '         Minimization'
          if (trim(algorithm(ia))=='lanczos') then
-            call algo(io,ia,im)%apply_lanczos(geom(io),bmatrix(io),hmatrix,rmatrix,dvb,d,ni,lmp(io,ia,im), &
+            call algo(io,ia,im)%apply_lanczos(geom(io),bmatrix(io),hmatrix,rmatrix,dvb,xg,d,ni,lmp(io,ia,im), &
  & shutoff_type,shutoff_value)
          elseif (trim(algorithm(ia))=='planczosif') then
-            call algo(io,ia,im)%apply_planczosif(geom(io),bmatrix(io),hmatrix,rmatrix,dxbbar,d,ni,lmp(io,ia,im), &
+            call algo(io,ia,im)%apply_planczosif(geom(io),bmatrix(io),hmatrix,rmatrix,dxbbar,xg,d,ni,lmp(io,ia,im), &
  & shutoff_type,shutoff_value)
          end if
 

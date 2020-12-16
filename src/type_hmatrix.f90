@@ -23,6 +23,7 @@ contains
    procedure :: write => hmatrix_write
    procedure :: apply => hmatrix_apply
    procedure :: apply_ad => hmatrix_apply_ad
+   procedure :: apply_nl => hmatrix_apply_nl
    procedure :: test => hmatrix_test
 end type hmatrix_type
 
@@ -87,7 +88,71 @@ end subroutine hmatrix_write
 ! Subroutine: hmatrix_apply
 ! Purpose: apply H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_apply(hmatrix,geom,x,y)
+subroutine hmatrix_apply(hmatrix,geom,xg,x,y)
+
+implicit none
+
+! Passed variables
+class(hmatrix_type),intent(in) :: hmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: x(geom%nh), xg(geom%nh)
+real(8),intent(out) :: y(hmatrix%nobs)
+
+! Local variables
+integer :: iobs, inh
+real(8) :: x_tl(geom%nh)
+
+
+! Observation operator linearized around xg:
+do inh=1,geom%nh
+   x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh) ! Cubic version
+   !x_tl(inh) = x(inh) ! Linear version
+end do
+
+! Apply observation operator
+y = 0.0
+do iobs=1,hmatrix%nobs
+   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
+end do
+
+end subroutine hmatrix_apply
+
+!----------------------------------------------------------------------
+! Subroutine: hmatrix_apply_ad
+! Purpose: apply adjoint of the H matrix
+!----------------------------------------------------------------------
+subroutine hmatrix_apply_ad(hmatrix,geom,xg,y,x)
+
+implicit none
+
+! Passed variables
+class(hmatrix_type),intent(in) :: hmatrix
+type(geom_type),intent(in) :: geom
+real(8),intent(in) :: y(hmatrix%nobs),xg(geom%nh)
+real(8),intent(out) :: x(geom%nh)
+
+! Local variables
+integer :: iobs, inh
+
+x = 0.0
+! Apply observation operator adjoint
+do iobs=1,hmatrix%nobs
+   call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
+end do  
+
+! Observation operator linearized around xg:
+do inh=1,geom%nh
+   x(inh) = 3*xg(inh)*xg(inh)*x(inh) !  Cubic version
+   !x(inh) = x(inh) ! Linear version
+end do
+
+end subroutine hmatrix_apply_ad
+
+!----------------------------------------------------------------------
+! Subroutine: hmatrix_apply_nl
+! Purpose: apply non linear H matrix
+!----------------------------------------------------------------------
+subroutine hmatrix_apply_nl(hmatrix,geom,x,y)
 
 implicit none
 
@@ -98,39 +163,22 @@ real(8),intent(in) :: x(geom%nh)
 real(8),intent(out) :: y(hmatrix%nobs)
 
 ! Local variables
-integer :: iobs
+integer :: iobs, inh
+real(8) :: xnl(geom%nh)
+
+! Non linear observation operator (cubic):
+do inh=1,geom%nh
+   xnl(inh)=x(inh)*x(inh)*x(inh)
+   !xnl(inh) = x(inh)
+end do
 
 ! Apply observation operator
+y = 0.0
 do iobs=1,hmatrix%nobs
-   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x,y(iobs))
+   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xnl,y(iobs))
 end do
 
-end subroutine hmatrix_apply
-
-!----------------------------------------------------------------------
-! Subroutine: hmatrix_apply_ad
-! Purpose: apply adjoint of the H matrix
-!----------------------------------------------------------------------
-subroutine hmatrix_apply_ad(hmatrix,geom,y,x)
-
-implicit none
-
-! Passed variables
-class(hmatrix_type),intent(in) :: hmatrix
-type(geom_type),intent(in) :: geom
-real(8),intent(in) :: y(hmatrix%nobs)
-real(8),intent(out) :: x(geom%nh)
-
-! Local variables
-integer :: iobs
-
-! Apply observation operator adjoint
-x = 0.0
-do iobs=1,hmatrix%nobs
-   call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
-end do
-
-end subroutine hmatrix_apply_ad
+end subroutine hmatrix_apply_nl
 
 !----------------------------------------------------------------------
 ! Subroutine: hmatrix_test
@@ -146,16 +194,18 @@ type(geom_type),intent(in) :: geom
 
 ! Local variables
 real(8) :: x1(geom%nh),x2(geom%nh)
+real(8) :: xg(geom%nh)
 real(8) :: y1(hmatrix%nobs),y2(hmatrix%nobs)
 real(8) :: dp1,dp2
 
 ! Initialization
 call random_number(x1)
 call random_number(y2)
+call random_number(xg)
 
 ! Direct H + adjoint H test
-call hmatrix%apply(geom,x1,y1)
-call hmatrix%apply_ad(geom,y2,x2)
+call hmatrix%apply(geom,xg,x1,y1)
+call hmatrix%apply_ad(geom,xg,y2,x2)
 dp1 = sum(x1*x2)
 dp2 = sum(y1*y2)
 write(*,'(a,e15.8)') '         Direct H + adjoint H test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
