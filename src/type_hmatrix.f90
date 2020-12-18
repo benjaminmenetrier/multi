@@ -105,8 +105,8 @@ real(8) :: x_tl(geom%nh)
 
 ! Observation operator linearized around xg:
 do inh=1,geom%nh
-   x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh) ! Cubic version
-   !x_tl(inh) = x(inh) ! Linear version
+   !x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh) ! Cubic version
+   x_tl(inh) = x(inh) ! Linear version
 end do
 
 ! Apply observation operator
@@ -133,17 +133,24 @@ real(8),intent(out) :: x(geom%nh)
 
 ! Local variables
 integer :: iobs, inh
+real(8) :: x_test(geom%nh)
 
 x = 0.0
+x_test = 0.0
+! Apply observation operator adjoint
+!call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x_test)
+
 ! Apply observation operator adjoint
 do iobs=1,hmatrix%nobs
    call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
-end do  
+end do
+
+!write(*,'(a,e15.8)') 'x diff', x(30)-x_test(30)
 
 ! Observation operator linearized around xg:
 do inh=1,geom%nh
-   x(inh) = 3*xg(inh)*xg(inh)*x(inh) !  Cubic version
-   !x(inh) = x(inh) ! Linear version
+   !x(inh) = 3*xg(inh)*xg(inh)*x(inh) !  Cubic version
+   x(inh) = x(inh) ! Linear version
 end do
 
 end subroutine hmatrix_apply_ad
@@ -168,8 +175,8 @@ real(8) :: xnl(geom%nh)
 
 ! Non linear observation operator (cubic):
 do inh=1,geom%nh
-   xnl(inh)=x(inh)*x(inh)*x(inh)
-   !xnl(inh) = x(inh)
+   !xnl(inh)=x(inh)*x(inh)*x(inh)
+   xnl(inh) = x(inh)
 end do
 
 ! Apply observation operator

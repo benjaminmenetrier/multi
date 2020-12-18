@@ -9,8 +9,8 @@ lmp_mode = "none"
 test_ortho = F
 shutoff_type = 0
 shutoff_value = 0.01
-transitive_interp = T
-projective_Bmatrix = T
+transitive_interp = F
+projective_Bmatrix = F
 /
 
 &resolutions
@@ -19,7 +19,7 @@ ny = 101, 101, 101
 /
 
 &observations
-nobs = 3000
+nobs = 1000
 sigma_obs = 0.01
 /
 

@@ -217,6 +217,8 @@ do io=1,no
 end do
 
 ! Generate background state
+! Null background state:
+! xb_full = 0.0
 call bmatrix(no)%randomize(geom(no),xb_full)
 do io=1,no
    ! Allocation

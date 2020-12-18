@@ -104,21 +104,27 @@ res_dir_list = []
 outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
-i_no = [2,3]
-i_ni = [4,6]
+i_no = [3]
+i_ni = [6]
 
 i_nx = ['101, 101, 101']
 
-i_nobs = [100, 3000]
+i_nobs = [1000]
 i_sigma_obs = [0.01]
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
 
-iter_params = itertools.product(i_no, i_ni, i_nx, i_nobs, i_sigma_obs,
-                                i_sigmabvar, i_Lb, repeat=1)
 
-for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb in iter_params:
+i_trans_interp = ["T", "F"]
+i_project_B = ["T", "F"]
+i_test_ortho = ["T", "F"]
+
+iter_params = itertools.product(i_no, i_ni, i_nx, i_nobs, i_sigma_obs,
+                                i_sigmabvar, i_Lb, i_trans_interp,
+                                i_project_B, i_test_ortho, repeat=1)
+
+for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, transitive_interp, projective_Bmatrix, test_ortho in iter_params:
     # square grid:
     ny=nx
     
