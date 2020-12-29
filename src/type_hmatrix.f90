@@ -104,9 +104,10 @@ real(8) :: x_tl(geom%nh)
 
 
 ! Observation operator linearized around xg:
+x_tl=0.0
 do inh=1,geom%nh
-   !x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh) ! Cubic version
-   x_tl(inh) = x(inh) ! Linear version
+   x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh) ! Cubic version
+   !x_tl(inh) = x(inh) ! Linear version
 end do
 
 ! Apply observation operator
@@ -133,24 +134,24 @@ real(8),intent(out) :: x(geom%nh)
 
 ! Local variables
 integer :: iobs, inh
-real(8) :: x_test(geom%nh)
+real(8) :: yg(hmatrix%nobs),y_tl(hmatrix%nobs)
 
 x = 0.0
-x_test = 0.0
-! Apply observation operator adjoint
-!call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x_test)
+! Interpolate the guess on obs space:
+yg = 0.0
+do iobs=1,hmatrix%nobs
+   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xg,yg(iobs))
+end do
+
+y_tl=0.0
+! Linearization around the guess:
+do iobs=1,hmatrix%nobs
+   y_tl(iobs) = 3*yg(iobs)*yg(iobs)*y(iobs)
+end do
 
 ! Apply observation operator adjoint
 do iobs=1,hmatrix%nobs
-   call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
-end do
-
-!write(*,'(a,e15.8)') 'x diff', x(30)-x_test(30)
-
-! Observation operator linearized around xg:
-do inh=1,geom%nh
-   !x(inh) = 3*xg(inh)*xg(inh)*x(inh) !  Cubic version
-   x(inh) = x(inh) ! Linear version
+   call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y_tl(iobs),x)
 end do
 
 end subroutine hmatrix_apply_ad
@@ -175,8 +176,8 @@ real(8) :: xnl(geom%nh)
 
 ! Non linear observation operator (cubic):
 do inh=1,geom%nh
-   !xnl(inh)=x(inh)*x(inh)*x(inh)
-   xnl(inh) = x(inh)
+   xnl(inh)=x(inh)*x(inh)*x(inh)
+   !xnl(inh) = x(inh)
 end do
 
 ! Apply observation operator
