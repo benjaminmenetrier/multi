@@ -12,6 +12,7 @@ use netcdf
 use tools_const
 use tools_netcdf
 
+
 implicit none
 
 include 'fftw3.f03'
@@ -40,6 +41,8 @@ contains
    generic   :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
    procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
    procedure :: interp_sp => geom_interp_sp
+   procedure :: nearest_interp => geom_nearest_interp
+   procedure :: nearest_interp_ad => geom_nearest_interp_ad
 end type geom_type
 
 contains
@@ -660,4 +663,128 @@ end if
 
 end subroutine geom_interp_sp
 
+!----------------------------------------------------------------------
+! Subroutine: geom_nearest_interp
+! Purpose: nearest neighbor interpolation
+!----------------------------------------------------------------------
+subroutine geom_nearest_interp(geom,xobs,yobs,x,yi)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom
+real(8),intent(in) :: xobs, yobs
+real(8),intent(in) :: x(geom%nh)
+real(8),intent(out) :: yi
+
+!Local variables
+integer    :: ix,iy,iobs
+integer    :: x_keep, y_keep
+real(8)    :: d_new,d_old,dx,dy
+real(8)    :: x_2d(geom%nx,geom%ny)
+
+x_2d = reshape(x,(/geom%nx,geom%ny/))
+
+d_old=geom%nh
+
+do ix=1,geom%nx
+   do iy=1,geom%ny
+      dx = xobs - geom%x(ix)
+      dy = yobs - geom%y(iy)
+      d_new = SQRT(dx*dx + dy*dy)
+      if (d_new<d_old) then
+         d_old=d_new
+         x_keep = ix
+         y_keep = iy
+      end if
+   end do
+end do
+
+yi=x_2d(x_keep,y_keep)
+
+end subroutine geom_nearest_interp
+
+! !----------------------------------------------------------------------
+! ! Subroutine: geom_nearest_interp_ad
+! ! Purpose: adjoint nearest neighbor interpolation
+! !----------------------------------------------------------------------
+! subroutine geom_nearest_interp_ad(geom,xobs,yobs,xi,y)
+
+! implicit none
+
+! ! Passed variables
+! class(geom_type),intent(in) :: geom
+! real(8),intent(in) :: xobs, yobs
+! real(8),intent(out) :: x(geom%nh)
+! real(8),intent(in) :: yi
+
+! !Local variables
+! integer    :: ix,iy,iobs
+! integer    :: x_keep, y_keep
+! real(8)    :: d_new,d_old,dx,dy
+! real(8)    :: x_2d(geom%nx,geom%ny)
+
+! d_old=geom%nh
+
+! do ix=1,geom%nx
+!    do iy=1,geom%ny
+!       dx = xobs - geom%x(ix)
+!       dy = yobs - geom%y(iy)
+!       d_new = SQRT(dx*dx + dy*dy)
+!       if (d_new<d_old) then
+!          d_old=d_new
+!          x_keep = ix
+!          y_keep = iy
+!       end if
+!    end do
+! end do
+
+! x_2d(x_keep,y_keep)=yi
+
+! end subroutine geom_nearest_interp_ad
+
+!----------------------------------------------------------------------
+! Subroutine: geom_nearest_interp_ad
+! Purpose: adjoint nearest neighbor interpolation
+!----------------------------------------------------------------------
+subroutine geom_nearest_interp_ad(geom,xobs,yobs,yi,x)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom
+real(8),intent(in) :: xobs, yobs
+real(8),intent(out) :: x(geom%nh)
+real(8),intent(in) :: yi
+
+!Local variables
+integer    :: ix,iy,iobs
+integer    :: x_keep, y_keep
+real(8)    :: d_new,d_old,dx,dy
+real(8)    :: x_2d(geom%nx,geom%ny)
+
+x_2d = reshape(x,(/geom%nx,geom%ny/))
+
+d_old=geom%nh
+
+do ix=1,geom%nx
+   do iy=1,geom%ny
+      dx = xobs - geom%x(ix)
+      dy = yobs - geom%y(iy)
+      d_new = SQRT(dx*dx + dy*dy)
+      if (d_new<d_old) then
+         d_old=d_new
+         x_keep = ix
+         y_keep = iy
+      end if
+   end do
+end do
+
+x_2d(x_keep,y_keep)=yi
+
+x = reshape(x_2d,(/geom%nh/))
+
+end subroutine geom_nearest_interp_ad
+
+!--------------------------------------------------------------------------------
 end module type_geom

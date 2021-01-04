@@ -6,11 +6,11 @@ algorithm = "lanczos", "planczosif"
 no = 3
 ni = 6
 lmp_mode = "none"
-test_ortho = F
+test_ortho = T
 shutoff_type = 0
 shutoff_value = 0.01
-transitive_interp = F
-projective_Bmatrix = F
+transitive_interp = T
+projective_Bmatrix = T
 /
 
 &resolutions
@@ -19,7 +19,7 @@ ny = 101, 101, 101
 /
 
 &observations
-nobs = 1000
+nobs = 100
 sigma_obs = 0.01
 /
 

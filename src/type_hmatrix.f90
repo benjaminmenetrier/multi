@@ -68,9 +68,6 @@ class(hmatrix_type),intent(inout) :: hmatrix
 integer,intent(in) :: ncid
 integer,intent(inout) :: nobs_id,x_obs_id,y_obs_id
 
-! Local variables
-!integer :: nobs_id,x_obs_id,y_obs_id
-
 ! Create dimensions
 call ncerr('hmatrix_write',nf90_def_dim(ncid,'nobs',hmatrix%nobs,nobs_id))
 
@@ -100,22 +97,23 @@ real(8),intent(out) :: y(hmatrix%nobs)
 
 ! Local variables
 integer :: iobs, inh
-real(8) :: x_tl(geom%nh)
+real(8) :: x_tl(geom%nh), x_test(geom%nh)
 
 
 ! Observation operator linearized around xg:
 x_tl=0.0
 do inh=1,geom%nh
-   x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh) ! Cubic version
-   !x_tl(inh) = x(inh) ! Linear version
+   !x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh) ! Cubic version
+   x_tl(inh) = x(inh) ! Linear version
 end do
 
 ! Apply observation operator
 y = 0.0
 do iobs=1,hmatrix%nobs
-   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
+   !call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
+   call geom%nearest_interp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
 end do
-
+   
 end subroutine hmatrix_apply
 
 !----------------------------------------------------------------------
@@ -138,20 +136,23 @@ real(8) :: yg(hmatrix%nobs),y_tl(hmatrix%nobs)
 
 x = 0.0
 ! Interpolate the guess on obs space:
-yg = 0.0
-do iobs=1,hmatrix%nobs
-   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xg,yg(iobs))
-end do
+! yg = 0.0
+! do iobs=1,hmatrix%nobs
+!    call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xg,yg(iobs))
+! end do
 
 y_tl=0.0
 ! Linearization around the guess:
 do iobs=1,hmatrix%nobs
-   y_tl(iobs) = 3*yg(iobs)*yg(iobs)*y(iobs)
+   !y_tl(iobs) = 3*yg(iobs)*yg(iobs)*y(iobs)
+   y_tl(iobs) = y(iobs)
 end do
 
 ! Apply observation operator adjoint
 do iobs=1,hmatrix%nobs
-   call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y_tl(iobs),x)
+!do iobs=hmatrix%nobs,1,-1
+   !call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y_tl(iobs),x)
+   call geom%nearest_interp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y_tl(iobs),x)
 end do
 
 end subroutine hmatrix_apply_ad
@@ -176,8 +177,8 @@ real(8) :: xnl(geom%nh)
 
 ! Non linear observation operator (cubic):
 do inh=1,geom%nh
-   xnl(inh)=x(inh)*x(inh)*x(inh)
-   !xnl(inh) = x(inh)
+   !xnl(inh)=x(inh)*x(inh)*x(inh)
+   xnl(inh) = x(inh)
 end do
 
 ! Apply observation operator

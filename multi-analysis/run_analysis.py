@@ -78,7 +78,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/nobs100_vs_3000')
+results_dir_root = os.path.join(directories['analysis_results'] + '/test_interp_2')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -109,16 +109,16 @@ i_ni = [6]
 
 i_nx = ['101, 101, 101']
 
-i_nobs = [1000]
+i_nobs = [100]
 i_sigma_obs = [0.01]
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
 
 
-i_trans_interp = ["T", "F"]
-i_project_B = ["T", "F"]
-i_test_ortho = ["T", "F"]
+i_trans_interp = ["T"]
+i_project_B = ["T"]
+i_test_ortho = ["T"]
 
 iter_params = itertools.product(i_no, i_ni, i_nx, i_nobs, i_sigma_obs,
                                 i_sigmabvar, i_Lb, i_trans_interp,
