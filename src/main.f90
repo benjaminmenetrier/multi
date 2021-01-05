@@ -118,8 +118,7 @@ spvarmin = 1.0e-5
 new_seed = .false.
 filename = 'output.nc'
 
-interp_type = 'bilinear'
-
+interp_type = 'nearest'
 
 ! Read the name of the namelist to use
 call get_command_argument(1,namelist_name)
@@ -283,7 +282,7 @@ do im=1,nm
 
          ! Test H matrix
          write(*,'(a)') '         Test H matrix'
-         call hmatrix%test(interp_type,geom(io))
+         call hmatrix%test(geom(io))
 
          ! Interpolate background at current resolution
          call geom(no)%interp_gp(geom(io),xb_full,xb)
@@ -528,7 +527,7 @@ do im=1,nm
          end if
    
          ! Compute innovation
-         call hmatrix%apply_nl(interp_type,geom(io),xg,hxg)
+         call hmatrix%apply_nl(geom(io),xg,hxg)
          !call hmatrix%apply(geom(io),xg,xg,hxg2)
          !write(*,'(a,e13.6)') 'diff bteween hnl and h:', sum(hxg-hxg2)
          
@@ -616,15 +615,15 @@ do im=1,nm
          ! Minimization
          write(*,'(a)') '         Minimization'
          if (trim(algorithm(ia))=='lanczos') then
-            call algo(io,ia,im)%apply_lanczos(geom(io),bmatrix(io),hmatrix,interp_type,rmatrix,dvb,xg,d,ni,lmp(io,ia,im), &
+            call algo(io,ia,im)%apply_lanczos(geom(io),bmatrix(io),hmatrix,rmatrix,dvb,xg,d,ni,lmp(io,ia,im), &
  & shutoff_type,shutoff_value)
          elseif (trim(algorithm(ia))=='planczosif') then
-            call algo(io,ia,im)%apply_planczosif(geom(io),bmatrix(io),hmatrix,interp_type,rmatrix,dxbbar,xg,d,ni,lmp(io,ia,im), &
+            call algo(io,ia,im)%apply_planczosif(geom(io),bmatrix(io),hmatrix,rmatrix,dxbbar,xg,d,ni,lmp(io,ia,im), &
  & shutoff_type,shutoff_value)
          end if
 
          ! Compute nonlinear cost function
-         call algo(io,ia,im)%compute_cost(geom(io),bmatrix(io),hmatrix,interp_type,rmatrix,xb,xg,ni)
+         call algo(io,ia,im)%compute_cost(geom(io),bmatrix(io),hmatrix,rmatrix,xb,xg,ni)
       
          ! Result
          write(*,'(a)') '         Cost function: J = Jb+Jo / J_nl = Jb_nl+Jo_nl'

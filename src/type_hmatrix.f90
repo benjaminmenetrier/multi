@@ -85,12 +85,11 @@ end subroutine hmatrix_write
 ! Subroutine: hmatrix_apply
 ! Purpose: apply H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_apply(hmatrix,interp_type,geom,xg,x,y)
+subroutine hmatrix_apply(hmatrix,geom,xg,x,y)
 
 implicit none
 
 ! Passed variables
-character(len=1024),intent(in)     :: interp_type
 class(hmatrix_type),intent(in) :: hmatrix
 type(geom_type),intent(in)     :: geom
 real(8),intent(in)             :: x(geom%nh), xg(geom%nh)
@@ -98,40 +97,35 @@ real(8),intent(out)            :: y(hmatrix%nobs)
 
 ! Local variables
 integer :: iobs, inh
-real(8) :: x_tl(geom%nh), x_test(geom%nh)
+real(8) :: x_tl(geom%nh)
 
 
 ! Observation operator linearized around xg:
 x_tl=0.0
 do inh=1,geom%nh
    ! Cubic version:
-   !x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
+   x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
    ! Linear version
-   x_tl(inh) = x(inh)
+   !x_tl(inh) = x(inh)
 end do
 
 ! Apply observation operator
 y = 0.0
 do iobs=1,hmatrix%nobs
-   if (trim(interp_type)=='nearest') then
-      call geom%nearest_interp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
-   else if (trim(interp_type)=='bilinear') then
-      call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
-   end if   
+   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs)) 
 end do
-   
+ 
 end subroutine hmatrix_apply
 
 !----------------------------------------------------------------------
 ! Subroutine: hmatrix_apply_ad
 ! Purpose: apply adjoint of the H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_apply_ad(hmatrix,interp_type,geom,xg,y,x)
+subroutine hmatrix_apply_ad(hmatrix,geom,xg,y,x)
 
 implicit none
 
 ! Passed variables
-character(len=1024),intent(in)     :: interp_type
 class(hmatrix_type),intent(in) :: hmatrix
 type(geom_type),intent(in) :: geom
 real(8),intent(in) :: y(hmatrix%nobs),xg(geom%nh)
@@ -141,33 +135,29 @@ real(8),intent(out) :: x(geom%nh)
 integer :: iobs, inh
 real(8) :: yg(hmatrix%nobs),y_tl(hmatrix%nobs)
 
-x = 0.0
 ! Interpolate the guess on the obs space:
-yg = 0.0
-do iobs=1,hmatrix%nobs
-   if (trim(interp_type)=='nearest') then
-      call geom%nearest_interp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xg,yg(iobs))
-   else if (trim(interp_type)=='bilinear') then
-      call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xg,yg(iobs))
-   end if   
-end do
+! yg = 0.0
+! do iobs=1,hmatrix%nobs
+!    call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xg,yg(iobs))
+! end do
 
-y_tl=0.0
-! Linearization around the guess:
-do iobs=1,hmatrix%nobs
-   ! Cubic version
-   !y_tl(iobs) = 3*yg(iobs)*yg(iobs)*y(iobs)
-   ! Linear version
-   y_tl(iobs) = y(iobs)
-end do
+! y_tl=0.0
+! ! Linearization around the guess:
+! do iobs=1,hmatrix%nobs
+!    ! Cubic version
+!    !y_tl(iobs) = 3*yg(iobs)*yg(iobs)*y(iobs)
+!    ! Linear version
+!    y_tl(iobs) = y(iobs)
+! end do
 
 ! Apply observation operator adjoint
+x = 0.0
 do iobs=1,hmatrix%nobs
-   if (trim(interp_type)=='nearest') then
-      call geom%nearest_interp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y_tl(iobs),x)
-   else if (trim(interp_type)=='bilinear') then
-      call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y_tl(iobs),x)
-   end if
+   call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
+end do
+
+do inh=1,geom%nh
+   x(inh)=3*xg(inh)*xg(inh)*x(inh)
 end do
 
 end subroutine hmatrix_apply_ad
@@ -176,12 +166,11 @@ end subroutine hmatrix_apply_ad
 ! Subroutine: hmatrix_apply_nl
 ! Purpose: apply non linear H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_apply_nl(hmatrix,interp_type,geom,x,y)
+subroutine hmatrix_apply_nl(hmatrix,geom,x,y)
 
 implicit none
 
 ! Passed variables
-character(len=1024),intent(in)     :: interp_type
 class(hmatrix_type),intent(in) :: hmatrix
 type(geom_type),intent(in)     :: geom
 real(8),intent(in)             :: x(geom%nh)
@@ -194,19 +183,15 @@ real(8) :: xnl(geom%nh)
 ! Non linear observation operator (cubic):
 do inh=1,geom%nh
    ! Cubic version
-   !xnl(inh)=x(inh)*x(inh)*x(inh)
+   xnl(inh)=x(inh)*x(inh)*x(inh)
    ! Linear version
-   xnl(inh) = x(inh)
+   !xnl(inh) = x(inh)
 end do
 
 ! Apply observation operator
 y = 0.0
 do iobs=1,hmatrix%nobs
-   if (trim(interp_type)=='nearest') then
-      call geom%nearest_interp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xnl,y(iobs))
-   else if (trim(interp_type)=='bilinear') then
-      call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xnl,y(iobs))
-   end if
+   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xnl,y(iobs))
 end do
 
 end subroutine hmatrix_apply_nl
@@ -215,13 +200,12 @@ end subroutine hmatrix_apply_nl
 ! Subroutine: hmatrix_test
 ! Purpose: setup H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_test(hmatrix,interp_type,geom)
+subroutine hmatrix_test(hmatrix,geom)
 
 implicit none
 
 ! Passed variables
 class(hmatrix_type),intent(in) :: hmatrix
-character(len=1024),intent(in) :: interp_type
 type(geom_type),intent(in) :: geom
 
 ! Local variables
@@ -236,8 +220,8 @@ call random_number(y2)
 call random_number(xg)
 
 ! Direct H + adjoint H test
-call hmatrix%apply(interp_type,geom,xg,x1,y1)
-call hmatrix%apply_ad(interp_type,geom,xg,y2,x2)
+call hmatrix%apply(geom,xg,x1,y1)
+call hmatrix%apply_ad(geom,xg,y2,x2)
 dp1 = sum(x1*x2)
 dp2 = sum(y1*y2)
 write(*,'(a,e15.8)') '         Direct H + adjoint H test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
