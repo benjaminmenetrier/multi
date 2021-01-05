@@ -19,7 +19,7 @@ ny = 101, 101, 101
 /
 
 &observations
-nobs = 100
+nobs = 2000
 sigma_obs = 0.01
 /
 

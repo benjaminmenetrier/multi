@@ -166,7 +166,7 @@ end subroutine algo_write
 ! Subroutine: algo_apply_lanczos
 ! Purpose: Lanczos algorithm in control space
 !----------------------------------------------------------------------
-subroutine algo_apply_lanczos(algo,geom,bmatrix,hmatrix,rmatrix,dvb,xg,d,ni,lmp,shutoff_type,shutoff_value)
+subroutine algo_apply_lanczos(algo,geom,bmatrix,hmatrix,interp_type,rmatrix,dvb,xg,d,ni,lmp,shutoff_type,shutoff_value)
 
 implicit none
 
@@ -175,6 +175,7 @@ class(algo_type),intent(inout) :: algo
 type(geom_type),intent(in) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
 type(hmatrix_type),intent(in) :: hmatrix
+character(len=1024),intent(in)    :: interp_type
 type(rmatrix_type),intent(in) :: rmatrix
 real(8),intent(in) :: dvb(geom%nh), xg(geom%nh)
 real(8),intent(in) :: d(hmatrix%nobs)
@@ -197,7 +198,7 @@ logical :: convergence
 s(:,0) = 0.0
 v(:,0) = 0.0
 call rmatrix%apply_inv(d,ytmp)
-call hmatrix%apply_ad(geom,xg,ytmp,xtmp)
+call hmatrix%apply_ad(interp_type,geom,xg,ytmp,xtmp)
 call bmatrix%apply_sqrt_ad(geom,xtmp,vtmp)
 vtmp = dvb+vtmp
 call lmp%apply_sqrt_ad(geom,ni,lmp%io,vtmp,r(:,0))
@@ -220,9 +221,9 @@ do while ((.not.convergence).and.(ii<ni))
    ii = ii+1
    call lmp%apply_sqrt(geom,ni,lmp%io,v(:,ii),vtmp)
    call bmatrix%apply_sqrt(geom,vtmp,xtmp)
-   call hmatrix%apply(geom,xg,xtmp,ytmp)
+   call hmatrix%apply(interp_type,geom,xg,xtmp,ytmp)
    call rmatrix%apply_inv(ytmp,ytmp2)
-   call hmatrix%apply_ad(geom,xg,ytmp2,xtmp)
+   call hmatrix%apply_ad(interp_type,geom,xg,ytmp2,xtmp)
    call bmatrix%apply_sqrt_ad(geom,xtmp,vtmp2)
    vtmp = vtmp+vtmp2
    call lmp%apply_sqrt_ad(geom,ni,lmp%io,vtmp,q(:,ii))
@@ -279,7 +280,7 @@ do while ((.not.convergence).and.(ii<ni))
 
    ! Compute linear cost function
    algo%jb(ii) = 0.5*sum((u(:,ii)-dvb)**2)
-   call hmatrix%apply(geom,xg,algo%dx(:,ii),ytmp)
+   call hmatrix%apply(interp_type,geom,xg,algo%dx(:,ii),ytmp)
    call rmatrix%apply_inv((d-ytmp),ytmp2)
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
    algo%j(ii) = algo%jb(ii)+algo%jo(ii)
@@ -338,7 +339,7 @@ end subroutine algo_apply_lanczos
 ! Subroutine: algo_apply_planczosif
 ! Purpose: PLanczosIF algorithm in linear space
 !----------------------------------------------------------------------
-subroutine algo_apply_planczosif(algo,geom,bmatrix,hmatrix,rmatrix,dxbbar,xg,d,ni,lmp,shutoff_type,shutoff_value)
+subroutine algo_apply_planczosif(algo,geom,bmatrix,hmatrix,interp_type,rmatrix,dxbbar,xg,d,ni,lmp,shutoff_type,shutoff_value)
 
 implicit none
 
@@ -347,6 +348,7 @@ class(algo_type),intent(inout) :: algo
 type(geom_type) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
 type(hmatrix_type),intent(in) :: hmatrix
+character(len=1024),intent(in)    :: interp_type
 type(rmatrix_type),intent(in) :: rmatrix
 real(8),intent(in) :: dxbbar(geom%nh), xg(geom%nh)
 real(8),intent(in) :: d(hmatrix%nobs)
@@ -370,7 +372,7 @@ logical :: convergence
 s(:,0) = 0.0
 v(:,0) = 0.0
 call rmatrix%apply_inv(d,ytmp)
-call hmatrix%apply_ad(geom,xg,ytmp,xtmp)
+call hmatrix%apply_ad(interp_type,geom,xg,ytmp,xtmp)
 r(:,0) = dxbbar+xtmp
 call lmp%apply(geom,ni,lmp%io,r(:,0),tbar(:,0))
 call bmatrix%apply(geom,tbar(:,0),t(:,0))
@@ -394,9 +396,9 @@ algo%j(0) = algo%jb(0)+algo%jo(0)
 do while ((.not.convergence).and.(ii<ni))
    ! Update
    ii = ii+1
-   call hmatrix%apply(geom,xg,z(:,ii),ytmp)
+   call hmatrix%apply(interp_type,geom,xg,z(:,ii),ytmp)
    call rmatrix%apply_inv(ytmp,ytmp2)
-   call hmatrix%apply_ad(geom,xg,ytmp2,xtmp)
+   call hmatrix%apply_ad(interp_type,geom,xg,ytmp2,xtmp)
    q(:,ii) = zbar(:,ii)+xtmp-beta(ii)*v(:,ii-1)
    alpha(ii) = sum(q(:,ii)*z(:,ii))
    w(:,ii) = q(:,ii)-alpha(ii)*v(:,ii)
@@ -454,7 +456,7 @@ do while ((.not.convergence).and.(ii<ni))
 
    ! Compute cost function
    algo%jb(ii) = 0.5*sum((algo%dx(:,ii)-dxb)*(dxbar(:,ii)-dxbbar))
-   call hmatrix%apply(geom,xg,algo%dx(:,ii),ytmp)
+   call hmatrix%apply(interp_type,geom,xg,algo%dx(:,ii),ytmp)
    call rmatrix%apply_inv(d-ytmp,ytmp2)
    algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
    algo%j(ii) = algo%jb(ii)+algo%jo(ii)
@@ -524,7 +526,7 @@ end subroutine algo_apply_planczosif
 ! Subroutine: algo_compute_cost
 ! Purpose: compute nonlinear cost function
 !----------------------------------------------------------------------
-subroutine algo_compute_cost(algo,geom,bmatrix,hmatrix,rmatrix,xb,xg,ni)
+subroutine algo_compute_cost(algo,geom,bmatrix,hmatrix,interp_type,rmatrix,xb,xg,ni)
 
 implicit none
 
@@ -533,6 +535,7 @@ class(algo_type),intent(inout) :: algo
 type(geom_type),intent(in) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
 type(hmatrix_type),intent(in) :: hmatrix
+character(len=1024),intent(in)    :: interp_type
 type(rmatrix_type),intent(in) :: rmatrix
 real(8),intent(in) :: xb(geom%nh)
 real(8),intent(in) :: xg(geom%nh)
@@ -545,7 +548,7 @@ real(8) :: xtmp(geom%nh),ytmp(hmatrix%nobs),ytmp2(hmatrix%nobs)
 ! Initialize nonlinear cost function
 call bmatrix%apply_inv(geom,xg-xb,xtmp)
 algo%jb_nl(0) = 0.5*sum((xg-xb)*xtmp)
-call hmatrix%apply_nl(geom,xg,ytmp)
+call hmatrix%apply_nl(interp_type,geom,xg,ytmp)
 ytmp = ytmp-hmatrix%yo
 call rmatrix%apply_inv(ytmp,ytmp2)
 algo%jo_nl(0) = 0.5*sum(ytmp*ytmp2)
@@ -555,7 +558,7 @@ do ii=1,algo%nimax
    ! Compute nonlinear cost function
    call bmatrix%apply_inv(geom,xg+algo%dx(:,ii)-xb,xtmp)
    algo%jb_nl(ii) = 0.5*sum((xg+algo%dx(:,ii)-xb)*xtmp)
-   call hmatrix%apply_nl(geom,(xg+algo%dx(:,ii)),ytmp)
+   call hmatrix%apply_nl(interp_type,geom,(xg+algo%dx(:,ii)),ytmp)
    ytmp = ytmp-hmatrix%yo
    call rmatrix%apply_inv(ytmp,ytmp2)
    algo%jo_nl(ii) = 0.5*sum(ytmp*ytmp2)
