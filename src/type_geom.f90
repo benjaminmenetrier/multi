@@ -36,13 +36,23 @@ contains
    procedure :: gp2sp => geom_gp2sp
    procedure :: sp2gp => geom_sp2gp
    procedure :: spdotprod => geom_spdotprod
-   procedure :: geom_interp_gp_scalar
-   procedure :: geom_interp_gp_field
-   generic   :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
-   procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
+   !procedure :: geom_interp_gp_scalar
+   !procedure :: geom_interp_gp_field
+   !generic   :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
+   !procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
    procedure :: interp_sp => geom_interp_sp
-   procedure :: nearest_interp => geom_nearest_interp
-   procedure :: nearest_interp_ad => geom_nearest_interp_ad
+
+   !-----------------------------------------------------------------------------
+   procedure :: geom_nearest_interp_scalar
+   procedure :: geom_nearest_interp_field
+   procedure :: interp_gp_ad => geom_nearest_interp_scalar_ad
+   generic   :: interp_gp => geom_nearest_interp_scalar,geom_nearest_interp_field
+   
+
+   procedure :: nearest_interp => geom_nearest_interp_scalar
+   procedure :: nearest_interp_ad => geom_nearest_interp_scalar_ad
+   !-----------------------------------------------------------------------------
+
 end type geom_type
 
 contains
@@ -663,34 +673,49 @@ end if
 
 end subroutine geom_interp_sp
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+!----------------------------------------------------------------------------------
+
 !----------------------------------------------------------------------
-! Subroutine: geom_nearest_interp
-! Purpose: nearest neighbor interpolation
+! Subroutine: geom_nearest_interp_scalar
+! Purpose: nearest neighbor interpolation (acting on scalars)
 !----------------------------------------------------------------------
-subroutine geom_nearest_interp(geom,xobs,yobs,x,yi)
+subroutine geom_nearest_interp_scalar(geom,x_out,y_out,gp_in,gp_out)
 
 implicit none
 
 ! Passed variables
 class(geom_type),intent(in) :: geom
-real(8),intent(in) :: xobs, yobs
-real(8),intent(in) :: x(geom%nh)
-real(8),intent(out) :: yi
+real(8),intent(in) :: x_out,y_out
+real(8),intent(in) :: gp_in(geom%nh)
+real(8),intent(out) :: gp_out
 
 !Local variables
-integer    :: ix,iy,iobs
+integer    :: ix,iy
 integer    :: x_keep, y_keep
 real(8)    :: d_new,d_old,dx,dy
-real(8)    :: x_2d(geom%nx,geom%ny)
+real(8)    :: gp_in_2d(geom%nx,geom%ny)
 
-x_2d = reshape(x,(/geom%nx,geom%ny/))
+gp_in_2d = reshape(gp_in,(/geom%nx,geom%ny/))
 
 d_old=geom%nh
 
 do ix=1,geom%nx
    do iy=1,geom%ny
-      dx = xobs - geom%x(ix)
-      dy = yobs - geom%y(iy)
+      dx = x_out - geom%x(ix)
+      dy = y_out - geom%y(iy)
       d_new = SQRT(dx*dx + dy*dy)
       if (d_new<d_old) then
          d_old=d_new
@@ -700,36 +725,148 @@ do ix=1,geom%nx
    end do
 end do
 
-yi=x_2d(x_keep,y_keep)
+gp_out=gp_in_2d(x_keep,y_keep)
 
-end subroutine geom_nearest_interp
+end subroutine geom_nearest_interp_scalar
 
-! !----------------------------------------------------------------------
-! ! Subroutine: geom_nearest_interp_ad
-! ! Purpose: adjoint nearest neighbor interpolation
-! !----------------------------------------------------------------------
-! subroutine geom_nearest_interp_ad(geom,xobs,yobs,xi,y)
+!----------------------------------------------------------------------
+! Subroutine: geom_nearest_interp_ad
+! Purpose: adjoint nearest neighbor interpolation adjoint
+! (acting on scalars)
+!----------------------------------------------------------------------
+subroutine geom_nearest_interp_scalar_ad(geom,x_out,y_out,gp_out,gp_in)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom
+real(8),intent(in) :: x_out, y_out
+real(8),intent(out) :: gp_in(geom%nh)
+real(8),intent(in) :: gp_out
+
+!Local variables
+integer    :: ix,iy
+integer    :: x_keep, y_keep
+real(8)    :: d_new,d_old,dx,dy
+real(8)    :: gp_in_2d(geom%nx,geom%ny)
+
+gp_in_2d = reshape(gp_in,(/geom%nx,geom%ny/))
+
+d_old=geom%nh
+
+do ix=1,geom%nx
+   do iy=1,geom%ny
+      dx = x_out - geom%x(ix)
+      dy = y_out - geom%y(iy)
+      d_new = SQRT(dx*dx + dy*dy)
+      if (d_new<d_old) then
+         d_old=d_new
+         x_keep = ix
+         y_keep = iy
+      end if
+   end do
+end do
+
+gp_in_2d(x_keep,y_keep)=gp_out
+gp_in = reshape(gp_in_2d,(/geom%nh/))
+
+end subroutine geom_nearest_interp_scalar_ad
+
+!----------------------------------------------------------------------
+! Subroutine: nearest_interp_field
+! Purpose: nearest neighbor interpolation (acting on fields)
+!----------------------------------------------------------------------
+
+subroutine geom_nearest_interp_field(geom_in,geom_out,gp_in,gp_out)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom_in, geom_out
+real(8),intent(in) :: gp_in(geom_in%nh)
+real(8),intent(out) :: gp_out(geom_out%nh)
+
+!Local variables
+integer    :: ix,iy,ih
+
+write(*,'(a)') 'lala'
+
+ih=0
+do iy=1,geom_in%ny
+   do ix=1,geom_in%nx
+      ih = ih+1
+      ! Apply scalar interpolation
+      call geom_in%nearest_interp(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
+   end do
+end do
+
+end subroutine geom_nearest_interp_field
+
+!----------------------------------------------------------------------
+! Subroutine: nearest_interp_test
+! Purpose: test interp + adjoint interp
+!----------------------------------------------------------------------
+! subroutine nearest_interp_test(geom)
+
+! implicit none
+
+! ! Passed variables
+! type(geom_type),intent(in) :: geom1, geom2
+
+! ! Local variables
+! real(8) :: x1(geom1%nh),x2(geom1%nh)
+! real(8) :: y1(geom2%nh),y2(geom2%nh)
+! real(8) :: dp1,dp2
+
+! ! Initialization
+! call random_number(x1)
+! call random_number(x2)
+
+! ! Direct interp + adjoint interp test
+! call geom1%apply(x1,y1)
+! call geom2%apply_ad(y2,x2)
+! dp1 = sum(x1*x2)
+! dp2 = sum(y1*y2)
+! write(*,'(a,e15.8)') '         Direct interp + adjoint interp test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+
+! end subroutine nearest_interp_test
+
+
+!--------------------------------------------------------------------------------
+
+end module type_geom
+
+! keep it in case:
+
+!----------------------------------------------------------------------
+! Subroutine: nearest_interp_field_ad
+! Purpose: nearest neighbor interpolation adjoint (acting on fields)
+!----------------------------------------------------------------------
+
+! subroutine geom_nearest_interp_field_ad(geom,x_out,y_out,gp_out,gp_in)
 
 ! implicit none
 
 ! ! Passed variables
 ! class(geom_type),intent(in) :: geom
-! real(8),intent(in) :: xobs, yobs
-! real(8),intent(out) :: x(geom%nh)
-! real(8),intent(in) :: yi
+! real(8),intent(in) :: x_out, y_out
+! real(8),intent(out) :: gp_in(geom%nh)
+! real(8),intent(in) :: gp_out
 
 ! !Local variables
-! integer    :: ix,iy,iobs
+! integer    :: ix,iy
 ! integer    :: x_keep, y_keep
 ! real(8)    :: d_new,d_old,dx,dy
-! real(8)    :: x_2d(geom%nx,geom%ny)
+! real(8)    :: gp_in_2d(geom%nx,geom%ny)
+
+! gp_in_2d = reshape(gp_in,(/geom%nx,geom%ny/))
 
 ! d_old=geom%nh
 
 ! do ix=1,geom%nx
 !    do iy=1,geom%ny
-!       dx = xobs - geom%x(ix)
-!       dy = yobs - geom%y(iy)
+!       dx = x_out - geom%x(ix)
+!       dy = y_out - geom%y(iy)
 !       d_new = SQRT(dx*dx + dy*dy)
 !       if (d_new<d_old) then
 !          d_old=d_new
@@ -739,52 +876,8 @@ end subroutine geom_nearest_interp
 !    end do
 ! end do
 
-! x_2d(x_keep,y_keep)=yi
+! gp_in_2d(x_keep,y_keep)=gp_out
 
-! end subroutine geom_nearest_interp_ad
+! gp_in = reshape(gp_in_2d,(/geom%nh/))
 
-!----------------------------------------------------------------------
-! Subroutine: geom_nearest_interp_ad
-! Purpose: adjoint nearest neighbor interpolation
-!----------------------------------------------------------------------
-subroutine geom_nearest_interp_ad(geom,xobs,yobs,yi,x)
-
-implicit none
-
-! Passed variables
-class(geom_type),intent(in) :: geom
-real(8),intent(in) :: xobs, yobs
-real(8),intent(out) :: x(geom%nh)
-real(8),intent(in) :: yi
-
-!Local variables
-integer    :: ix,iy,iobs
-integer    :: x_keep, y_keep
-real(8)    :: d_new,d_old,dx,dy
-real(8)    :: x_2d(geom%nx,geom%ny)
-
-x_2d = reshape(x,(/geom%nx,geom%ny/))
-
-d_old=geom%nh
-
-do ix=1,geom%nx
-   do iy=1,geom%ny
-      dx = xobs - geom%x(ix)
-      dy = yobs - geom%y(iy)
-      d_new = SQRT(dx*dx + dy*dy)
-      if (d_new<d_old) then
-         d_old=d_new
-         x_keep = ix
-         y_keep = iy
-      end if
-   end do
-end do
-
-x_2d(x_keep,y_keep)=yi
-
-x = reshape(x_2d,(/geom%nh/))
-
-end subroutine geom_nearest_interp_ad
-
-!--------------------------------------------------------------------------------
-end module type_geom
+! end subroutine geom_nearest_interp_field_ad
