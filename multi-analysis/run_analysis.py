@@ -67,6 +67,11 @@ os.chdir('../..')
 cwd=cwd=os.getcwd()
 directories['multi'] = cwd
 
+# Compile the code:
+directories['build'] = os.path.join(directories['multi'] + '/build')
+os.chdir(directories['build'])
+os.system('make')
+
 # Path to the executable from multi:
 exec_command = os.path.join(directories['multi'] + '/build/bin/multi ')
 
@@ -78,7 +83,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/test_interp_nearest')
+results_dir_root = os.path.join(directories['analysis_results'] + '/linear_H_nearest_interp_resox2')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -107,7 +112,7 @@ outer_iterations_list = []
 i_no = [3]
 i_ni = [6]
 
-i_nx = ['101, 101, 101']
+i_nx = ['21,51,101']
 
 i_nobs = [100]
 i_sigma_obs = [0.01]

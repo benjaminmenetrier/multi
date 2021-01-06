@@ -1,21 +1,21 @@
 &solver
 nm = 3
-method = "theoretical", "standard", "alternative"
+method = "theoretical"
 na = 2
-algorithm = "lanczos", "planczosif"
-no = 3
+algorithm = "lanczos"
+no = 2
 ni = 6
 lmp_mode = "none"
 test_ortho = T
 shutoff_type = 0
 shutoff_value = 0.01
-transitive_interp = T
+transitive_interp = F
 projective_Bmatrix = T
 /
 
 &resolutions
-nx = 101, 101, 101
-ny = 101, 101, 101
+nx = 21,31
+ny = 21,31
 /
 
 &observations
