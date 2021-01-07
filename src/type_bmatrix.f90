@@ -209,7 +209,7 @@ integer :: dirac_cov_bis_id,dirac_cor_bis_id
 x1_2d = 0.0
 x1bis_2d = 0.0
 x1_2d(1,1) = 1.0
-x1bis_2d(geom%nx/2,geom%ny/2) = 1.0 !change later for something like geom%nx/3,geom%ny/3, or non diagonal pixel ?
+x1bis_2d(geom%nx/2,geom%ny/2) = 1.0
 
 x1 = pack(x1_2d,.true.)
 x1bis = pack(x1bis_2d,.true.)

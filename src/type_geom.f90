@@ -56,6 +56,8 @@ contains
    procedure :: interp_nearest_scalar_ad => geom_interp_nearest_scalar_ad
    !-----------------------------------------------------------------------------
 
+
+   
 ! type geom_type
 !    integer             :: nx
 !    integer             :: ny
@@ -714,6 +716,8 @@ end subroutine geom_interp_sp
 
 
 !----------------------------------------------------------------------------------
+!----------------------------------------------------------------------------------
+
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_nearest_interp_scalar
@@ -856,23 +860,20 @@ end subroutine geom_interp_nearest_scalar_ad
 
 ! end subroutine nearest_interp_test
 
-
-
-
 !----------------------------------------------------------------------
 ! Subroutine: transitive_interp_diff
 ! Purpose: compute the differences when interpolating a field in one
 ! or two steps between different resolutions.
 !----------------------------------------------------------------------
-subroutine transitive_interp_diff(nx_test, ny_test, transitive_interp, diff_123_vs_13)
+subroutine transitive_interp_diff(nx_test,ny_test,interp_method,transitive_interp,diff_123_vs_13)
 
 implicit none
   
 !Passed variables
 integer,intent(in)             :: nx_test(3)
 integer,intent(in)             :: ny_test(3)
-! A bit dirty but...
 logical,intent(in)             :: transitive_interp
+character(len=1024),intent(in) :: interp_method
 real(8),intent(out)            :: diff_123_vs_13
 
 ! Local variables
@@ -893,11 +894,20 @@ allocate(field_test13(geom_test(3)%nh))
 call random_number(field_test1)
 
 ! Interpolate from resolutions 1->2 then 2->3
-call geom_test(1)%interp_nearest(geom_test(2),field_test1,field_test12)
-call geom_test(2)%interp_nearest(geom_test(3),field_test12,field_test123)
+if (trim(interp_method)=='nearest') then
+   call geom_test(1)%interp_nearest(geom_test(2),field_test1,field_test12)
+   call geom_test(2)%interp_nearest(geom_test(3),field_test12,field_test123)
+else if (trim(interp_method)=='bilinear') then
+   call geom_test(1)%interp_gp(geom_test(2),field_test1,field_test12)
+   call geom_test(2)%interp_gp(geom_test(3),field_test12,field_test123)
+end if
+
 ! Interpolate from resolutions 1->3
-call geom_test(1)%interp_nearest(geom_test(3),field_test1,field_test13)
-!call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
+if (trim(interp_method)=='nearest') then
+   call geom_test(1)%interp_nearest(geom_test(3),field_test1,field_test13)
+else if (trim(interp_method)=='bilinear') then
+   call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
+end if
 
 ! Compute the difference
 diff_123_vs_13 = 0.0
@@ -906,6 +916,7 @@ do ih=1,geom_test(3)%nh
    !write(*,'(e15.8,e15.8,e15.8)') field_test123(ih), field_test13(ih), diff_123_vs_13
 end do
 
+! (Maybe look at the max value instead) ?
 diff_123_vs_13 = diff_123_vs_13/(1.0*geom_test(3)%nh)
 
 deallocate(field_test1)
@@ -950,8 +961,13 @@ allocate(field_test21(geom_test(1)%nh))
 call random_number(field_test)
 
 ! Interpolate from resolutions 1->2 then 2->1
-call geom_test(1)%interp_nearest(geom_test(2),field_test,field_test12)
-call geom_test(2)%interp_nearest(geom_test(1),field_test12,field_test21)
+if (trim(interp_method)=='nearest') then
+   call geom_test(1)%interp_nearest(geom_test(2),field_test,field_test12)
+   call geom_test(2)%interp_nearest(geom_test(1),field_test12,field_test21)
+else if (trim(interp_method)=='bilinear') then
+   call geom_test(1)%interp_gp(geom_test(2),field_test,field_test12)
+   call geom_test(2)%interp_gp(geom_test(1),field_test12,field_test21)
+end if
 
 ! Compute the difference
 diff = 0.0
@@ -995,7 +1011,7 @@ allocate(ny_test(3))
 nx_test = (/21,51,101/)
 ny_test = (/21,51,101/)
 write(*,'(a)') ''
-call transitive_interp_diff(nx_test, ny_test, transitive_interp, diff_l2h)
+call transitive_interp_diff(nx_test,ny_test,interp_method,transitive_interp,diff_l2h)
 write(*,'(a)') ''
 write(*,'(a,e15.8)') '      Ri>Rj>Rk - Ri>Rk :       ', diff_l2h
 
@@ -1003,7 +1019,7 @@ write(*,'(a,e15.8)') '      Ri>Rj>Rk - Ri>Rk :       ', diff_l2h
 nx_test = (/101,51,21/)
 ny_test = (/101,51,21/)
 write(*,'(a)') ''
-call transitive_interp_diff(nx_test, ny_test, transitive_interp, diff_h2l)
+call transitive_interp_diff(nx_test,ny_test,interp_method,transitive_interp,diff_h2l)
 write(*,'(a)') ''
 write(*,'(a,e15.8)') '      Ri<Rj<Rk - Ri<Rk :       ', diff_h2l
 write(*,'(a)') ''
@@ -1012,7 +1028,7 @@ write(*,'(a)') ''
 write(*,'(a)') ''
 call transitive_interp_right_inverse_test(interp_method,transitive_interp,diff)
 write(*,'(a)') ''
-write(*,'(a,e15.8)') '      Right inverse    :       ', diff
+write(*,'(a,e15.8)') '      Right inverse   :       ', diff
 write(*,'(a)') '---------------------------------'
 write(*,'(a)') ''
 

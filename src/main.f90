@@ -46,12 +46,12 @@ character(len=1024) :: filename            ! Filename
 
 ! Local variables
 integer                        :: ncid,subgrpid,nx_id,ny_id,xb_id,xg_id,hxg_id,d_id
-integer                        :: x_obs_id,y_obs_id,nobs_id,obs_val_id
+integer                        :: x_obs_id,y_obs_id,nobs_id,obs_val_id,xt_val_id
 integer                        :: io,jo,ii,ji,im,jm,ia,ja
 integer,allocatable            :: grpid(:,:)
 real(8)                        :: proj,norm
 real(8),allocatable            :: maxdiff(:,:,:,:)
-real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:,:)
+real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:,:),xt_full(:)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:),dvb(:),dva(:),dxa(:),dxa_tmp(:),dxabar(:),dxa_prev(:)
 real(8),allocatable            :: xb_2d(:,:),xg_2d(:,:)
 real(8),allocatable            :: d(:),hxg(:),hxg2(:)
@@ -115,8 +115,10 @@ Lb = 0.12
 spvarmin = 1.0e-5
 new_seed = .false.
 filename = 'output.nc'
-! put later in the namelist
+
+! put later in the namelist and set option to define the generic interp routine
 interp_method = 'nearest'
+
 
 ! Read the name of the namelist to use
 call get_command_argument(1,namelist_name)
@@ -170,6 +172,23 @@ do im=1,nm
    end do
 end do
 
+! Setup geometries
+do io=1,no
+   write(*,'(a,i1)') '   Geometry setup for outer iteration ',io
+   call geom(io)%setup(nx(io),ny(io),transitive_interp)
+   do im=1,nm
+      call geom(io)%write(grpid(io,im))
+   end do
+end do
+
+! Truth initialization:
+allocate(xt_full(geom(no)%nh))
+call rand_normal(geom(no)%nh,xt_full)
+
+! Write observations
+!call ncerr('main',nf90_def_var(ncid,'xt_val',nf90_double,(/xt_id/),xt_val_id))
+!call ncerr('main',nf90_put_var(ncid,xt_val_id,xt_full))
+
 ! Allocation (obs space)
 allocate(d(nobs))
 allocate(hxg(nobs))
@@ -183,20 +202,23 @@ call hmatrix%write(ncid,x_obs_id,y_obs_id,nobs_id)
 call rmatrix%setup(nobs,sigma_obs)
 
 ! Setup observations
-call rmatrix%randomize(hmatrix%yo)
+call rmatrix%randomize(xt_interp,hmatrix%yo)
 
 ! Write observations
 call ncerr('main',nf90_def_var(ncid,'obs_val',nf90_double,(/nobs_id/),obs_val_id))
 call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
 
-! Setup geometries
-do io=1,no
-   write(*,'(a,i1)') '   Geometry setup for outer iteration ',io
-   call geom(io)%setup(nx(io),ny(io),transitive_interp)
-   do im=1,nm
-      call geom(io)%write(grpid(io,im))
-   end do
-end do
+
+! Be carefull: we had put the geometries AFTER the observation generations (because of the random seed).
+
+! ! Setup geometries
+! do io=1,no
+!    write(*,'(a,i1)') '   Geometry setup for outer iteration ',io
+!    call geom(io)%setup(nx(io),ny(io),transitive_interp)
+!    do im=1,nm
+!       call geom(io)%write(grpid(io,im))
+!    end do
+! end do
 
 ! Transitive interpolation test:
 call transitive_interp_test(interp_method,transitive_interp)
