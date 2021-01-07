@@ -32,6 +32,7 @@ logical             :: test_ortho          ! Test orthogonality
 integer             :: shutoff_type        ! Stopping criterion according: 1-Jb, 2-beta, 3-Ritz convergence (else: no criterion)
 real(8)             :: shutoff_value       ! Stopping criterion threshold
 logical             :: transitive_interp   ! Transitive interpolator (grid-point interpolator defined with FFTs and spetral interpolator)
+character(len=1024) :: interp_method       ! Interpolation method
 logical             :: projective_Bmatrix  ! Projective B matrix (low-resolution B matrix is a a projection of the high-resolution B matrix)
 integer             :: nx(nomax)           ! X direction sizes
 integer             :: ny(nomax)           ! Y direction sizes
@@ -61,9 +62,6 @@ type(geom_type),allocatable    :: geom(:)
 type(hmatrix_type)             :: hmatrix
 type(lmp_type),allocatable     :: lmp(:,:,:)
 type(rmatrix_type)             :: rmatrix
-
-character(len=1024)            :: interp_type
-
 
 ! Namelist blocks
 namelist/solver/ &
@@ -117,8 +115,8 @@ Lb = 0.12
 spvarmin = 1.0e-5
 new_seed = .false.
 filename = 'output.nc'
-
-interp_type = 'nearest'
+! put later in the namelist
+interp_method = 'nearest'
 
 ! Read the name of the namelist to use
 call get_command_argument(1,namelist_name)
@@ -200,6 +198,9 @@ do io=1,no
    end do
 end do
 
+! Transitive interpolation test:
+call transitive_interp_test(interp_method,transitive_interp)
+
 ! Allocation (model/control space)
 allocate(xb_full(geom(no)%nh))
 allocate(xg_full(geom(no)%nh))
@@ -223,7 +224,7 @@ end do
 
 ! Generate background state
 ! Null background state:
-! xb_full = 0.0
+xb_full = 0.0
 call bmatrix(no)%randomize(geom(no),xb_full)
 do io=1,no
    ! Allocation
@@ -234,8 +235,6 @@ do io=1,no
    !call geom(no)%interp_gp(geom(io),xb_full,xb)
    call geom(no)%interp_nearest(geom(io),xb_full,xb)
 
-   
-   write(*,'(a)') 'ok_main'
    ! Reshape background
    xb_2d = reshape(xb,(/geom(io)%nx,geom(io)%ny/))
 

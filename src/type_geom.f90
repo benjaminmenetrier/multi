@@ -760,7 +760,6 @@ end subroutine geom_interp_nearest_scalar
 ! Subroutine: nearest_interp_field
 ! Purpose: nearest neighbor interpolation (acting on fields)
 !----------------------------------------------------------------------
-
 subroutine geom_interp_nearest_field(geom_in,geom_out,gp_in,gp_out)
 
 implicit none
@@ -858,6 +857,170 @@ end subroutine geom_interp_nearest_scalar_ad
 ! end subroutine nearest_interp_test
 
 
-!--------------------------------------------------------------------------------
+
+
+!----------------------------------------------------------------------
+! Subroutine: transitive_interp_diff
+! Purpose: compute the differences when interpolating a field in one
+! or two steps between different resolutions.
+!----------------------------------------------------------------------
+subroutine transitive_interp_diff(nx_test, ny_test, transitive_interp, diff_123_vs_13)
+
+implicit none
+  
+!Passed variables
+integer,intent(in)             :: nx_test(3)
+integer,intent(in)             :: ny_test(3)
+! A bit dirty but...
+logical,intent(in)             :: transitive_interp
+real(8),intent(out)            :: diff_123_vs_13
+
+! Local variables
+type(geom_type)                :: geom_test(3)
+real(8),allocatable            :: field_test1(:),field_test12(:),field_test123(:),field_test13(:)
+integer                        :: io,ih
+
+! Setup geometries
+do io=1,3
+   call geom_test(io)%setup(nx_test(io),ny_test(io),transitive_interp)
+end do
+
+allocate(field_test1(geom_test(1)%nh))
+allocate(field_test12(geom_test(2)%nh))
+allocate(field_test123(geom_test(3)%nh))
+allocate(field_test13(geom_test(3)%nh))
+
+call random_number(field_test1)
+
+! Interpolate from resolutions 1->2 then 2->3
+call geom_test(1)%interp_nearest(geom_test(2),field_test1,field_test12)
+call geom_test(2)%interp_nearest(geom_test(3),field_test12,field_test123)
+! Interpolate from resolutions 1->3
+call geom_test(1)%interp_nearest(geom_test(3),field_test1,field_test13)
+!call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
+
+! Compute the difference
+diff_123_vs_13 = 0.0
+do ih=1,geom_test(3)%nh
+   diff_123_vs_13 = diff_123_vs_13 + abs(field_test123(ih)-field_test13(ih))
+   !write(*,'(e15.8,e15.8,e15.8)') field_test123(ih), field_test13(ih), diff_123_vs_13
+end do
+
+diff_123_vs_13 = diff_123_vs_13/(1.0*geom_test(3)%nh)
+
+deallocate(field_test1)
+deallocate(field_test12)
+deallocate(field_test123)
+deallocate(field_test13)
+
+end subroutine transitive_interp_diff
+
+!----------------------------------------------------------------------
+! Subroutine: transitive_interp_right_inverse_test
+! Purpose: test the right inverse of the interpolator
+!----------------------------------------------------------------------
+subroutine transitive_interp_right_inverse_test(interp_method,transitive_interp,diff)
+
+implicit none
+  
+! Passed variables
+character(len=1024),intent(in) :: interp_method
+logical,intent(in)             :: transitive_interp
+real(8),intent(out)            :: diff
+
+! Local variables
+integer                        :: nx_test(2)
+integer                        :: ny_test(2)
+type(geom_type)                :: geom_test(2)
+real(8),allocatable            :: field_test(:),field_test12(:),field_test21(:)
+integer                        :: io,ih
+
+nx_test = (/51,101/)
+ny_test = (/51,101/)
+
+! Setup geometries
+do io=1,2
+   call geom_test(io)%setup(nx_test(io),ny_test(io),transitive_interp)
+end do
+
+allocate(field_test(geom_test(1)%nh))
+allocate(field_test12(geom_test(2)%nh))
+allocate(field_test21(geom_test(1)%nh))
+
+call random_number(field_test)
+
+! Interpolate from resolutions 1->2 then 2->1
+call geom_test(1)%interp_nearest(geom_test(2),field_test,field_test12)
+call geom_test(2)%interp_nearest(geom_test(1),field_test12,field_test21)
+
+! Compute the difference
+diff = 0.0
+do ih=1,geom_test(1)%nh
+   diff = diff + abs(field_test(ih)-field_test21(ih))
+end do
+
+diff = diff/(1.0*geom_test(1)%nh)
+
+deallocate(field_test)
+deallocate(field_test12)
+deallocate(field_test21)
+
+end subroutine transitive_interp_right_inverse_test
+
+!----------------------------------------------------------------------
+! Subroutine: transitive_interp_test
+! Purpose: test the transitiveness of the interpolator
+!----------------------------------------------------------------------
+subroutine transitive_interp_test(interp_method, transitive_interp)
+
+implicit none
+  
+!Passed variables
+character(len=1024),intent(in) :: interp_method
+! A bit dirty but...
+logical,intent(in)             :: transitive_interp
+
+! Local variables
+integer,allocatable            :: nx_test(:)
+integer,allocatable            :: ny_test(:)
+real(8)                        :: diff_l2h, diff_h2l, diff
+
+write(*,'(a)') '---------------------------------'
+write(*,'(a)') '   Transitive interpolation test:'
+
+allocate(nx_test(3))
+allocate(ny_test(3))
+
+! Lower to higher dimension:
+nx_test = (/21,51,101/)
+ny_test = (/21,51,101/)
+write(*,'(a)') ''
+call transitive_interp_diff(nx_test, ny_test, transitive_interp, diff_l2h)
+write(*,'(a)') ''
+write(*,'(a,e15.8)') '      Ri>Rj>Rk - Ri>Rk :       ', diff_l2h
+
+! Higher to lower dimension:
+nx_test = (/101,51,21/)
+ny_test = (/101,51,21/)
+write(*,'(a)') ''
+call transitive_interp_diff(nx_test, ny_test, transitive_interp, diff_h2l)
+write(*,'(a)') ''
+write(*,'(a,e15.8)') '      Ri<Rj<Rk - Ri<Rk :       ', diff_h2l
+write(*,'(a)') ''
+
+! Right inverse test
+write(*,'(a)') ''
+call transitive_interp_right_inverse_test(interp_method,transitive_interp,diff)
+write(*,'(a)') ''
+write(*,'(a,e15.8)') '      Right inverse    :       ', diff
+write(*,'(a)') '---------------------------------'
+write(*,'(a)') ''
+
+deallocate(nx_test)
+deallocate(ny_test)
+
+end subroutine transitive_interp_test  
+
+!----------------------------------------------------------------------
 
 end module type_geom
