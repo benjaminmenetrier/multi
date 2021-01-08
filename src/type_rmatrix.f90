@@ -95,14 +95,15 @@ end subroutine rmatrix_apply_inv
 ! Subroutine: rmatrix_randomize
 ! Purpose: randomize the R matrix
 !----------------------------------------------------------------------
-subroutine rmatrix_randomize(rmatrix,xt_interp,yout)
-
+!subroutine rmatrix_randomize(rmatrix,xt_full,yout)
+subroutine rmatrix_randomize(rmatrix,yout)
+  
 implicit none
 
 ! Passed variables
 class(rmatrix_type),intent(in) :: rmatrix
 real(8),intent(out) :: yout(rmatrix%nobs)
-real(8),intent(in)  :: xt_interp(rmatrix%nobs)
+!real(8),intent(in)  :: xt_full(rmatrix%nobs)
 ! Local variable
 real(8) :: nu(rmatrix%nobs)
 

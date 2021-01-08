@@ -26,7 +26,9 @@ type geom_type
    integer             :: lmax
    real(8),allocatable :: x(:)
    real(8),allocatable :: y(:)
-   logical             :: transitive_interp
+   !logical             :: transitive_interp
+   character(len=1024) :: interp_method
+   
 contains
    procedure :: setup => geom_setup
    procedure :: write => geom_write
@@ -45,11 +47,11 @@ contains
 
    !-----------------------------------------------------------------------------
    procedure :: geom_interp_nearest_scalar
-   procedure :: geom_interp_nearest_field
+   !procedure :: geom_interp_nearest_field
 
    procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
-   procedure :: interp_nearest_ad => geom_interp_nearest_scalar_ad
-   generic   :: interp_nearest => geom_interp_nearest_scalar,geom_interp_nearest_field
+   !procedure :: interp_nearest_ad => geom_interp_nearest_scalar_ad
+   !generic   :: interp_nearest => geom_interp_nearest_scalar,geom_interp_nearest_field
    generic   :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
 
    procedure :: interp_nearest_scalar => geom_interp_nearest_scalar
@@ -102,15 +104,17 @@ contains
 ! Subroutine: geom_setup
 ! Purpose: setup geometry
 !----------------------------------------------------------------------
-subroutine geom_setup(geom,nx,ny,transitive_interp)
-
+!subroutine geom_setup(geom,nx,ny,transitive_interp)
+subroutine geom_setup(geom,nx,ny,interp_method)
+    
 implicit none
 
 ! Passed variables
 class(geom_type),intent(inout) :: geom
 integer,intent(in) :: nx
 integer,intent(in) :: ny
-logical,intent(in) :: transitive_interp
+!logical,intent(in) :: transitive_interp
+character(len=1024):: interp_method
 
 ! Local variables
 integer :: ix,iy
@@ -132,7 +136,8 @@ end if
 ! Copy dimensions and attributes
 geom%nx = nx
 geom%ny = ny
-geom%transitive_interp = transitive_interp
+!geom%transitive_interp = transitive_interp
+geom%interp_method = interp_method
 
 ! Derived dimensions
 geom%nh = geom%nx*geom%ny
@@ -572,7 +577,8 @@ real(8),intent(out) :: gp_out(geom_out%nh)
 integer :: ix,iy,ih
 real(8),allocatable :: sp_in(:),sp_out(:)
 
-if (geom_in%transitive_interp) then
+!if (geom_in%transitive_interp) then
+if (geom_in%interp_method == 'spectral') then
    ! Allocation
    allocate(sp_in(geom_in%nh))
    allocate(sp_out(geom_out%nh))
@@ -589,16 +595,25 @@ if (geom_in%transitive_interp) then
    ! Release memory
    deallocate(sp_in)
    deallocate(sp_out)
-else
+else if (geom_in%interp_method == 'bilinear') then
    ! Initialization
    ih = 0
    do iy=1,geom_out%ny
       do ix=1,geom_out%nx
-         ! Apply scalar interpolation
+         ! Apply scalar bilinear interpolation
          ih = ih+1
          call geom_in%interp_gp(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
       end do
    end do
+else if (geom_in%interp_method == 'nearest') then
+   ih=0
+do iy=1,geom_out%ny
+   do ix=1,geom_out%nx
+      ih = ih+1
+      ! Apply scalar nearest neighbor interpolation
+      call geom_in%interp_nearest_scalar(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
+   end do
+end do
 end if
 
 end subroutine geom_interp_gp_field
@@ -718,7 +733,6 @@ end subroutine geom_interp_sp
 !----------------------------------------------------------------------------------
 !----------------------------------------------------------------------------------
 
-
 !----------------------------------------------------------------------
 ! Subroutine: geom_nearest_interp_scalar
 ! Purpose: nearest neighbor interpolation (acting on scalars)
@@ -764,29 +778,29 @@ end subroutine geom_interp_nearest_scalar
 ! Subroutine: nearest_interp_field
 ! Purpose: nearest neighbor interpolation (acting on fields)
 !----------------------------------------------------------------------
-subroutine geom_interp_nearest_field(geom_in,geom_out,gp_in,gp_out)
+! subroutine geom_interp_nearest_field(geom_in,geom_out,gp_in,gp_out)
 
-implicit none
+! implicit none
 
-! Passed variables
-class(geom_type),intent(in) :: geom_in
-type(geom_type),intent(in)  :: geom_out
-real(8),intent(in) :: gp_in(geom_in%nh)
-real(8),intent(out) :: gp_out(geom_out%nh)
+! ! Passed variables
+! class(geom_type),intent(in) :: geom_in
+! type(geom_type),intent(in)  :: geom_out
+! real(8),intent(in) :: gp_in(geom_in%nh)
+! real(8),intent(out) :: gp_out(geom_out%nh)
 
-!Local variables
-integer    :: ix,iy,ih
+! !Local variables
+! integer    :: ix,iy,ih
 
-ih=0
-do iy=1,geom_out%ny
-   do ix=1,geom_out%nx
-      ih = ih+1
-      ! Apply scalar interpolation
-      call geom_in%interp_nearest_scalar(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
-   end do
-end do
+! ih=0
+! do iy=1,geom_out%ny
+!    do ix=1,geom_out%nx
+!       ih = ih+1
+!       ! Apply scalar interpolation
+!       call geom_in%interp_nearest_scalar(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
+!    end do
+! end do
 
-end subroutine geom_interp_nearest_field
+! end subroutine geom_interp_nearest_field
 
 !----------------------------------------------------------------------
 ! Subroutine: geom_nearest_interp_ad
@@ -865,14 +879,14 @@ end subroutine geom_interp_nearest_scalar_ad
 ! Purpose: compute the differences when interpolating a field in one
 ! or two steps between different resolutions.
 !----------------------------------------------------------------------
-subroutine transitive_interp_diff(nx_test,ny_test,interp_method,transitive_interp,diff_123_vs_13)
+subroutine transitive_interp_diff(nx_test,ny_test,interp_method,diff_123_vs_13)
 
 implicit none
   
 !Passed variables
 integer,intent(in)             :: nx_test(3)
 integer,intent(in)             :: ny_test(3)
-logical,intent(in)             :: transitive_interp
+!logical,intent(in)             :: transitive_interp
 character(len=1024),intent(in) :: interp_method
 real(8),intent(out)            :: diff_123_vs_13
 
@@ -883,7 +897,7 @@ integer                        :: io,ih
 
 ! Setup geometries
 do io=1,3
-   call geom_test(io)%setup(nx_test(io),ny_test(io),transitive_interp)
+   call geom_test(io)%setup(nx_test(io),ny_test(io),interp_method)
 end do
 
 allocate(field_test1(geom_test(1)%nh))
@@ -894,21 +908,23 @@ allocate(field_test13(geom_test(3)%nh))
 call random_number(field_test1)
 
 ! Interpolate from resolutions 1->2 then 2->3
-if (trim(interp_method)=='nearest') then
-   call geom_test(1)%interp_nearest(geom_test(2),field_test1,field_test12)
-   call geom_test(2)%interp_nearest(geom_test(3),field_test12,field_test123)
-else if (trim(interp_method)=='bilinear') then
-   call geom_test(1)%interp_gp(geom_test(2),field_test1,field_test12)
-   call geom_test(2)%interp_gp(geom_test(3),field_test12,field_test123)
-end if
+! if (trim(interp_method)=='nearest') then
+!    call geom_test(1)%interp_nearest(geom_test(2),field_test1,field_test12)
+!    call geom_test(2)%interp_nearest(geom_test(3),field_test12,field_test123)
+! else if (trim(interp_method)=='bilinear') then
+!    call geom_test(1)%interp_gp(geom_test(2),field_test1,field_test12)
+!    call geom_test(2)%interp_gp(geom_test(3),field_test12,field_test123)
+! end if
+call geom_test(1)%interp_gp(geom_test(2),field_test1,field_test12)
+call geom_test(2)%interp_gp(geom_test(3),field_test12,field_test123)
 
 ! Interpolate from resolutions 1->3
-if (trim(interp_method)=='nearest') then
-   call geom_test(1)%interp_nearest(geom_test(3),field_test1,field_test13)
-else if (trim(interp_method)=='bilinear') then
-   call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
-end if
-
+! if (trim(interp_method)=='nearest') then
+!    call geom_test(1)%interp_nearest(geom_test(3),field_test1,field_test13)
+! else if (trim(interp_method)=='bilinear') then
+!    call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
+! end if
+call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
 ! Compute the difference
 diff_123_vs_13 = 0.0
 do ih=1,geom_test(3)%nh
@@ -930,13 +946,13 @@ end subroutine transitive_interp_diff
 ! Subroutine: transitive_interp_right_inverse_test
 ! Purpose: test the right inverse of the interpolator
 !----------------------------------------------------------------------
-subroutine transitive_interp_right_inverse_test(interp_method,transitive_interp,diff)
+subroutine transitive_interp_right_inverse_test(interp_method,diff)
 
 implicit none
   
 ! Passed variables
 character(len=1024),intent(in) :: interp_method
-logical,intent(in)             :: transitive_interp
+!logical,intent(in)             :: transitive_interp
 real(8),intent(out)            :: diff
 
 ! Local variables
@@ -951,7 +967,7 @@ ny_test = (/51,101/)
 
 ! Setup geometries
 do io=1,2
-   call geom_test(io)%setup(nx_test(io),ny_test(io),transitive_interp)
+   call geom_test(io)%setup(nx_test(io),ny_test(io),interp_method)
 end do
 
 allocate(field_test(geom_test(1)%nh))
@@ -960,14 +976,16 @@ allocate(field_test21(geom_test(1)%nh))
 
 call random_number(field_test)
 
-! Interpolate from resolutions 1->2 then 2->1
-if (trim(interp_method)=='nearest') then
-   call geom_test(1)%interp_nearest(geom_test(2),field_test,field_test12)
-   call geom_test(2)%interp_nearest(geom_test(1),field_test12,field_test21)
-else if (trim(interp_method)=='bilinear') then
-   call geom_test(1)%interp_gp(geom_test(2),field_test,field_test12)
-   call geom_test(2)%interp_gp(geom_test(1),field_test12,field_test21)
-end if
+! ! Interpolate from resolutions 1->2 then 2->1
+! if (trim(interp_method)=='nearest') then
+!    call geom_test(1)%interp_nearest(geom_test(2),field_test,field_test12)
+!    call geom_test(2)%interp_nearest(geom_test(1),field_test12,field_test21)
+! else if (trim(interp_method)=='bilinear') then
+!    call geom_test(1)%interp_gp(geom_test(2),field_test,field_test12)
+!    call geom_test(2)%interp_gp(geom_test(1),field_test12,field_test21)
+! end if
+call geom_test(1)%interp_gp(geom_test(2),field_test,field_test12)
+call geom_test(2)%interp_gp(geom_test(1),field_test12,field_test21)
 
 ! Compute the difference
 diff = 0.0
@@ -987,14 +1005,12 @@ end subroutine transitive_interp_right_inverse_test
 ! Subroutine: transitive_interp_test
 ! Purpose: test the transitiveness of the interpolator
 !----------------------------------------------------------------------
-subroutine transitive_interp_test(interp_method, transitive_interp)
+subroutine transitive_interp_test(interp_method)
 
 implicit none
   
 !Passed variables
 character(len=1024),intent(in) :: interp_method
-! A bit dirty but...
-logical,intent(in)             :: transitive_interp
 
 ! Local variables
 integer,allocatable            :: nx_test(:)
@@ -1011,7 +1027,7 @@ allocate(ny_test(3))
 nx_test = (/21,51,101/)
 ny_test = (/21,51,101/)
 write(*,'(a)') ''
-call transitive_interp_diff(nx_test,ny_test,interp_method,transitive_interp,diff_l2h)
+call transitive_interp_diff(nx_test,ny_test,interp_method,diff_l2h)
 write(*,'(a)') ''
 write(*,'(a,e15.8)') '      Ri>Rj>Rk - Ri>Rk :       ', diff_l2h
 
@@ -1019,14 +1035,14 @@ write(*,'(a,e15.8)') '      Ri>Rj>Rk - Ri>Rk :       ', diff_l2h
 nx_test = (/101,51,21/)
 ny_test = (/101,51,21/)
 write(*,'(a)') ''
-call transitive_interp_diff(nx_test,ny_test,interp_method,transitive_interp,diff_h2l)
+call transitive_interp_diff(nx_test,ny_test,interp_method,diff_h2l)
 write(*,'(a)') ''
 write(*,'(a,e15.8)') '      Ri<Rj<Rk - Ri<Rk :       ', diff_h2l
 write(*,'(a)') ''
 
 ! Right inverse test
 write(*,'(a)') ''
-call transitive_interp_right_inverse_test(interp_method,transitive_interp,diff)
+call transitive_interp_right_inverse_test(interp_method,diff)
 write(*,'(a)') ''
 write(*,'(a,e15.8)') '      Right inverse   :       ', diff
 write(*,'(a)') '---------------------------------'

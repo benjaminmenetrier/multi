@@ -9,7 +9,7 @@ lmp_mode = "none"
 test_ortho = T
 shutoff_type = 0
 shutoff_value = 0.01
-transitive_interp = T
+interp_method = "bilinear"
 projective_Bmatrix = T
 /
 
