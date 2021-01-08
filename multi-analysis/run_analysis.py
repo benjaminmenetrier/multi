@@ -194,6 +194,9 @@ for r, res_dir in enumerate(res_dir_list):
     obs_plot(ds, res_dir)
     hxg_plot(ds, res_dir)
     innovation_plot(ds, res_dir)
+    x_true = np.array(ds['xt'][:])
+    out_name = os.path.join(res_dir + '/xt.png')
+    field_plot(x_true, out_name)
     
     # # Plots comparision between lanczos and planczosif:
     lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations_list[r])
@@ -221,7 +224,7 @@ for r, res_dir in enumerate(res_dir_list):
                 try:
                     matrix = np.array(ds[met][io][field][:])
                     out_name = os.path.join(background_dir + f'/{field}_{io}')
-                    field_plot(matrix,out_name)
+                    field_plot(matrix, out_name)
                 except:
                     print('Cannot plot matrix for ', met, io, field)
 

@@ -113,7 +113,6 @@ end do
 y = 0.0
 do iobs=1,hmatrix%nobs
    call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
-   !call geom%interp_nearest(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs)) 
 end do
  
 end subroutine hmatrix_apply
@@ -140,7 +139,6 @@ real(8) :: yg(hmatrix%nobs),y_tl(hmatrix%nobs)
 x = 0.0
 do iobs=1,hmatrix%nobs
    call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
-   !call geom%interp_nearest_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
 end do
 
 do inh=1,geom%nh
@@ -182,7 +180,6 @@ end do
 y = 0.0
 do iobs=1,hmatrix%nobs
    call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xnl,y(iobs))
-   !call geom%interp_nearest(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xnl,y(iobs))
 end do
 
 end subroutine hmatrix_apply_nl

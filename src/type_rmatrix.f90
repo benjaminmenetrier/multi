@@ -8,6 +8,8 @@
 module type_rmatrix
 
 use tools_rand
+use type_hmatrix
+use type_geom
 
 implicit none
 
@@ -96,16 +98,27 @@ end subroutine rmatrix_apply_inv
 ! Purpose: randomize the R matrix
 !----------------------------------------------------------------------
 !subroutine rmatrix_randomize(rmatrix,xt_full,yout)
+!subroutine rmatrix_randomize(rmatrix,geom,xt,hmatrix%x_obs,hmatrix%y_obs,hmatrix%yo)
 subroutine rmatrix_randomize(rmatrix,yout)
   
 implicit none
 
 ! Passed variables
-class(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(out) :: yout(rmatrix%nobs)
-!real(8),intent(in)  :: xt_full(rmatrix%nobs)
+class(rmatrix_type),intent(in)   :: rmatrix
+real(8),intent(out)              :: yout(rmatrix%nobs)
+!type(geom_type),intent(in)       :: geom
+!type(hmatrix_type),intent(inout) :: hmatrix
+!real(8),intent(in)               :: xt(geom%nh)
+
 ! Local variable
-real(8) :: nu(rmatrix%nobs)
+real(8)                          :: nu(rmatrix%nobs)
+!integer                          :: iobs
+
+! Interpolate the truth on the obs space
+! nu = 0.0
+! do iobs=1,hmatrix%nobs
+!    call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xt,nu(iobs))
+! end do
 
 ! Gaussian random vector
 call rand_normal(rmatrix%nobs,nu)

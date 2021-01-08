@@ -46,14 +46,14 @@ character(len=1024) :: filename            ! Filename
 
 ! Local variables
 integer                        :: ncid,subgrpid,nx_id,ny_id,xb_id,xg_id,hxg_id,d_id
-integer                        :: x_obs_id,y_obs_id,nobs_id,obs_val_id,xt_val_id
+integer                        :: x_obs_id,y_obs_id,nobs_id,obs_val_id,nx_full_id,ny_full_id,x_full_id,y_full_id,xt_id
 integer                        :: io,jo,ii,ji,im,jm,ia,ja
 integer,allocatable            :: grpid(:,:)
 real(8)                        :: proj,norm
 real(8),allocatable            :: maxdiff(:,:,:,:)
-real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:,:),xt_full(:)
+real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:,:),xt(:)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:),dvb(:),dva(:),dxa(:),dxa_tmp(:),dxabar(:),dxa_prev(:)
-real(8),allocatable            :: xb_2d(:,:),xg_2d(:,:)
+real(8),allocatable            :: xb_2d(:,:),xg_2d(:,:),xt_2d(:,:)
 real(8),allocatable            :: d(:),hxg(:),hxg2(:)
 character(len=1024)            :: grpname
 type(algo_type),allocatable    :: algo(:,:,:)
@@ -182,12 +182,22 @@ do io=1,no
 end do
 
 ! Truth initialization:
-allocate(xt_full(geom(no)%nh))
-call rand_normal(geom(no)%nh,xt_full)
+allocate(xt(geom(no)%nh))
+allocate(xt_2d(geom(no)%nx,geom(no)%ny))
+call rand_normal(geom(no)%nh,xt)
+xt_2d=reshape(xt,(/geom(no)%nx,geom(no)%ny/))
 
-! Write observations
-!call ncerr('main',nf90_def_var(ncid,'xt_val',nf90_double,(/xt_id/),xt_val_id))
-!call ncerr('main',nf90_put_var(ncid,xt_val_id,xt_full))
+! Write the truth:
+! Create dimensions
+call ncerr('hmatrix_write',nf90_def_dim(ncid,'nx_full',geom(no)%nx,nx_full_id))
+call ncerr('hmatrix_write',nf90_def_dim(ncid,'ny_full',geom(no)%ny,ny_full_id))
+! Create variables
+call ncerr('hmatrix_write',nf90_def_var(ncid,'x_full',nf90_double,(/nx_full_id/),x_full_id))
+call ncerr('hmatrix_write',nf90_def_var(ncid,'y_full',nf90_double,(/ny_full_id/),y_full_id))
+call ncerr('main',nf90_def_var(ncid,'xt',nf90_double,(/nx_full_id,ny_full_id/),xt_id))
+call ncerr('main',nf90_put_var(ncid,x_full_id,geom(no)%x))
+call ncerr('main',nf90_put_var(ncid,y_full_id,geom(no)%y))
+call ncerr('main',nf90_put_var(ncid,xt_id,xt_2d))
 
 ! Allocation (obs space)
 allocate(d(nobs))
@@ -202,12 +212,14 @@ call hmatrix%write(ncid,x_obs_id,y_obs_id,nobs_id)
 call rmatrix%setup(nobs,sigma_obs)
 
 ! Setup observations
-call rmatrix%randomize(hmatrix%yo)
+!call rmatrix%randomize(geom(no),xt,hmatrix%x_obs,hmatrix%yobs,hmatrix%yo)
+call hmatrix%apply_nl(geom(no),xt,hmatrix%yo)
+call rmatrix%apply_sqrt(hmatrix%yo,hmatrix%yo)
+!call rmatrix%randomize(hmatrix%yo)
 
 ! Write observations
 call ncerr('main',nf90_def_var(ncid,'obs_val',nf90_double,(/nobs_id/),obs_val_id))
 call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
-
 
 ! Be carefull: we had put the geometries AFTER the observation generations (because of the random seed).
 
@@ -245,9 +257,11 @@ do io=1,no
 end do
 
 ! Generate background state
-! Null background state:
+! Null background state or random state -> pb when dividing by zero in dsteqr:
 xb_full = 0.0
-call bmatrix(no)%randomize(geom(no),xb_full)
+call bmatrix(no)%apply_sqrt(geom(no),xt,xb_full)
+!call bmatrix(no)%randomize(geom(no),xb_full)
+
 do io=1,no
    ! Allocation
    allocate(xb(geom(io)%nh))
