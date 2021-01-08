@@ -32,7 +32,7 @@ lmp_mode = '"none"'
 test_ortho = "F"
 shutoff_type = 0
 shutoff_value = 1e-2
-transitive_interp = "T"
+interp_method = '"spectral"'
 projective_Bmatrix = "T"
 # Resolution:
 nx = "11,31,51,101"
@@ -83,7 +83,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/linear_H_nearest_interp_resox2')
+results_dir_root = os.path.join(directories['analysis_results'] + '/check')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -121,15 +121,15 @@ i_sigmabvar = [0.]
 i_Lb = [0.1]
 
 
-i_trans_interp = ["T"]
+i_interp_method = ['"spectral"']
 i_project_B = ["T"]
 i_test_ortho = ["T"]
 
 iter_params = itertools.product(i_no, i_ni, i_nx, i_nobs, i_sigma_obs,
-                                i_sigmabvar, i_Lb, i_trans_interp,
+                                i_sigmabvar, i_Lb, i_interp_method,
                                 i_project_B, i_test_ortho, repeat=1)
 
-for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, transitive_interp, projective_Bmatrix, test_ortho in iter_params:
+for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
     # square grid:
     ny=nx
     
@@ -146,7 +146,8 @@ for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, transitive_interp, projective_Bm
     name_string += f'_nx{nx}_ny{ny}_n-obs{nobs}_sigmaobs{sigma_obs}'
     name_string += f'_sigbvar{sigmabvar}_Lb{Lb}'
     name_string += f'_orth{test_ortho}_shut_{shutoff_type}-{shutoff_value}'
-    name_string += f'_trans{transitive_interp}_proj{projective_Bmatrix}'
+    name_string += '_interp{}'.format(interp_method.replace('"',''))
+    name_string += f'_proj{projective_Bmatrix}'
     name_string = name_string.replace(',','-').replace(' ','')
     
     res_dir = os.path.join(res_dir_raw + '/' +  name_string)
@@ -162,7 +163,7 @@ for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, transitive_interp, projective_Bm
     parameters={}
     parameters['solver'] = [nm, method, na, algo, no, ni, lmp_mode, test_ortho,
                             shutoff_type, shutoff_value,
-                            transitive_interp, projective_Bmatrix]
+                            interp_method, projective_Bmatrix]
     parameters['resolution'] = [nx, ny]
     parameters['obs'] = [nobs, sigma_obs]
     parameters['background'] = [sigmabvar, Lb, spvarmin]

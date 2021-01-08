@@ -43,7 +43,7 @@ def namelist_write(parameters,directory):
     parameters_name={}
     parameters_name['solver'] = ['nm', 'method', 'na', 'algorithm', 'no', 'ni', 'lmp_mode', 'test_ortho',
                                  'shutoff_type', 'shutoff_value',
-                                 'transitive_interp', 'projective_Bmatrix',]
+                                 'interp_method', 'projective_Bmatrix',]
     parameters_name['resolution'] = ['nx', 'ny']
     parameters_name['obs'] = ['nobs', 'sigma_obs']
     parameters_name['background'] = ['sigmabvar', 'Lb', 'spvarmin']
