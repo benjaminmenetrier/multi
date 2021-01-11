@@ -19,8 +19,8 @@ ny = 21,51,101
 /
 
 &observations
-nobs = 10000
-sigma_obs = 1e-08
+nobs = 200
+sigma_obs = 0.01
 /
 
 &background

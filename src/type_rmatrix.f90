@@ -99,32 +99,27 @@ end subroutine rmatrix_apply_inv
 !----------------------------------------------------------------------
 !subroutine rmatrix_randomize(rmatrix,xt_full,yout)
 !subroutine rmatrix_randomize(rmatrix,geom,xt,hmatrix%x_obs,hmatrix%y_obs,hmatrix%yo)
-subroutine rmatrix_randomize(rmatrix,yout)
+subroutine rmatrix_randomize(rmatrix,yo)
   
 implicit none
 
 ! Passed variables
 class(rmatrix_type),intent(in)   :: rmatrix
-real(8),intent(out)              :: yout(rmatrix%nobs)
-!type(geom_type),intent(in)       :: geom
-!type(hmatrix_type),intent(inout) :: hmatrix
-!real(8),intent(in)               :: xt(geom%nh)
+real(8),intent(inout)               :: yo(rmatrix%nobs)
 
 ! Local variable
-real(8)                          :: nu(rmatrix%nobs)
-!integer                          :: iobs
-
-! Interpolate the truth on the obs space
-! nu = 0.0
-! do iobs=1,hmatrix%nobs
-!    call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xt,nu(iobs))
-! end do
+real(8)                          :: nu(rmatrix%nobs),y_err(rmatrix%nobs)
+integer                          :: iobs
 
 ! Gaussian random vector
 call rand_normal(rmatrix%nobs,nu)
 
 ! Apply R matrix square-root
-call rmatrix%apply_sqrt(nu,yout)
+call rmatrix%apply_sqrt(nu,y_err)
+
+do iobs=1,rmatrix%nobs
+   yo(iobs) = yo(iobs)*(1+y_err(iobs))
+end do
 
 end subroutine rmatrix_randomize
 

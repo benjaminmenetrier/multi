@@ -113,7 +113,7 @@ def field_plot(matrix, out_name):
     """
     print('plotting:', out_name)
     fig = plt.figure()
-    plt.matshow(np.array(matrix), cmap=plt.get_cmap('copper'))
+    plt.matshow(np.array(matrix), origin='lower', cmap=plt.get_cmap('copper'))
     plt.colorbar()
     plt.savefig(out_name)
     plt.clf()

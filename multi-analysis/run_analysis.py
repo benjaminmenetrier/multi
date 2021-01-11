@@ -83,7 +83,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/check')
+results_dir_root = os.path.join(directories['analysis_results'] + '/check_all')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -114,14 +114,13 @@ i_ni = [4]
 
 i_nx = ['21,51,101']
 
-i_nobs = [10000]
-i_sigma_obs = [0.00000001]
+i_nobs = [200]
+i_sigma_obs = [0.01]
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
 
-
-i_interp_method = ['"spectral"']
+i_interp_method = ['"bilinear"','"spectral"','"spectral"']
 i_project_B = ["T"]
 i_test_ortho = ["T"]
 
@@ -142,11 +141,11 @@ for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, interp_method, projective_Bmatri
     # Create the results directory:
     name_string = f'res_no{no}_ni{ni}'
     name_string += '_lmp-{}'.format(lmp_mode.replace('"',''))
-    name_string += '_met-{}'.format(method.replace('"',''))
+    #name_string += '_met-{}'.format(method.replace('"',''))
     name_string += f'_nx{nx}_ny{ny}_n-obs{nobs}_sigmaobs{sigma_obs}'
     name_string += f'_sigbvar{sigmabvar}_Lb{Lb}'
     name_string += f'_orth{test_ortho}_shut_{shutoff_type}-{shutoff_value}'
-    name_string += '_interp{}'.format(interp_method.replace('"',''))
+    name_string += '_interp-{}'.format(interp_method.replace('"',''))
     name_string += f'_proj{projective_Bmatrix}'
     name_string = name_string.replace(',','-').replace(' ','')
     

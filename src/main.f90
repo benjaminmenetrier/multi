@@ -45,7 +45,7 @@ logical             :: new_seed            ! New random seed
 character(len=1024) :: filename            ! Filename
 
 ! Local variables
-integer                        :: ncid,subgrpid,nx_id,ny_id,xb_id,xg_id,hxg_id,d_id
+integer                        :: ncid,subgrpid,nx_id,ny_id,xb_id,xg_id,hxg_id,d_id,iobs
 integer                        :: x_obs_id,y_obs_id,nobs_id,obs_val_id,nx_full_id,ny_full_id,x_full_id,y_full_id,xt_id
 integer                        :: io,jo,ii,ji,im,jm,ia,ja
 integer,allocatable            :: grpid(:,:)
@@ -205,14 +205,17 @@ do io=1,no
    end do
 end do
 
-! Truth initialization:
+! Truth allocation
 allocate(xt(geom(no)%nh))
 allocate(xt_2d(geom(no)%nx,geom(no)%ny))
+
+! Truth initialization
 call rand_normal(geom(no)%nh,xt)
 call bmatrix(no)%apply_sqrt(geom(no),xt,xt)
 xt_2d=reshape(xt,(/geom(no)%nx,geom(no)%ny/))
 
 ! Write the truth:
+
 ! Create dimensions
 call ncerr('hmatrix_write',nf90_def_dim(ncid,'nx_full',geom(no)%nx,nx_full_id))
 call ncerr('hmatrix_write',nf90_def_dim(ncid,'ny_full',geom(no)%ny,ny_full_id))
@@ -237,52 +240,17 @@ call hmatrix%write(ncid,x_obs_id,y_obs_id,nobs_id)
 call rmatrix%setup(nobs,sigma_obs)
 
 ! Setup observations
-!call rmatrix%randomize(geom(no),xt,hmatrix%x_obs,hmatrix%yobs,hmatrix%yo)
 call hmatrix%apply_nl(geom(no),xt,hmatrix%yo)
-!call rmatrix%apply_sqrt(hmatrix%yo,hmatrix%yo)
-!call rmatrix%randomize(hmatrix%yo)
+call rmatrix%randomize(hmatrix%yo)
 
 ! Write observations
 call ncerr('main',nf90_def_var(ncid,'obs_val',nf90_double,(/nobs_id/),obs_val_id))
 call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
 
-! Be carefull: we had put the geometries AFTER the observation generations (because of the random seed).
-
-! ! Setup geometries
-! do io=1,no
-!    write(*,'(a,i1)') '   Geometry setup for outer iteration ',io
-!    call geom(io)%setup(nx(io),ny(io),transitive_interp)
-!    do im=1,nm
-!       call geom(io)%write(grpid(io,im))
-!    end do
-! end do
-
-! ! Transitive interpolation test:
-! call transitive_interp_test(interp_method)
-
-! ! Allocation (model/control space)
-! allocate(xb_full(geom(no)%nh))
-! allocate(xg_full(geom(no)%nh))
-
-! ! Setup B matrices
-! do io=1,no
-!    write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
-!    if (projective_Bmatrix) then
-!       if (abs(sigmabvar)>0.0) then
-!          write(*,'(a)') 'ERROR: sigmabvar should be 0 for a projective B matrix family'
-!          stop
-!       end if
-!       call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb,spvarmin)
-!    else
-!       call bmatrix(io)%setup(geom(io),geom(io),sigmabvar,Lb,spvarmin)
-!    end if
-!    do im=1,nm
-!       call bmatrix(io)%write(geom(io),grpid(io,im))
-!    end do
-! end do
+! New seed for the background
+call set_seed(new_seed)
 
 ! Generate background state
-call set_seed(new_seed)
 xb_full = 0.0
 call bmatrix(no)%randomize(geom(no),xb_full)
 
