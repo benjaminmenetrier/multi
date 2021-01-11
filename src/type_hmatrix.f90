@@ -104,9 +104,9 @@ real(8) :: x_tl(geom%nh)
 x_tl=0.0
 do inh=1,geom%nh
    ! Cubic version
-   x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
+   !x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
    ! Linear version
-   !x_tl(inh) = x(inh)
+   x_tl(inh) = x(inh)
 end do
 
 ! Apply observation operator
@@ -143,9 +143,9 @@ end do
 
 do inh=1,geom%nh
    ! Cubic version
-   x(inh)=3*xg(inh)*xg(inh)*x(inh)
+   !x(inh)=3*xg(inh)*xg(inh)*x(inh)
    ! Linear version
-   !x(inh)=x(inh)
+   x(inh)=x(inh)
 end do
 
 end subroutine hmatrix_apply_ad
@@ -171,9 +171,9 @@ real(8) :: xnl(geom%nh)
 ! Non linear observation operator (cubic):
 do inh=1,geom%nh
    ! Cubic version
-   xnl(inh)=x(inh)*x(inh)*x(inh)
+   !xnl(inh)=x(inh)*x(inh)*x(inh)
    ! Linear version
-   !xnl(inh) = x(inh)
+   xnl(inh) = x(inh)
 end do
 
 ! Apply observation operator

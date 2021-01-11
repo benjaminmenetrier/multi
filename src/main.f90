@@ -181,10 +181,35 @@ do io=1,no
    end do
 end do
 
+! Transitive interpolation test:
+call transitive_interp_test(interp_method)
+
+! Allocation (model/control space)
+allocate(xb_full(geom(no)%nh))
+allocate(xg_full(geom(no)%nh))
+
+! Setup B matrices
+do io=1,no
+   write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
+   if (projective_Bmatrix) then
+      if (abs(sigmabvar)>0.0) then
+         write(*,'(a)') 'ERROR: sigmabvar should be 0 for a projective B matrix family'
+         stop
+      end if
+      call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb,spvarmin)
+   else
+      call bmatrix(io)%setup(geom(io),geom(io),sigmabvar,Lb,spvarmin)
+   end if
+   do im=1,nm
+      call bmatrix(io)%write(geom(io),grpid(io,im))
+   end do
+end do
+
 ! Truth initialization:
 allocate(xt(geom(no)%nh))
 allocate(xt_2d(geom(no)%nx,geom(no)%ny))
 call rand_normal(geom(no)%nh,xt)
+call bmatrix(no)%apply_sqrt(geom(no),xt,xt)
 xt_2d=reshape(xt,(/geom(no)%nx,geom(no)%ny/))
 
 ! Write the truth:
@@ -214,7 +239,7 @@ call rmatrix%setup(nobs,sigma_obs)
 ! Setup observations
 !call rmatrix%randomize(geom(no),xt,hmatrix%x_obs,hmatrix%yobs,hmatrix%yo)
 call hmatrix%apply_nl(geom(no),xt,hmatrix%yo)
-call rmatrix%apply_sqrt(hmatrix%yo,hmatrix%yo)
+!call rmatrix%apply_sqrt(hmatrix%yo,hmatrix%yo)
 !call rmatrix%randomize(hmatrix%yo)
 
 ! Write observations
@@ -232,35 +257,34 @@ call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
 !    end do
 ! end do
 
-! Transitive interpolation test:
-call transitive_interp_test(interp_method)
+! ! Transitive interpolation test:
+! call transitive_interp_test(interp_method)
 
-! Allocation (model/control space)
-allocate(xb_full(geom(no)%nh))
-allocate(xg_full(geom(no)%nh))
+! ! Allocation (model/control space)
+! allocate(xb_full(geom(no)%nh))
+! allocate(xg_full(geom(no)%nh))
 
-! Setup B matrices
-do io=1,no
-   write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
-   if (projective_Bmatrix) then
-      if (abs(sigmabvar)>0.0) then
-         write(*,'(a)') 'ERROR: sigmabvar should be 0 for a projective B matrix family'
-         stop
-      end if
-      call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb,spvarmin)
-   else
-      call bmatrix(io)%setup(geom(io),geom(io),sigmabvar,Lb,spvarmin)
-   end if
-   do im=1,nm
-      call bmatrix(io)%write(geom(io),grpid(io,im))
-   end do
-end do
+! ! Setup B matrices
+! do io=1,no
+!    write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
+!    if (projective_Bmatrix) then
+!       if (abs(sigmabvar)>0.0) then
+!          write(*,'(a)') 'ERROR: sigmabvar should be 0 for a projective B matrix family'
+!          stop
+!       end if
+!       call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb,spvarmin)
+!    else
+!       call bmatrix(io)%setup(geom(io),geom(io),sigmabvar,Lb,spvarmin)
+!    end if
+!    do im=1,nm
+!       call bmatrix(io)%write(geom(io),grpid(io,im))
+!    end do
+! end do
 
 ! Generate background state
-! Null background state or random state -> pb when dividing by zero in dsteqr:
+call set_seed(new_seed)
 xb_full = 0.0
-call bmatrix(no)%apply_sqrt(geom(no),xt,xb_full)
-!call bmatrix(no)%randomize(geom(no),xb_full)
+call bmatrix(no)%randomize(geom(no),xb_full)
 
 do io=1,no
    ! Allocation

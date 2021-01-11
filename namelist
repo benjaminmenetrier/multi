@@ -4,7 +4,7 @@ method = "theoretical", "standard", "alternative"
 na = 2
 algorithm = "lanczos", "planczosif"
 no = 3
-ni = 6
+ni = 4
 lmp_mode = "none"
 test_ortho = T
 shutoff_type = 0
@@ -19,8 +19,8 @@ ny = 21,51,101
 /
 
 &observations
-nobs = 100
-sigma_obs = 0.01
+nobs = 10000
+sigma_obs = 1e-08
 /
 
 &background

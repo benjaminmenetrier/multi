@@ -110,12 +110,12 @@ outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
 i_no = [3]
-i_ni = [6]
+i_ni = [4]
 
 i_nx = ['21,51,101']
 
-i_nobs = [100]
-i_sigma_obs = [0.01]
+i_nobs = [10000]
+i_sigma_obs = [0.00000001]
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
