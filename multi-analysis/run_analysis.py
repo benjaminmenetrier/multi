@@ -83,7 +83,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/check_all')
+results_dir_root = os.path.join(directories['analysis_results'] + '/cubic_H_test_fct')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -110,17 +110,17 @@ outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
 i_no = [3]
-i_ni = [4]
+i_ni = [6]
 
 i_nx = ['21,51,101']
 
-i_nobs = [200]
+i_nobs = [1000]
 i_sigma_obs = [0.01]
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
 
-i_interp_method = ['"bilinear"','"spectral"','"spectral"']
+i_interp_method = ['"spectral"']#['"bilinear"','"spectral"','"nearest"']
 i_project_B = ["T"]
 i_test_ortho = ["T"]
 

@@ -21,6 +21,8 @@ type hmatrix_type
 contains
    procedure :: setup => hmatrix_setup
    procedure :: write => hmatrix_write
+   procedure :: measure => hmatrix_measure
+   procedure :: measure_nl => hmatrix_measure_nl
    procedure :: apply => hmatrix_apply
    procedure :: apply_ad => hmatrix_apply_ad
    procedure :: apply_nl => hmatrix_apply_nl
@@ -82,6 +84,64 @@ call ncerr('hmatrix_write',nf90_put_var(ncid,y_obs_id,hmatrix%y_obs))
 end subroutine hmatrix_write
 
 !----------------------------------------------------------------------
+! Subroutine: hmatrix_measure_nl
+! Purpose: non linear measure of the state field.
+!----------------------------------------------------------------------
+subroutine hmatrix_measure_nl(hmatrix,geom,x,x_nl)
+
+implicit none
+
+! Passed variables
+class(hmatrix_type),intent(in) :: hmatrix
+type(geom_type),intent(in)     :: geom
+real(8),intent(out)            :: x_nl(geom%nh)
+real(8),intent(in)             :: x(geom%nh)
+
+! Local variables
+integer :: inh
+
+do inh=1,geom%nh
+
+   ! Cubic version
+   x_nl(inh) = x(inh)*x(inh)*x(inh)
+
+   ! Linear version
+   !x_tl(inh) = x(inh)
+
+end do
+
+end subroutine hmatrix_measure_nl
+
+!----------------------------------------------------------------------
+! Subroutine: hmatrix_measure
+! Purpose: measure of the state field linearized around the guess
+!----------------------------------------------------------------------
+subroutine hmatrix_measure(hmatrix,geom,xg,x,x_tl)
+
+implicit none
+
+! Passed variables
+class(hmatrix_type),intent(in) :: hmatrix
+type(geom_type),intent(in)     :: geom
+real(8),intent(out)            :: x_tl(geom%nh)
+real(8),intent(in)             :: xg(geom%nh), x(geom%nh)
+
+! Local variables
+integer :: inh
+
+do inh=1,geom%nh
+
+   ! Cubic version
+   x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
+
+   ! Linear version
+   !x_tl(inh) = x(inh)
+
+end do
+
+end subroutine hmatrix_measure
+
+!----------------------------------------------------------------------
 ! Subroutine: hmatrix_apply
 ! Purpose: apply H matrix
 !----------------------------------------------------------------------
@@ -99,15 +159,8 @@ real(8),intent(out)            :: y(hmatrix%nobs)
 integer :: iobs, inh
 real(8) :: x_tl(geom%nh)
 
-
 ! Observation operator linearized around xg
-x_tl=0.0
-do inh=1,geom%nh
-   ! Cubic version
-   !x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
-   ! Linear version
-   x_tl(inh) = x(inh)
-end do
+call hmatrix%measure(geom,xg,x,x_tl)
 
 ! Apply observation operator
 y = 0.0
@@ -121,7 +174,7 @@ end subroutine hmatrix_apply
 ! Subroutine: hmatrix_apply_ad
 ! Purpose: apply adjoint of the H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_apply_ad(hmatrix,geom,xg,y,x)
+subroutine hmatrix_apply_ad(hmatrix,geom,xg,y,x_tl)
 
 implicit none
 
@@ -129,11 +182,11 @@ implicit none
 class(hmatrix_type),intent(in) :: hmatrix
 type(geom_type),intent(in) :: geom
 real(8),intent(in) :: y(hmatrix%nobs),xg(geom%nh)
-real(8),intent(out) :: x(geom%nh)
+real(8),intent(out) :: x_tl(geom%nh)
 
 ! Local variables
 integer :: iobs, inh
-real(8) :: yg(hmatrix%nobs),y_tl(hmatrix%nobs)
+real(8) :: yg(hmatrix%nobs),y_tl(hmatrix%nobs), x(geom%nh)
 
 ! Apply observation operator adjoint
 x = 0.0
@@ -141,12 +194,8 @@ do iobs=1,hmatrix%nobs
    call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
 end do
 
-do inh=1,geom%nh
-   ! Cubic version
-   !x(inh)=3*xg(inh)*xg(inh)*x(inh)
-   ! Linear version
-   x(inh)=x(inh)
-end do
+! Observation operator linearized around the guess
+call hmatrix%measure(geom,xg,x,x_tl)
 
 end subroutine hmatrix_apply_ad
 
@@ -169,12 +218,7 @@ integer :: iobs, inh
 real(8) :: xnl(geom%nh)
 
 ! Non linear observation operator (cubic):
-do inh=1,geom%nh
-   ! Cubic version
-   !xnl(inh)=x(inh)*x(inh)*x(inh)
-   ! Linear version
-   xnl(inh) = x(inh)
-end do
+call hmatrix%measure_nl(geom,x,xnl)
 
 ! Apply observation operator
 y = 0.0
