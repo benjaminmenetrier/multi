@@ -45,7 +45,7 @@ def compare_plots(obj1, obj2, ylabel12, obj3, ylabel3, x, xlabel,
     """
     print("plotting:", out_name)
     # Create figure window to plot data
-    fig = plt.figure(1, figsize=(9,9))
+    fig = plt.figure(1, figsize=(10,10))
     gs = gridspec.GridSpec(2, 1, height_ratios=[6, 3])
 
     # Top plot: obj1 vs obj2

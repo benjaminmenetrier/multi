@@ -14,8 +14,8 @@ projective_Bmatrix = T
 /
 
 &resolutions
-nx = 21,51,101
-ny = 21,51,101
+nx = 101,201,401
+ny = 101,201,401
 /
 
 &observations

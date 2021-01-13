@@ -97,8 +97,6 @@ end subroutine rmatrix_apply_inv
 ! Subroutine: rmatrix_randomize
 ! Purpose: randomize the R matrix
 !----------------------------------------------------------------------
-!subroutine rmatrix_randomize(rmatrix,xt_full,yout)
-!subroutine rmatrix_randomize(rmatrix,geom,xt,hmatrix%x_obs,hmatrix%y_obs,hmatrix%yo)
 subroutine rmatrix_randomize(rmatrix,yo)
   
 implicit none
