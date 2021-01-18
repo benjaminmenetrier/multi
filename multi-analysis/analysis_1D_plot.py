@@ -136,9 +136,10 @@ def compare_methods_plot(ds, outer_iterations, res_dir):
     """
     lanczos, planczosif, obj_list, diff_list={}, {}, {}, {}
 
-    keys=['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
+    # Dirty trick here: j_nl is doubled because of a problem of figure size ... cannot find how to fix it...
+    keys=['j_nl', 'j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
     
-    labels=[r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$', r'$J_b$',
+    labels=[r'$J^{nl}$', r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$', r'$J_b$',
             r'$\sqrt{\rho}$', r'$\beta$']
 
     legend = []
