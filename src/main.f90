@@ -31,7 +31,6 @@ character(len=1024) :: lmp_mode            ! LMP mode ('none', 'spectral', 'ritz
 logical             :: test_ortho          ! Test orthogonality
 integer             :: shutoff_type        ! Stopping criterion according: 1-Jb, 2-beta, 3-Ritz convergence (else: no criterion)
 real(8)             :: shutoff_value       ! Stopping criterion threshold
-!logical             :: transitive_interp   ! Transitive interpolator (grid-point interpolator defined with FFTs and spetral interpolator)
 character(len=1024) :: interp_method       ! Interpolation method (transitive or not)
 logical             :: projective_Bmatrix  ! Projective B matrix (low-resolution B matrix is a a projection of the high-resolution B matrix)
 integer             :: nx(nomax)           ! X direction sizes
@@ -107,7 +106,7 @@ test_ortho = .false.
 shutoff_type = 0
 shutoff_value = 0.0
 !transitive_interp = .true.
-interp_method = 'nearest'
+interp_method = 'spectral'
 nx = 101
 ny = 101
 nobs = 2000

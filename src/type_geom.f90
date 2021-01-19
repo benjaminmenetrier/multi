@@ -12,7 +12,6 @@ use netcdf
 use tools_const
 use tools_netcdf
 
-
 implicit none
 
 include 'fftw3.f03'
@@ -26,7 +25,6 @@ type geom_type
    integer             :: lmax
    real(8),allocatable :: x(:)
    real(8),allocatable :: y(:)
-   !logical             :: transitive_interp
    character(len=1024) :: interp_method
    
 contains
@@ -47,54 +45,13 @@ contains
 
    !-----------------------------------------------------------------------------
    procedure :: geom_interp_nearest_scalar
-   !procedure :: geom_interp_nearest_field
 
-   procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
-   !procedure :: interp_nearest_ad => geom_interp_nearest_scalar_ad
-   !generic   :: interp_nearest => geom_interp_nearest_scalar,geom_interp_nearest_field
    generic   :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
-
+   procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
+   
    procedure :: interp_nearest_scalar => geom_interp_nearest_scalar
    procedure :: interp_nearest_scalar_ad => geom_interp_nearest_scalar_ad
    !-----------------------------------------------------------------------------
-
-
-   
-! type geom_type
-!    integer             :: nx
-!    integer             :: ny
-!    integer             :: nh
-!    integer             :: kmax
-!    integer             :: lmax
-!    real(8),allocatable :: x(:)
-!    real(8),allocatable :: y(:)
-!    logical             :: transitive_interp
-! contains
-!    procedure :: setup => geom_setup
-!    procedure :: write => geom_write
-!    procedure :: complex_to_real => geom_complex_to_real
-!    procedure :: real_to_complex => geom_real_to_complex
-!    procedure :: complex_to_full => geom_complex_to_full
-!    procedure :: full_to_complex => geom_full_to_complex
-!    procedure :: gp2sp => geom_gp2sp
-!    procedure :: sp2gp => geom_sp2gp
-!    procedure :: spdotprod => geom_spdotprod
-!    procedure :: geom_interp_gp_scalar
-!    procedure :: geom_interp_gp_field
-!    generic   :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
-!    procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
-!    procedure :: interp_sp => geom_interp_sp
-
-!    !-----------------------------------------------------------------------------
-!    procedure :: geom_nearest_interp_scalar
-!    procedure :: geom_nearest_interp_field
-!    !procedure :: interp_gp_ad => geom_nearest_interp_scalar_ad
-!    !generic   :: interp_gp => geom_nearest_interp_scalar,geom_nearest_interp_field
-   
-
-!    procedure :: nearest_interp => geom_nearest_interp_scalar
-!    procedure :: nearest_interp_ad => geom_nearest_interp_scalar_ad
-!    !-----------------------------------------------------------------------------
 
 end type geom_type
 
@@ -729,10 +686,6 @@ end if
 
 end subroutine geom_interp_sp
 
-
-!----------------------------------------------------------------------------------
-!----------------------------------------------------------------------------------
-
 !----------------------------------------------------------------------
 ! Subroutine: geom_nearest_interp_scalar
 ! Purpose: nearest neighbor interpolation (acting on scalars)
@@ -846,35 +799,6 @@ gp_in = reshape(gp_in_2d,(/geom%nh/))
 end subroutine geom_interp_nearest_scalar_ad
 
 !----------------------------------------------------------------------
-! Subroutine: nearest_interp_test
-! Purpose: test interp + adjoint interp
-!----------------------------------------------------------------------
-! subroutine nearest_interp_test(geom)
-
-! implicit none
-
-! ! Passed variables
-! type(geom_type),intent(in) :: geom1, geom2
-
-! ! Local variables
-! real(8) :: x1(geom1%nh),x2(geom1%nh)
-! real(8) :: y1(geom2%nh),y2(geom2%nh)
-! real(8) :: dp1,dp2
-
-! ! Initialization
-! call random_number(x1)
-! call random_number(x2)
-
-! ! Direct interp + adjoint interp test
-! call geom1%apply(x1,y1)
-! call geom2%apply_ad(y2,x2)
-! dp1 = sum(x1*x2)
-! dp2 = sum(y1*y2)
-! write(*,'(a,e15.8)') '         Direct interp + adjoint interp test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
-
-! end subroutine nearest_interp_test
-
-!----------------------------------------------------------------------
 ! Subroutine: transitive_interp_diff
 ! Purpose: compute the differences when interpolating a field in one
 ! or two steps between different resolutions.
@@ -908,28 +832,15 @@ allocate(field_test13(geom_test(3)%nh))
 call random_number(field_test1)
 
 ! Interpolate from resolutions 1->2 then 2->3
-! if (trim(interp_method)=='nearest') then
-!    call geom_test(1)%interp_nearest(geom_test(2),field_test1,field_test12)
-!    call geom_test(2)%interp_nearest(geom_test(3),field_test12,field_test123)
-! else if (trim(interp_method)=='bilinear') then
-!    call geom_test(1)%interp_gp(geom_test(2),field_test1,field_test12)
-!    call geom_test(2)%interp_gp(geom_test(3),field_test12,field_test123)
-! end if
 call geom_test(1)%interp_gp(geom_test(2),field_test1,field_test12)
 call geom_test(2)%interp_gp(geom_test(3),field_test12,field_test123)
 
 ! Interpolate from resolutions 1->3
-! if (trim(interp_method)=='nearest') then
-!    call geom_test(1)%interp_nearest(geom_test(3),field_test1,field_test13)
-! else if (trim(interp_method)=='bilinear') then
-!    call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
-! end if
 call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
 ! Compute the difference
 diff_123_vs_13 = 0.0
 do ih=1,geom_test(3)%nh
    diff_123_vs_13 = diff_123_vs_13 + abs(field_test123(ih)-field_test13(ih))
-   !write(*,'(e15.8,e15.8,e15.8)') field_test123(ih), field_test13(ih), diff_123_vs_13
 end do
 
 ! (Maybe look at the max value instead) ?
@@ -976,15 +887,9 @@ allocate(field_test21(geom_test(1)%nh))
 
 call random_number(field_test)
 
-! ! Interpolate from resolutions 1->2 then 2->1
-! if (trim(interp_method)=='nearest') then
-!    call geom_test(1)%interp_nearest(geom_test(2),field_test,field_test12)
-!    call geom_test(2)%interp_nearest(geom_test(1),field_test12,field_test21)
-! else if (trim(interp_method)=='bilinear') then
-!    call geom_test(1)%interp_gp(geom_test(2),field_test,field_test12)
-!    call geom_test(2)%interp_gp(geom_test(1),field_test12,field_test21)
-! end if
+! Interpolation from resolution 1 -> 2
 call geom_test(1)%interp_gp(geom_test(2),field_test,field_test12)
+! Interpolation from resolution 2 -> 1
 call geom_test(2)%interp_gp(geom_test(1),field_test12,field_test21)
 
 ! Compute the difference
