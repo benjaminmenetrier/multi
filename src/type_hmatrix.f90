@@ -18,6 +18,7 @@ type hmatrix_type
    real(8),allocatable :: x_obs(:)
    real(8),allocatable :: y_obs(:)
    real(8),allocatable :: yo(:)
+   character(len=1024) :: measure_function
 contains
    procedure :: setup => hmatrix_setup
    procedure :: write => hmatrix_write
@@ -35,16 +36,18 @@ contains
 ! Subroutine: hmatrix_setup
 ! Purpose: setup H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_setup(hmatrix,nobs)
+subroutine hmatrix_setup(hmatrix,nobs,measure_function)
 
 implicit none
 
 ! Passed variables
 class(hmatrix_type),intent(inout) :: hmatrix
-integer,intent(in) :: nobs
+integer,intent(in)                :: nobs
+character(len=1024)               :: measure_function
 
 ! Copy dimension
 hmatrix%nobs = nobs
+hmatrix%measure_function = measure_function
 
 ! Allocation
 allocate(hmatrix%x_obs(hmatrix%nobs))
@@ -101,13 +104,18 @@ real(8),intent(in)             :: x(geom%nh)
 integer :: inh
 
 do inh=1,geom%nh
-
-   ! Cubic version
-   x_nl(inh) = x(inh)*x(inh)*x(inh)
-
-   ! Linear version
-   !x_tl(inh) = x(inh)
-
+   if (trim(hmatrix%measure_function) == "4th") then
+      ! power 4 version
+      x_nl(inh) = x(inh)*x(inh)*x(inh)*x(inh)
+   else if (trim(hmatrix%measure_function) == "cubic") then
+      ! Cubic version
+      x_nl(inh) = x(inh)*x(inh)*x(inh)
+   else if (trim(hmatrix%measure_function) == "linear") then
+      ! Linear version
+      x_nl(inh) = x(inh)
+   else
+      write(*,'(a)') "Error: cannot detremine which H measure function to use"   
+   end if
 end do
 
 end subroutine hmatrix_measure_nl
@@ -130,13 +138,18 @@ real(8),intent(in)             :: xg(geom%nh), x(geom%nh)
 integer :: inh
 
 do inh=1,geom%nh
-
-   ! Cubic version
-   x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
-
-   ! Linear version
-   !x_tl(inh) = x(inh)
-
+   if (trim(hmatrix%measure_function) == "4th") then
+      ! power 4 version
+      x_tl(inh) = 4*xg(inh)*xg(inh)*xg(inh)*x(inh)
+   else if (trim(hmatrix%measure_function) == "cubic") then
+      ! Cubic version
+      x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
+   else if (trim(hmatrix%measure_function) == "linear") then
+      ! Linear version
+      x_tl(inh) = x(inh)
+   else
+      write(*,'(a)') "Error: cannot detremine which H measure function to use"   
+   end if
 end do
 
 end subroutine hmatrix_measure

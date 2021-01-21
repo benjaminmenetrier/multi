@@ -45,7 +45,7 @@ def namelist_write(parameters,directory):
                                  'shutoff_type', 'shutoff_value',
                                  'interp_method', 'projective_Bmatrix',]
     parameters_name['resolution'] = ['nx', 'ny']
-    parameters_name['obs'] = ['nobs', 'sigma_obs']
+    parameters_name['obs'] = ['nobs', 'sigma_obs', 'measure_function']
     parameters_name['background'] = ['sigmabvar', 'Lb', 'spvarmin']
     parameters_name['miscellanous'] = ['new_seed', 'filename']
 

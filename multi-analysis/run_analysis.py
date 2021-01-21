@@ -12,7 +12,7 @@ import os
 import sys
 import numpy as np
 from distutils.dir_util import copy_tree
-from shutil import copyfile
+from shutil import copyfile, copytree, rmtree
 from fnmatch import fnmatch
 from analysis_tools import *
 from analysis_1D_plot import *
@@ -40,6 +40,7 @@ ny = "11,31,51,101"
 # Observations:
 nobs = 100
 sigma_obs = 0.1
+measure_function = '"linear"'
 # Background:
 sigmabvar = 0.0
 Lb = 0.12
@@ -79,7 +80,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/cubic_H_nearest')
+results_dir_root = os.path.join(directories['analysis_results'] + '/H4th')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -110,25 +111,27 @@ i_ni = [4]
 
 i_nx = ['23,51,101']
 
-i_nobs = [100]
+i_nobs = [300]
 i_sigma_obs = [0.001]
+i_measure_function = ['"4th"']
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
 
-#i_interp_method = ['"bilinear"','"spectral"','"nearest"']
-i_interp_method = ['"spectral"']
+i_interp_method = ['"bilinear"','"spectral"','"nearest"']
+#i_interp_method = ['"spectral"']
 
 i_project_B = ["T","F"]
-#i_project_B = ["T"]
+#i_project_B = ["F"]
 
 i_test_ortho = ["T"]
 
 iter_params = itertools.product(i_no, i_ni, i_nx, i_nobs, i_sigma_obs,
-                                i_sigmabvar, i_Lb, i_interp_method,
-                                i_project_B, i_test_ortho, repeat=1)
+                                i_measure_function, i_sigmabvar, i_Lb,
+                                i_interp_method, i_project_B,
+                                i_test_ortho, repeat=1)
 
-for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
+for no, ni, nx, nobs, sigma_obs, measure_function, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
     # square grid:
     ny=nx
     
@@ -152,40 +155,55 @@ for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, interp_method, projective_Bmatri
     # res_dir = os.path.join(res_dir + '/' +  name_string)
     # if not os.path.exists(res_dir):
     #     os.mkdir(res_dir)
-        
-    name_string = f'no{no}_ni{ni}'
-    res_dir = os.path.join(res_dir_raw + '/' +  name_string)
-    if not os.path.exists(res_dir):
-        os.mkdir(res_dir)
+
+    res_file_name = ""
+
+    dir_name = '{}-H'.format(measure_function.replace('"',''))
+    res_file_name = dir_name
+    res_dir = os.path.join(res_dir_raw + '/' +  dir_name)
+    #if not os.path.exists(res_dir):
+    #    os.mkdir(res_dir)
     
-    name_string = 'lmp-{}'.format(lmp_mode.replace('"',''))
-    res_dir = os.path.join(res_dir + '/' +  name_string)
-    if not os.path.exists(res_dir):
-        os.mkdir(res_dir)
+    dir_name = f'no{no}_ni{ni}'
+    res_file_name += dir_name
+    res_dir = os.path.join(res_dir + '_' +  dir_name)
+    #if not os.path.exists(res_dir):
+    #    os.mkdir(res_dir)
     
-    name_string = 'nx{}_ny{}'.format(nx.replace(',','-'), ny.replace(',','-'))
-    res_dir = os.path.join(res_dir + '/' +  name_string)
-    if not os.path.exists(res_dir):
-        os.mkdir(res_dir)
+    dir_name = 'lmp-{}'.format(lmp_mode.replace('"',''))
+    res_file_name += "_"+dir_name
+    res_dir = os.path.join(res_dir + '_' +  dir_name)
+    #if not os.path.exists(res_dir):
+    #    os.mkdir(res_dir)
     
-    name_string = f'nobs{nobs}_sigmaobs{sigma_obs}'
-    res_dir = os.path.join(res_dir + '/' +  name_string)
-    if not os.path.exists(res_dir):
-        os.mkdir(res_dir)
+    dir_name = 'nx{}_ny{}'.format(nx.replace(',','-'), ny.replace(',','-'))
+    res_file_name += "_"+dir_name
+    res_dir = os.path.join(res_dir + '_' +  dir_name)
+    #if not os.path.exists(res_dir):
+    #    os.mkdir(res_dir)
     
-    name_string = f'sigbvar{sigmabvar}_Lb{Lb}'
-    res_dir = os.path.join(res_dir + '/' +  name_string)
+    dir_name = f'nobs{nobs}_sigmaobs{sigma_obs}'
+    res_file_name += "_"+dir_name
+    res_dir = os.path.join(res_dir + '_' +  dir_name)
+    #if not os.path.exists(res_dir):
+    #    os.mkdir(res_dir)
+    
+    dir_name = f'sigbvar{sigmabvar}_Lb{Lb}'
+    res_file_name += "_"+dir_name
+    res_dir = os.path.join(res_dir + '_' +  dir_name)
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
     
     #name_string += f'_orth{test_ortho}_shut_{shutoff_type}-{shutoff_value}'
 
     name_string = 'interp-{}'.format(interp_method.replace('"',''))
+    res_file_name += "_"+dir_name
     res_dir = os.path.join(res_dir + '/' +  name_string)
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
     
     name_string = f'proj{projective_Bmatrix}'
+    res_file_name += "_"+dir_name
     res_dir = os.path.join(res_dir + '/' +  name_string)
     if not os.path.exists(res_dir):
         os.mkdir(res_dir)
@@ -198,7 +216,7 @@ for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, interp_method, projective_Bmatri
                             shutoff_type, shutoff_value,
                             interp_method, projective_Bmatrix]
     parameters['resolution'] = [nx, ny]
-    parameters['obs'] = [nobs, sigma_obs]
+    parameters['obs'] = [nobs, sigma_obs, measure_function]
     parameters['background'] = [sigmabvar, Lb, spvarmin]
     parameters['miscellanous'] = [new_seed, filename]
     
@@ -206,16 +224,38 @@ for no, ni, nx, nobs, sigma_obs, sigmabvar, Lb, interp_method, projective_Bmatri
         
     # Run the code:
     os.chdir(directories['multi'])
+    # Copy the source code:
+    if os.path.exists(os.path.join(res_dir + "/src")):
+        rmtree(os.path.join(res_dir + "/src"))
+    copytree("src", os.path.join(res_dir + "/src"))
     #os.system('echo "namelist" | '+exec_command)
     os.system(exec_command + " namelist")
     copyfile("namelist", os.path.join(res_dir + "/namelist"))                                    
     os.chdir(directories['run_analysis'])
     # Copy the results:
     copyfile(code_output, os.path.join(res_dir + "/output.nc"))
+    
                                     
 ################################################################################
 # Analysis:
 print('Starting analysis:')
+################################################################################
+# Comparision between the different methods:
+
+for r, res_dir in enumerate(res_dir_list):
+    try:
+    #if True:                        
+        ds = netcdf_extract(res_dir)
+        # Comparision for 1D variables (cost functions, rho, beta ...):
+        compare_methods_plot(ds, outer_iterations_list[r], res_dir)
+
+        compare_methods_plot2(ds, outer_iterations_list[r], res_dir)
+
+        # Comparision for 2D variables at outer loop level:
+        compare_methods_2D_outer(ds, res_dir)
+    except:
+        print("Cannot compare methods with file \n", res_dir) 
+################################################################################
 
 # Loop over the results directories produced:
 for r, res_dir in enumerate(res_dir_list):
@@ -295,22 +335,6 @@ for r, res_dir in enumerate(res_dir_list):
                                     field_plot(dx, out_name)
                                 except:
                                     print('Cannot plot matrix for ', met, io, field)    
-                                                
-################################################################################
-# Comparision between the different methods:
 
-for r, res_dir in enumerate(res_dir_list):
-    try:
-    #if True:                        
-        ds = netcdf_extract(res_dir)
-        # Comparision for 1D variables (cost functions, rho, beta ...):
-        compare_methods_plot(ds, outer_iterations_list[r], res_dir)
-
-        compare_methods_plot2(ds, outer_iterations_list[r], res_dir)
-
-        # Comparision for 2D variables at outer loop level:
-        compare_methods_2D_outer(ds, res_dir)
-    except:
-        print("Cannot compare methods: the following file does not exist:\n",res)
-print('analysis completed')    
+print('analysis completed')   
 ################################################################################

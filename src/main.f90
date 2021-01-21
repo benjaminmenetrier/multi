@@ -37,6 +37,7 @@ integer             :: nx(nomax)           ! X direction sizes
 integer             :: ny(nomax)           ! Y direction sizes
 integer             :: nobs                ! Number of observations
 real(8)             :: sigma_obs           ! Observation error standard deviation
+character(len=1024) :: measure_function    ! measure function in H operator ('linear', 'cubic')
 real(8)             :: sigmabvar           ! Grid-point standard deviation variations amplitude
 real(8)             :: Lb                  ! Correlation length-scale
 real(8)             :: spvarmin            ! Minimum spectral variance (inverse fails if this is too small)
@@ -82,7 +83,8 @@ namelist/resolutions/ &
  & ny
 namelist/observations/ &
  & nobs, &
- & sigma_obs
+ & sigma_obs, &
+ & measure_function
 namelist/background/ &
  & sigmabvar, &
  & Lb, &
@@ -111,6 +113,7 @@ nx = 101
 ny = 101
 nobs = 2000
 sigma_obs = 0.1
+measure_function = 'cubic'
 sigmabvar = 0.0
 Lb = 0.12
 spvarmin = 1.0e-5
@@ -232,7 +235,7 @@ allocate(hxg(nobs))
 allocate(hxg2(nobs))
 
 ! Setup obserations locations
-call hmatrix%setup(nobs)
+call hmatrix%setup(nobs,measure_function)
 call hmatrix%write(ncid,x_obs_id,y_obs_id,nobs_id)
 
 ! Setup R matrix

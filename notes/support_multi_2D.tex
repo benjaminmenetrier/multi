@@ -23,7 +23,7 @@
 %Pour le TITLEPAGE
 
 
-\title[Nicolas Baillot d'Etivaux]{Constraining the equation of state for dense matter through thermal emission of neutron stars}
+\title[Nicolas Baillot d'Etivaux]{}
 
 
 %Debut de la presentation :
@@ -40,42 +40,236 @@
 \begin{itemize}
 \item Added features
 \item Comparision between linear and non linear H
-\item Comparision between interpolation methods and projective B matrix
+\item Comparision between interpolation methods with/without projective B matrix
 \end{itemize}
 \end{frame}
 
 
 \begin{frame}{Added features}
 \begin{itemize}
- \item Cubic H operator + adjoint:
+ \item Cubic H operator and adjoint:
  \begin{itemize}
-  \item Adjoint coding ok ? test -> 1E-15
-  \item Other functions to test ?
+  \item $H_{nl}$: 1) $x \rightarrow x^3$, 2) interpolation on obs points.
+  \item $H$: 1) $x \rightarrow 3 x^g  x^g  x^3$, 2) interpolation on obs points.
+  \item $H^*$: 1) interpolation on grid points, 2) $x \rightarrow 3 x^g  x^g  x^3$. 
  \end{itemize}
- \item Gaussian random field for the truth
- \item Observations from the truth ($y = H x^t + N(0,\sigma^o)$)
+ \vspace{+0.2cm}
+ \item Truth:\\
+  1) $x^t = \textrm{rand\_normal}(n_h)$.\\
+  2) $x^t = B^{1/2} x^t$.
+  \vspace{+0.2cm}
+ \item Observations from the truth:\\
+     $y = H x^t + N(0,\sigma^o)$.
+ \vspace{+0.2cm}
+ \item Nearest Neighbor interpolation.    
 \end{itemize}
 \end{frame}
 
 
 %------------------------------------------------------------------------------------------
+\begin{frame}{Check the observations from $x^t$}
+\begin{center}
+$ \sigma^o = 0.001$\\ 
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=0.95\linewidth]{img/xt.png}
+  \caption{$x^t$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=0.95\linewidth]{img/obs.png}
+  \caption{Obs with a linear H}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Check the observations from $x^t$}
+\begin{center}
+$ \sigma^o = 0.001$\\ 
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=0.95\linewidth]{img/xt.png}
+  \caption{$x^t$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=0.95\linewidth]{img/obs_nl.png}
+  \caption{Obs with a cubic H}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%------------------------------------------------------------------------------------------
+\begin{frame}{Comparision between linear and non linear H: $J^o$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/Hcomp/jo_linear300.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Comparision between linear and non linear H:$J^o$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Cubic case:\\
+\includegraphics[scale=0.3]{./img/Hcomp/jo_nl300.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Comparision between linear and non linear H:$J^o_{nl}$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Cubic case:\\
+\includegraphics[scale=0.3]{./img/Hcomp/jo_nl_nl300.png}
+\end{center}
+\end{frame}
+%------------------------------------------------------------------------------------------
+
+
+\begin{frame}
+\begin{center}
+\huge{Projective B-matrix}
+\end{center}
+\end{frame}
+
+\begin{frame}{Projective B matrix: nearest interpolation: $J^o$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/near/jo_linear_T.png}
+\end{center}
+\end{frame}
+\begin{frame}{Projective B matrix: nearest interpolation: $J^b$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/near/jb_linear_T.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Projective B matrix: bilinear interpolation: $J^o$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/bil/jo_linear_T.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Projective B matrix: bilinear interpolation: $J^b$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/bil/jb_linear_T.png}
+\end{center}
+\end{frame}
+
+%------------------------------------------------------------------------------------------
+
+
+\begin{frame}
+\begin{center}
+\huge{Non projective B-matrix}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non projective B matrix: spectral interpolation: $J^o$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/spec/jo_linear_F.png}
+\end{center}
+\end{frame}
+\begin{frame}{Non projective B matrix: spectral interpolation: $J^b$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/spec/jb_linear_F.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non projective B matrix: bilinear interpolation: $J^o$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/bil/jo_linear_F.png}
+\end{center}
+\end{frame}
+\begin{frame}{Non projective B matrix: bilinear interpolation: $J^b$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/bil/jb_linear_F.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non projective B matrix: nearest interpolation: $J^o$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/near/jo_linear_F.png}
+\end{center}
+\end{frame}
+\begin{frame}{Non projective B matrix: nearest interpolation: $J^b$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+Linear case:\\
+\includegraphics[scale=0.3]{./img/projB/near/jb_linear_F.png}
+\end{center}
+\end{frame}
+
+%------------------------------------------------------------------------------------------
+
+\begin{frame}
+\begin{center}
+\huge{Non projective B-matrix with cubic H}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non projective B matrix: spectral interpolation: $J$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+cubic case:\\
+\includegraphics[scale=0.3]{./img/projB/spec/j_cubic_F.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non projective B matrix: spectral interpolation: $J^o_nl$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+cubic case:\\
+\includegraphics[scale=0.3]{./img/projB/spec/jo_nl_cubic_F.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non projective B matrix: spectral interpolation: $J^o$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+cubic case:\\
+\includegraphics[scale=0.3]{./img/projB/spec/jo_cubic_F.png}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non projective B matrix: spectral interpolation: $J^b$}
+\begin{center}
+$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
+cubic case:\\
+\includegraphics[scale=0.3]{./img/projB/spec/jb_cubic_F.png}
+\end{center}
+\end{frame}
 
 
 % Conclusions ------------------------------------------------------------------------------------------
-\begin{frame}{Short conclusion:}
+\begin{frame}{Short conclusion and questions:}
 \begin{itemize}
- \item The code seems to converge to a correct solution according to the innovation, cost function and residual norm, both in full resolution or changing it.
- \item There is no significant difference between the three methods or between the algorithms used in both scenarios for the resolution.
- \item There is a small difference between non-linear and linearized cost functions.
- \item There are small differences in the guess appearing after the first outer loops between the alternative and theoretical methods, but not between the standard and theoretical methods.
- \item Need to check beta (outer loops problem?)
+\item As expected: The only way to get no differences between the methods (th, std, alt) is to have a transitive interpolation AND the projective B matrix condition.\\
+\item There is often a change of variation at the first inner loop level (except for the first outer loop).\\
+\item Nearest neighbor interpolation seems not transitive (?) (+periodic domain ? + very slow...)\\
+\item Similar behaviour with H measuring $x^4$ (not shown).
+\item Question: What happens if two observations are interpolated at the same grid point with the bilinear and nearest neighbor interpolations ?
+\item Question: equation 38 from the notes.
 \end{itemize}
 \end{frame}
 %------------------------------------------------------------------------------------------
-
-
-
-
 
 
 \usebackgroundtemplate{}

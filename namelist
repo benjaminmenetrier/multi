@@ -19,8 +19,9 @@ ny = 23,51,101
 /
 
 &observations
-nobs = 100
+nobs = 300
 sigma_obs = 0.001
+measure_function = "4th"
 /
 
 &background

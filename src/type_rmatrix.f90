@@ -103,7 +103,7 @@ implicit none
 
 ! Passed variables
 class(rmatrix_type),intent(in)   :: rmatrix
-real(8),intent(inout)               :: yo(rmatrix%nobs)
+real(8),intent(inout)            :: yo(rmatrix%nobs)
 
 ! Local variable
 real(8)                          :: nu(rmatrix%nobs),y_err(rmatrix%nobs)
