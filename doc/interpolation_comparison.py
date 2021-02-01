@@ -52,7 +52,7 @@ for i in range (0,n3+1):
    ylindir.append(lin1(float(i)/float(n3)))
    ynndir.append(nn1(float(i)/float(n3)))
 
-nref = 100
+nref = 1000
 xref = []
 yspref = []
 ylin1ref = []
