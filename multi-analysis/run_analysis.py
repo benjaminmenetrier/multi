@@ -80,7 +80,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/H4th')
+results_dir_root = os.path.join(directories['analysis_results'] + '/full_res_check')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -106,19 +106,19 @@ res_dir_list = []
 outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
-i_no = [3]
-i_ni = [4]
+i_no = [6]
+i_ni = [2,6]
 
-i_nx = ['23,51,101']
+i_nx = ['101,101,101,101,101,101']
 
-i_nobs = [300]
-i_sigma_obs = [0.001]
-i_measure_function = ['"4th"']
+i_nobs = [2000]
+i_sigma_obs = [0.001, 0.01, 0.1]
+i_measure_function = ['"cubic"','"linear"']
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
 
-i_interp_method = ['"bilinear"','"spectral"','"nearest"']
+i_interp_method = ['"bilinear"','"spectral"']
 #i_interp_method = ['"spectral"']
 
 i_project_B = ["T","F"]

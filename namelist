@@ -3,24 +3,24 @@ nm = 3
 method = "theoretical", "standard", "alternative"
 na = 2
 algorithm = "lanczos", "planczosif"
-no = 2
-ni = 4
+no = 1
+ni = 2
 lmp_mode = "none"
 test_ortho = T
 shutoff_type = 0
 shutoff_value = 0.01
-interp_method = "nearest"
+interp_method = "bilinear"
 projective_Bmatrix = F
 /
 
 &resolutions
-nx = 23,25,101
-ny = 1,1,101
+nx = 101,101,101,101,101,101
+ny = 101,101,101,101,101,101
 /
 
 &observations
-nobs = 300
-sigma_obs = 0.001
+nobs = 2000
+sigma_obs = 0.1
 measure_function = "linear"
 /
 

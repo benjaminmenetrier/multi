@@ -552,7 +552,6 @@ do im=1,nm
    
          ! Compute innovation
          call hmatrix%apply_nl(geom(io),xg,hxg)
-         
          d = hmatrix%yo-hxg
       
          ! Copy and interpolate LMP vectors
