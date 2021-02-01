@@ -840,11 +840,11 @@ call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
 ! Compute the difference
 diff_123_vs_13 = 0.0
 do ih=1,geom_test(3)%nh
-   diff_123_vs_13 = diff_123_vs_13 + abs(field_test123(ih)-field_test13(ih))
+   !diff_123_vs_13 = diff_123_vs_13 + abs(field_test123(ih)-field_test13(ih))
+   diff_123_vs_13 = max(diff_123_vs_13, abs(field_test123(ih)-field_test13(ih)))
 end do
 
-! (Maybe look at the max value instead) ?
-diff_123_vs_13 = diff_123_vs_13/(1.0*geom_test(3)%nh)
+!diff_123_vs_13 = diff_123_vs_13/(1.0*geom_test(3)%nh)
 
 deallocate(field_test1)
 deallocate(field_test12)
@@ -928,22 +928,22 @@ write(*,'(a)') '   Transitive interpolation test:'
 allocate(nx_test(3))
 allocate(ny_test(3))
 
-! Lower to higher dimension:
-nx_test = (/21,51,101/)
-ny_test = (/21,51,101/)
-write(*,'(a)') ''
-call transitive_interp_diff(nx_test,ny_test,interp_method,diff_l2h)
-write(*,'(a)') ''
-write(*,'(a,e15.8)') '      Ri>Rj>Rk - Ri>Rk :       ', diff_l2h
-
-! Higher to lower dimension:
-nx_test = (/101,51,21/)
-ny_test = (/101,51,21/)
+! Lower dimension to arbitrary to higher dimension:
+nx_test = (/21,101,51/)
+ny_test = (/21,101,51/)
 write(*,'(a)') ''
 call transitive_interp_diff(nx_test,ny_test,interp_method,diff_h2l)
 write(*,'(a)') ''
-write(*,'(a,e15.8)') '      Ri<Rj<Rk - Ri<Rk :       ', diff_h2l
+write(*,'(a,e15.8)') '      condition (38) :       ', diff_h2l
 write(*,'(a)') ''
+
+! Higher to Lower dimension:
+nx_test = (/101,51,21/)
+ny_test = (/101,51,21/)
+write(*,'(a)') ''
+call transitive_interp_diff(nx_test,ny_test,interp_method,diff_l2h)
+write(*,'(a)') ''
+write(*,'(a,e15.8)') '      condition (39) :       ', diff_l2h
 
 ! Right inverse test
 write(*,'(a)') ''
