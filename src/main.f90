@@ -31,7 +31,7 @@ character(len=1024) :: lmp_mode            ! LMP mode ('none', 'spectral', 'ritz
 logical             :: test_ortho          ! Test orthogonality
 integer             :: shutoff_type        ! Stopping criterion according: 1-Jb, 2-beta, 3-Ritz convergence (else: no criterion)
 real(8)             :: shutoff_value       ! Stopping criterion threshold
-character(len=1024) :: interp_method       ! Interpolation method (transitive or not)
+character(len=1024) :: interp_method       ! Interpolation method ('spectral',  or not)
 logical             :: projective_Bmatrix  ! Projective B matrix (low-resolution B matrix is a a projection of the high-resolution B matrix)
 integer             :: nx(nomax)           ! X direction sizes
 integer             :: ny(nomax)           ! Y direction sizes
@@ -54,7 +54,7 @@ real(8),allocatable            :: maxdiff(:,:,:,:)
 real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:,:),xt(:)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:),dvb(:),dva(:),dxa(:),dxa_tmp(:),dxabar(:),dxa_prev(:)
 real(8),allocatable            :: xb_2d(:,:),xg_2d(:,:),xt_2d(:,:)
-real(8),allocatable            :: d(:),hxg(:),hxg2(:)
+real(8),allocatable            :: d(:),hxg(:)
 character(len=1024)            :: grpname
 type(algo_type),allocatable    :: algo(:,:,:)
 type(bmatrix_type),allocatable :: bmatrix(:)
@@ -75,7 +75,6 @@ namelist/solver/ &
  & test_ortho, &
  & shutoff_type, &
  & shutoff_value, &
- ! & transitive_interp, &
  & interp_method, &
  & projective_Bmatrix
 namelist/resolutions/ &
@@ -107,7 +106,6 @@ lmp_mode = 'none'
 test_ortho = .false.
 shutoff_type = 0
 shutoff_value = 0.0
-!transitive_interp = .true.
 interp_method = 'spectral'
 nx = 101
 ny = 101
@@ -119,7 +117,6 @@ Lb = 0.12
 spvarmin = 1.0e-5
 new_seed = .false.
 filename = 'output.nc'
-
 
 ! Read the name of the namelist to use
 call get_command_argument(1,namelist_name)
@@ -176,15 +173,14 @@ end do
 ! Setup geometries
 do io=1,no
    write(*,'(a,i1)') '   Geometry setup for outer iteration ',io
-   !call geom(io)%setup(nx(io),ny(io),transitive_interp)
    call geom(io)%setup(nx(io),ny(io),interp_method)
    do im=1,nm
       call geom(io)%write(grpid(io,im))
    end do
 end do
 
-! Transitive interpolation test:
-call transitive_interp_test(interp_method)
+! Test interpolation transitivity
+if ((no>1).and.(geom(1)%nh<geom(no)%nh)) call geom(1)%transitive_interp_test(geom(no))
 
 ! Allocation (model/control space)
 allocate(xb_full(geom(no)%nh))
@@ -216,7 +212,7 @@ call rand_normal(geom(no)%nh,xt)
 call bmatrix(no)%apply_sqrt(geom(no),xt,xt)
 xt_2d=reshape(xt,(/geom(no)%nx,geom(no)%ny/))
 
-! Write the truth:
+! Write the truth
 
 ! Create dimensions
 call ncerr('hmatrix_write',nf90_def_dim(ncid,'nx_full',geom(no)%nx,nx_full_id))
@@ -232,7 +228,6 @@ call ncerr('main',nf90_put_var(ncid,xt_id,xt_2d))
 ! Allocation (obs space)
 allocate(d(nobs))
 allocate(hxg(nobs))
-allocate(hxg2(nobs))
 
 ! Setup obserations locations
 call hmatrix%setup(nobs,measure_function)
@@ -262,8 +257,7 @@ do io=1,no
    allocate(xb_2d(geom(io)%nx,geom(io)%ny))
 
    ! Interpolate background at current resolution
-   call geom(no)%interp_gp(geom(io),xb_full,xb)
-   !call geom(no)%interp_nearest(geom(io),xb_full,xb)
+   call geom(no)%interp(geom(io),xb_full,xb)
 
    ! Reshape background
    xb_2d = reshape(xb,(/geom(io)%nx,geom(io)%ny/))
@@ -317,8 +311,7 @@ do im=1,nm
          call hmatrix%test(geom(io))
 
          ! Interpolate background at current resolution
-         call geom(no)%interp_gp(geom(io),xb_full,xb)
-         !call geom(no)%interp_nearest(geom(io),xb_full,xb)
+         call geom(no)%interp(geom(io),xb_full,xb)
          
          ! Compte guess and first term of the right-hand side
          if (trim(method(im))=='theoretical') then
@@ -335,12 +328,10 @@ do im=1,nm
                ! Compute analysis increment from the previous outer iteration at full resolution
                if (trim(algorithm(ia))=='lanczos') then
                   call bmatrix(io-1)%apply_sqrt(geom(io-1),algo(io-1,ia,im)%dva,dxa_prev)
-                  call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full(:,io-1))
-                  !call geom(io-1)%interp_nearest(geom(no),dxa_prev,dxa_full(:,io-1))
+                  call geom(io-1)%interp(geom(no),dxa_prev,dxa_full(:,io-1))
                elseif (trim(algorithm(ia))=='planczosif') then
                   call bmatrix(io-1)%apply(geom(io-1),algo(io-1,ia,im)%dxabar,dxa_prev)
-                  call geom(io-1)%interp_gp(geom(no),dxa_prev,dxa_full(:,io-1))
-                  !call geom(io-1)%interp_nearest(geom(no),dxa_prev,dxa_full(:,io-1))
+                  call geom(io-1)%interp(geom(no),dxa_prev,dxa_full(:,io-1))
                end if
 
                ! Add analysis increment of the previous outer iteration at full resolution
@@ -351,8 +342,7 @@ do im=1,nm
             end if
    
             ! Interpolate guess at current resolution
-            call geom(no)%interp_gp(geom(io),xg_full,xg)
-            !call geom(no)%interp_nearest(geom(io),xg_full,xg)
+            call geom(no)%interp(geom(io),xg_full,xg)
             
             ! Allocation
             allocate(dxbbar(geom(io)%nh))
@@ -385,89 +375,80 @@ do im=1,nm
                ! Background at full resolution
                xg_full = xb_full
             else
-               !if (transitive_interp) then
-               if (trim(geom(no)%interp_method) == 'nearest' .or. trim(geom(no)%interp_method) == 'spectral') then
-                  if (projective_Bmatrix) then
-                     ! Allocation
-                     allocate(dxa(geom(io-1)%nh))
+               if (projective_Bmatrix) then
+                  ! Allocation
+                  allocate(dxa(geom(io-1)%nh))
    
-                     ! Compute analysis increment from the previous outer iteration at full resolution
-                     if (trim(algorithm(ia))=='lanczos') then
-                        call bmatrix(io-1)%apply_sqrt(geom(io-1),algo(io-1,ia,im)%dva,dxa)
-                     elseif (trim(algorithm(ia))=='planczosif') then
-                        call bmatrix(io-1)%apply(geom(io-1),algo(io-1,ia,im)%dxabar,dxa)
-                     end if
-                     call geom(io-1)%interp_gp(geom(no),dxa,dxa_full(:,io-1))
-                     !call geom(io-1)%interp_nearest(geom(no),dxa,dxa_full(:,io-1))
-                     
-                     ! Add analysis increment of the previous outer iteration at full resolution
-                     xg_full = xg_full+dxa_full(:,io-1)
-    
-                     ! Release memory
-                     deallocate(dxa)
-                  else
-                     ! Allocation
-                     allocate(dxa(geom(io)%nh))
-                     allocate(dxa_tmp(geom(io)%nh))   
-
-                     ! Initialization
-                     dxa = 0.0
-
-                     ! Compute analysis increment from the previous outer iterations at full resolution
-                     if (trim(algorithm(ia))=='lanczos') then
-                        ! Allocation
-                        allocate(dva(geom(io)%nh))
-
-                        ! Loop over previous iterations
-                        do jo=1,io-1
-                           call geom(jo)%interp_sp(geom(io),algo(jo,ia,im)%dva,dva)
-                           call bmatrix(io)%apply_sqrt(geom(io),dva,dxa_tmp)
-                           dxa = dxa+dxa_tmp
-                        end do
-                        do jo=1,io-2
-                           call geom(no)%interp_gp(geom(io),dxa_full(:,jo),dxa_tmp)
-                           !call geom(no)%interp_nearest(geom(io),dxa_full(:,jo),dxa_tmp)
-                           dxa = dxa-dxa_tmp
-                        end do
-
-                        ! Release memory
-                        deallocate(dva)
-                     elseif (trim(algorithm(ia))=='planczosif') then
-                        ! Allocation
-                        allocate(dxabar(geom(io)%nh))
-
-                        ! Loop over previous iterations
-                        do jo=1,io-1
-                           call geom(jo)%interp_gp(geom(io),algo(jo,ia,im)%dxabar,dxabar)
-                           !call geom(jo)%interp_nearest(geom(io),algo(jo,ia,im)%dxabar,dxabar)
-                           call bmatrix(io)%apply(geom(io),dxabar,dxa_tmp)
-                           dxa = dxa+dxa_tmp
-                        end do
-                        do jo=1,io-2
-                           call geom(no)%interp_gp(geom(io),dxa_full(:,jo),dxa_tmp)
-                           !call geom(no)%interp_nearest(geom(io),dxa_full(:,jo),dxa_tmp)
-                           dxa = dxa-dxa_tmp
-                        end do
-
-                        ! Release memory
-                        deallocate(dxabar)
-                     end if                   
-                     call geom(io)%interp_gp(geom(no),dxa,dxa_full(:,io-1))
-                     !call geom(io)%interp_nearest(geom(no),dxa,dxa_full(:,io-1))
-                     
-                     ! Add analysis increment of the previous outer iteration at full resolution
-                     xg_full = xg_full+dxa_full(:,io-1)
-    
-                     ! Release memory
-                     deallocate(dxa)
-                     deallocate(dxa_tmp)
+                  ! Compute analysis increment from the previous outer iteration at full resolution
+                  if (trim(algorithm(ia))=='lanczos') then
+                     call bmatrix(io-1)%apply_sqrt(geom(io-1),algo(io-1,ia,im)%dva,dxa)
+                  elseif (trim(algorithm(ia))=='planczosif') then
+                     call bmatrix(io-1)%apply(geom(io-1),algo(io-1,ia,im)%dxabar,dxa)
                   end if
+                  call geom(io-1)%interp(geom(no),dxa,dxa_full(:,io-1))
+                  
+                  ! Add analysis increment of the previous outer iteration at full resolution
+                  xg_full = xg_full+dxa_full(:,io-1)
+ 
+                  ! Release memory
+                  deallocate(dxa)
+               else
+                  ! Allocation
+                  allocate(dxa(geom(io)%nh))
+                  allocate(dxa_tmp(geom(io)%nh))   
+
+                  ! Initialization
+                  dxa = 0.0
+
+                  ! Compute analysis increment from the previous outer iterations at full resolution
+                  if (trim(algorithm(ia))=='lanczos') then
+                     ! Allocation
+                     allocate(dva(geom(io)%nh))
+
+                     ! Loop over previous iterations
+                     do jo=1,io-1
+                        call geom(jo)%interp(geom(io),algo(jo,ia,im)%dva,dva)
+                        call bmatrix(io)%apply_sqrt(geom(io),dva,dxa_tmp)
+                        dxa = dxa+dxa_tmp
+                     end do
+                     do jo=1,io-2
+                        call geom(no)%interp(geom(io),dxa_full(:,jo),dxa_tmp)
+                        dxa = dxa-dxa_tmp
+                     end do
+
+                     ! Release memory
+                     deallocate(dva)
+                  elseif (trim(algorithm(ia))=='planczosif') then
+                     ! Allocation
+                     allocate(dxabar(geom(io)%nh))
+
+                     ! Loop over previous iterations
+                     do jo=1,io-1
+                        call geom(jo)%interp(geom(io),algo(jo,ia,im)%dxabar,dxabar)
+                        call bmatrix(io)%apply(geom(io),dxabar,dxa_tmp)
+                        dxa = dxa+dxa_tmp
+                     end do
+                     do jo=1,io-2
+                        call geom(no)%interp(geom(io),dxa_full(:,jo),dxa_tmp)
+                        dxa = dxa-dxa_tmp
+                     end do
+
+                     ! Release memory
+                     deallocate(dxabar)
+                  end if                   
+                  call geom(io)%interp(geom(no),dxa,dxa_full(:,io-1))
+                  
+                  ! Add analysis increment of the previous outer iteration at full resolution
+                  xg_full = xg_full+dxa_full(:,io-1)
+ 
+                  ! Release memory
+                  deallocate(dxa)
+                  deallocate(dxa_tmp)
                end if
             end if
    
             ! Interpolate guess at current resolution
-            call geom(no)%interp_gp(geom(io),xg_full,xg)
-            !call geom(no)%interp_nearest(geom(io),xg_full,xg)
+            call geom(no)%interp(geom(io),xg_full,xg)
             
             if (trim(algorithm(ia))=='lanczos') then 
                ! Allocation
@@ -479,7 +460,7 @@ do im=1,nm
    
                do jo=1,io-1
                   ! Interpolate analysis increment of previous iterations at current resolution
-                  call geom(jo)%interp_sp(geom(io),algo(jo,ia,im)%dva,dva)
+                  call geom(jo)%interp(geom(io),algo(jo,ia,im)%dva,dva)
    
                    ! Add contributions
                   dvb = dvb-dva
@@ -497,8 +478,7 @@ do im=1,nm
    
                do jo=1,io-1
                   ! Interpolate analysis increment of previous iterations at current resolution
-                  call geom(jo)%interp_gp(geom(io),algo(jo,ia,im)%dxabar,dxabar)
-                  !call geom(jo)%interp_nearest(geom(io),algo(jo,ia,im)%dxabar,dxabar)
+                  call geom(jo)%interp(geom(io),algo(jo,ia,im)%dxabar,dxabar)
                   
                   ! Add contributions
                   dxbbar = dxbbar-dxabar
@@ -522,7 +502,7 @@ do im=1,nm
    
                do jo=1,io-1
                   ! Interpolate analysis increment of previous iterations at current resolution
-                  call geom(jo)%interp_sp(geom(io),algo(jo,ia,im)%dva,dva)
+                  call geom(jo)%interp(geom(io),algo(jo,ia,im)%dva,dva)
    
                   ! Add contributions
                   dvb = dvb-dva
@@ -543,8 +523,7 @@ do im=1,nm
    
                do jo=1,io-1
                   ! Interpolate analysis increment of previous iterations at current resolution
-                  call geom(jo)%interp_gp(geom(io),algo(jo,ia,im)%dxabar,dxabar)
-                  !call geom(jo)%interp_nearest(geom(io),algo(jo,ia,im)%dxabar,dxabar)
+                  call geom(jo)%interp(geom(io),algo(jo,ia,im)%dxabar,dxabar)
                   
                   ! Add contributions
                   dxbbar = dxbbar-dxabar
@@ -561,8 +540,7 @@ do im=1,nm
             xg = xb-dxb
    
             ! Interpolate background increment at full resolution
-            call geom(io)%interp_gp(geom(no),dxb,dxb_full)
-            !call geom(io)%interp_nearest(geom(no),dxb,dxb_full)
+            call geom(io)%interp(geom(no),dxb,dxb_full)
             
             ! Compute guess at full resolution
             xg_full = xb_full-dxb_full
@@ -574,8 +552,6 @@ do im=1,nm
    
          ! Compute innovation
          call hmatrix%apply_nl(geom(io),xg,hxg)
-         !call hmatrix%apply(geom(io),xg,xg,hxg2)
-         !write(*,'(a,e13.6)') 'diff bteween hnl and h:', sum(hxg-hxg2)
          
          d = hmatrix%yo-hxg
       
@@ -602,10 +578,10 @@ do im=1,nm
                   do ii=1,ni+1
                      if (trim(algorithm(ia))=='lanczos') then
                         ! Interpolation of Lanczos vectors
-                        call geom(jo-1)%interp_sp(geom(io),lmp(jo,ia,im)%lancvec_trunc(:,ii),lmp(io,ia,im)%outer(jo)%lancvec(:,ii))
+                        call geom(jo-1)%interp(geom(io),lmp(jo,ia,im)%lancvec_trunc(:,ii),lmp(io,ia,im)%outer(jo)%lancvec(:,ii))
                      elseif (trim(algorithm(ia))=='planczosif') then
                         ! Interpolation of Lanczos vectors
-                        call geom(jo-1)%interp_gp(geom(io),lmp(jo,ia,im)%lancvec_trunc(:,ii),lmp(io,ia,im)%outer(jo)%lancvec(:,ii))
+                        call geom(jo-1)%interp(geom(io),lmp(jo,ia,im)%lancvec_trunc(:,ii),lmp(io,ia,im)%outer(jo)%lancvec(:,ii))
    
                         ! Regeneration of other Lanczos vectors
                         call lmp(io,ia,im)%apply(geom(io),ni,jo-1,lmp(io,ia,im)%outer(jo)%lancvec(:,ii), &

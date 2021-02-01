@@ -9,7 +9,7 @@ lmp_mode = "none"
 test_ortho = T
 shutoff_type = 0
 shutoff_value = 0.01
-interp_method = "nearest"
+interp_method = "spectral"
 projective_Bmatrix = F
 /
 
@@ -21,7 +21,7 @@ ny = 23,51,101
 &observations
 nobs = 300
 sigma_obs = 0.001
-measure_function = "4th"
+measure_function = "linear"
 /
 
 &background

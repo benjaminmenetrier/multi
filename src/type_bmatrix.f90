@@ -89,20 +89,20 @@ bmatrix%spnorm = 1.0/x(1)
 call random_number(x1)
 call bmatrix%apply(geom,x1,x1out)
 call bmatrix%apply_inv(geom,x1out,x2)
-write(*,'(a,e15.8)') '         Direct + inverse test on B:    ',maxval(abs(x1-x2))
+write(*,'(a,e15.8)') '      Direct + inverse test on B:    ',maxval(abs(x1-x2))
 
 ! Inverse + direct test on B
 call random_number(x1)
 call bmatrix%apply_inv(geom,x1,x1out)
 call bmatrix%apply(geom,x1out,x2)
-write(*,'(a,e15.8)') '         Inverse + direct test on B:    ',maxval(abs(x1-x2))
+write(*,'(a,e15.8)') '      Inverse + direct test on B:    ',maxval(abs(x1-x2))
 
 ! Test on U being the square-root of B
 call random_number(x1)
 call bmatrix%apply(geom,x1,x1out)
 call bmatrix%apply_sqrt_ad(geom,x1,v1)
 call bmatrix%apply_sqrt(geom,v1,x2)
-write(*,'(a,e15.8)') '         U = square-root of B:          ',maxval(abs(x1out-x2))
+write(*,'(a,e15.8)') '      U = square-root of B:          ',maxval(abs(x1out-x2))
 
 ! Adjoint test on U
 call random_number(x1)
@@ -112,7 +112,7 @@ call bmatrix%apply_sqrt_ad(geom,x1,v1)
 call bmatrix%apply_sqrt(geom,v2,x2)
 dp1 = sum(x1*x2)
 dp2 = geom%spdotprod(v1,v2)
-write(*,'(a,e15.8)') '         Adjoint test on U:             ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+write(*,'(a,e15.8)') '      Adjoint test on U:             ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
 ! Adjoint test on B
 call random_number(x1)
@@ -121,7 +121,7 @@ call bmatrix%apply(geom,x1,x1out)
 call bmatrix%apply(geom,x2,x2out)
 dp1 = sum(x1*x2out)
 dp2 = sum(x2*x1out)
-write(*,'(a,e15.8)') '         Auto-adjoint test on B:        ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+write(*,'(a,e15.8)') '      Auto-adjoint test on B:        ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
 ! Print correlation shape
 x1_2d = 0.0
@@ -132,13 +132,13 @@ x2_2d = reshape(x2,(/geom%nx,geom%ny/))
 sigmab_2d = reshape(bmatrix%sigmab,(/geom%nx,geom%ny/))
 x2_2d = x2_2d/(sigmab_2d(1,1)*sigmab_2d)
 iy = 1
-write(*,'(a)',advance='no') '         X-coordinate:                 '
+write(*,'(a)',advance='no') '      X-coordinate:                 '
 do ix=1,geom%nx
    if (x2_2d(ix,iy)<1.0e-3) exit
    write(*,'(f6.2)',advance='no') geom%x(ix)
 end do
 write(*,'(a)')
-write(*,'(a)',advance='no') '         Theoretical correlation shape:'
+write(*,'(a)',advance='no') '      Theoretical correlation shape:'
 do ix=1,geom%nx
    if (x2_2d(ix,iy)<1.0e-3) exit
    if (ix<geom%nx/2) then
@@ -149,20 +149,20 @@ do ix=1,geom%nx
    write(*,'(f6.2)',advance='no') exp(-0.5*(dist/bmatrix%Lb)**2)
 end do
 write(*,'(a)')
-write(*,'(a)',advance='no') '         Effective correlation shape:  '
+write(*,'(a)',advance='no') '      Effective correlation shape:  '
 do ix=1,geom%nx
    if (x2_2d(ix,iy)<1.0e-3) exit
    write(*,'(f6.2)',advance='no') x2_2d(ix,iy)
 end do
 write(*,'(a)')
-write(*,'(a)',advance='no') '         Y-coordinate:                 '
+write(*,'(a)',advance='no') '      Y-coordinate:                 '
 ix = 1
 do iy=1,geom%ny
    if (x2_2d(ix,iy)<1.0e-3) exit
    write(*,'(f6.2)',advance='no') geom%y(iy)
 end do
 write(*,'(a)')
-write(*,'(a)',advance='no') '         Theoretical correlation shape:'
+write(*,'(a)',advance='no') '      Theoretical correlation shape:'
 do iy=1,geom%ny
    ih = 1+(iy-1)*geom%nx
    if (x2_2d(ix,iy)<1.0e-3) exit
@@ -174,7 +174,7 @@ do iy=1,geom%ny
    write(*,'(f6.2)',advance='no') exp(-0.5*(dist/bmatrix%Lb)**2)
 end do
 write(*,'(a)')
-write(*,'(a)',advance='no') '         Effective correlation shape:  '
+write(*,'(a)',advance='no') '      Effective correlation shape:  '
 do iy=1,geom%ny
    ih = 1+(iy-1)*geom%nx
    if (x2_2d(ix,iy)<1.0e-3) exit
@@ -396,8 +396,10 @@ real(8),intent(out) :: x(geom%nh)
 ! Local variables
 real(8) :: vtmp(geom%nh)
 
+! Adjoint FFT inverse
+call geom%gp2sp(v,vtmp)
+
 ! Apply spectral standard-deviation
-vtmp = v
 call bmatrix%spvar_sqrt(geom,vtmp)
 
 ! Adjoint FFT
@@ -423,16 +425,19 @@ real(8),intent(in) :: x(geom%nh)
 real(8),intent(out) :: v(geom%nh)
 
 ! Local variables
-real(8) :: xtmp(geom%nh)
+real(8) :: xtmp(geom%nh),vtmp(geom%nh)
 
 ! Apply grid-point standard-deviation
 xtmp = x*bmatrix%sigmab
 
 ! FFT
-call geom%gp2sp(xtmp,v)
+call geom%gp2sp(xtmp,vtmp)
 
 ! Apply spectral standard-deviation
-call bmatrix%spvar_sqrt(geom,v)
+call bmatrix%spvar_sqrt(geom,vtmp)
+
+! FFT inverse
+call geom%sp2gp(vtmp,v)
 
 end subroutine bmatrix_apply_sqrt_ad
 
@@ -451,16 +456,19 @@ real(8),intent(in) :: x(geom%nh)
 real(8),intent(out) :: v(geom%nh)
 
 ! Local variables
-real(8) :: xtmp(geom%nh)
+real(8) :: xtmp(geom%nh),vtmp(geom%nh)
 
 ! Apply grid-point standard-deviation inverse
 xtmp = x/bmatrix%sigmab
 
 ! Adjoint FFT inverse
-call geom%gp2sp(xtmp,v)
+call geom%gp2sp(xtmp,vtmp)
 
 ! Apply spectral standard-deviation inverse
-call bmatrix%spvar_sqrt_inv(geom,v)
+call bmatrix%spvar_sqrt_inv(geom,vtmp)
+
+! Adjoint FFT
+call geom%sp2gp(vtmp,v)
 
 end subroutine bmatrix_apply_sqrt_inv
 
@@ -481,8 +489,10 @@ real(8),intent(out) :: x(geom%nh)
 ! Local variables
 real(8) :: vtmp(geom%nh)
 
+! FFT
+call geom%gp2sp(v,vtmp)
+
 ! Apply spectral standard-deviation inverse
-vtmp = v
 call bmatrix%spvar_sqrt_inv(geom,vtmp)
 
 ! FFT inverse

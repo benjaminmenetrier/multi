@@ -26,7 +26,6 @@ type geom_type
    real(8),allocatable :: x(:)
    real(8),allocatable :: y(:)
    character(len=1024) :: interp_method
-   
 contains
    procedure :: setup => geom_setup
    procedure :: write => geom_write
@@ -37,22 +36,12 @@ contains
    procedure :: gp2sp => geom_gp2sp
    procedure :: sp2gp => geom_sp2gp
    procedure :: spdotprod => geom_spdotprod
-   
-   procedure :: geom_interp_gp_scalar
-   procedure :: geom_interp_gp_field
-
-   procedure :: interp_sp => geom_interp_sp
-
-   !-----------------------------------------------------------------------------
-   procedure :: geom_interp_nearest_scalar
-
-   generic   :: interp_gp => geom_interp_gp_scalar,geom_interp_gp_field
-   procedure :: interp_gp_ad => geom_interp_gp_scalar_ad
-   
-   procedure :: interp_nearest_scalar => geom_interp_nearest_scalar
-   procedure :: interp_nearest_scalar_ad => geom_interp_nearest_scalar_ad
-   !-----------------------------------------------------------------------------
-
+   procedure :: interp => geom_interp
+   procedure :: interp_spectral => geom_interp_spectral
+   procedure :: interp_bilinear => geom_interp_bilinear
+   procedure :: interp_bilinear_ad => geom_interp_bilinear_ad
+   procedure :: interp_nearest => geom_interp_nearest
+   procedure :: transitive_interp_test => geom_transitive_interp_test
 end type geom_type
 
 contains
@@ -61,7 +50,6 @@ contains
 ! Subroutine: geom_setup
 ! Purpose: setup geometry
 !----------------------------------------------------------------------
-!subroutine geom_setup(geom,nx,ny,transitive_interp)
 subroutine geom_setup(geom,nx,ny,interp_method)
     
 implicit none
@@ -70,7 +58,6 @@ implicit none
 class(geom_type),intent(inout) :: geom
 integer,intent(in) :: nx
 integer,intent(in) :: ny
-!logical,intent(in) :: transitive_interp
 character(len=1024):: interp_method
 
 ! Local variables
@@ -93,7 +80,6 @@ end if
 ! Copy dimensions and attributes
 geom%nx = nx
 geom%ny = ny
-!geom%transitive_interp = transitive_interp
 geom%interp_method = interp_method
 
 ! Derived dimensions
@@ -185,13 +171,9 @@ dp1 = sum(gp1*gp2)
 dp2 = geom%spdotprod(sp1,sp2)
 write(*,'(a,e15.8)') '      SP to GP adjoint:           ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
-! GP interpolation
-call geom%interp_gp(geom,gp1,gp2)
-write(*,'(a,e15.8)') '      GP interpolation:           ',maxval(abs(gp1-gp2))
-
-! SP interpolation
-call geom%interp_sp(geom,sp1,sp2)
-write(*,'(a,e15.8)') '      SP interpolation:           ',maxval(abs(sp1-sp2))
+! Null interpolation
+call geom%interp(geom,gp1,gp2)
+write(*,'(a,e15.8)') '      Null interpolation:         ',maxval(abs(gp1-gp2))
 
 end subroutine geom_setup
 
@@ -463,64 +445,10 @@ dp = real(sum(cp1_full*dconjg(cp2_full)),8)
 end function geom_spdotprod
 
 !----------------------------------------------------------------------
-! Subroutine: geom_interp_gp_scalar
-! Purpose: grid-point interpolation for a given scalar
+! Subroutine: geom_interp
+! Purpose: field interpolation interface
 !----------------------------------------------------------------------
-subroutine geom_interp_gp_scalar(geom_in,x_out,y_out,gp_in,gp_out)
-
-implicit none
-
-! Passed variables
-class(geom_type),intent(in) :: geom_in
-real(8),intent(in) :: x_out
-real(8),intent(in) :: y_out
-real(8),intent(in) :: gp_in(geom_in%nh)
-real(8),intent(out) :: gp_out
-
-! Local variables
-integer :: ix_inf,ix_sup,iy_inf,iy_sup
-integer :: ih_inf_inf,ih_inf_sup,ih_sup_inf,ih_sup_sup
-real(8) :: rx_inf,rx_sup,ry_inf,ry_sup
-
-! Bilinear interpolation indices and coefficients
-ix_inf = floor(x_out*real(geom_in%nx,8))+1
-iy_inf = floor(y_out*real(geom_in%ny,8))+1
-if (ix_inf<geom_in%nx) then
-   ix_sup = ix_inf+1
-   rx_inf = (geom_in%x(ix_sup)-x_out)/(geom_in%x(ix_sup)-geom_in%x(ix_inf))
-   rx_sup = (x_out-geom_in%x(ix_inf))/(geom_in%x(ix_sup)-geom_in%x(ix_inf))
-else
-   ix_sup = 1
-   rx_inf = (1.0-x_out)/(1.0-geom_in%x(ix_inf))
-   rx_sup = (x_out-geom_in%x(ix_inf))/(1.0-geom_in%x(ix_inf))
-end if
-if (iy_inf<geom_in%ny) then
-   iy_sup = iy_inf+1
-   ry_inf = (geom_in%y(iy_sup)-y_out)/(geom_in%y(iy_sup)-geom_in%y(iy_inf))
-   ry_sup = (y_out-geom_in%y(iy_inf))/(geom_in%y(iy_sup)-geom_in%y(iy_inf))
-else
-   iy_sup = 1
-   ry_inf = (1.0-y_out)/(1.0-geom_in%y(iy_inf))
-   ry_sup = (y_out-geom_in%y(iy_inf))/(1.0-geom_in%y(iy_inf))
-end if
-
-! Apply bilinear interpolation
-ih_inf_inf = ix_inf+(iy_inf-1)*geom_in%nx
-ih_inf_sup = ix_inf+(iy_sup-1)*geom_in%nx
-ih_sup_inf = ix_sup+(iy_inf-1)*geom_in%nx
-ih_sup_sup = ix_sup+(iy_sup-1)*geom_in%nx
-gp_out = rx_inf*ry_inf*gp_in(ih_inf_inf) &
-     & + rx_inf*ry_sup*gp_in(ih_inf_sup) &
-     & + rx_sup*ry_inf*gp_in(ih_sup_inf) &
-     & + rx_sup*ry_sup*gp_in(ih_sup_sup)
-
-end subroutine geom_interp_gp_scalar
-
-!----------------------------------------------------------------------
-! Subroutine: geom_interp_gp_field
-! Purpose: grid-point interpolation for a given field
-!----------------------------------------------------------------------
-subroutine geom_interp_gp_field(geom_in,geom_out,gp_in,gp_out)
+subroutine geom_interp(geom_in,geom_out,gp_in,gp_out)
 
 implicit none
 
@@ -534,8 +462,8 @@ real(8),intent(out) :: gp_out(geom_out%nh)
 integer :: ix,iy,ih
 real(8),allocatable :: sp_in(:),sp_out(:)
 
-!if (geom_in%transitive_interp) then
-if (geom_in%interp_method == 'spectral') then
+select case (trim(geom_in%interp_method))
+case('spectral')
    ! Allocation
    allocate(sp_in(geom_in%nh))
    allocate(sp_out(geom_out%nh))
@@ -544,7 +472,7 @@ if (geom_in%interp_method == 'spectral') then
    call geom_in%gp2sp(gp_in,sp_in)
 
    ! Spectral interpolation
-   call geom_in%interp_sp(geom_out,sp_in,sp_out)
+   call geom_in%interp_spectral(geom_out,sp_in,sp_out)
 
    ! Inverse Fourier transform
    call geom_out%sp2gp(sp_out,gp_out)
@@ -552,88 +480,36 @@ if (geom_in%interp_method == 'spectral') then
    ! Release memory
    deallocate(sp_in)
    deallocate(sp_out)
-else if (geom_in%interp_method == 'bilinear') then
+case ('bilinear')
    ! Initialization
    ih = 0
    do iy=1,geom_out%ny
       do ix=1,geom_out%nx
          ! Apply scalar bilinear interpolation
          ih = ih+1
-         call geom_in%interp_gp(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
+         call geom_in%interp_bilinear(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
       end do
    end do
-else if (geom_in%interp_method == 'nearest') then
+case ('neareast')
    ih=0
-do iy=1,geom_out%ny
-   do ix=1,geom_out%nx
-      ih = ih+1
-      ! Apply scalar nearest neighbor interpolation
-      call geom_in%interp_nearest_scalar(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
+   do iy=1,geom_out%ny
+      do ix=1,geom_out%nx
+         ih = ih+1
+         ! Apply scalar nearest neighbor interpolation
+         call geom_in%interp_nearest(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
+      end do
    end do
-end do
-end if
+case default
+   write(*,'(a)') 'Error: wrong interpolation method'
+end select
 
-end subroutine geom_interp_gp_field
-
-!----------------------------------------------------------------------
-! Subroutine: geom_interp_gp_scalar_ad
-! Purpose: grid-point interpolation for a given scalar, adjoint
-!----------------------------------------------------------------------
-subroutine geom_interp_gp_scalar_ad(geom_in,x_out,y_out,gp_out,gp_in)
-
-implicit none
-
-! Passed variables
-class(geom_type),intent(in) :: geom_in
-real(8),intent(in) :: x_out
-real(8),intent(in) :: y_out
-real(8),intent(in) :: gp_out
-real(8),intent(inout) :: gp_in(geom_in%nh)
-
-! Local variables
-integer :: ix_inf,ix_sup,iy_inf,iy_sup
-integer :: ih_inf_inf,ih_inf_sup,ih_sup_inf,ih_sup_sup
-real(8) :: rx_inf,rx_sup,ry_inf,ry_sup
-
-! Bilinear interpolation indices and coefficients
-ix_inf = floor(x_out*real(geom_in%nx,8))+1
-iy_inf = floor(y_out*real(geom_in%ny,8))+1
-if (ix_inf<geom_in%nx) then
-   ix_sup = ix_inf+1
-   rx_inf = (geom_in%x(ix_sup)-x_out)/(geom_in%x(ix_sup)-geom_in%x(ix_inf))
-   rx_sup = (x_out-geom_in%x(ix_inf))/(geom_in%x(ix_sup)-geom_in%x(ix_inf))
-else
-   ix_sup = 1
-   rx_inf = (1.0-x_out)/(1.0-geom_in%x(ix_inf))
-   rx_sup = (x_out-geom_in%x(ix_inf))/(1.0-geom_in%x(ix_inf))
-end if
-if (iy_inf<geom_in%ny) then
-   iy_sup = iy_inf+1
-   ry_inf = (geom_in%y(iy_sup)-y_out)/(geom_in%y(iy_sup)-geom_in%y(iy_inf))
-   ry_sup = (y_out-geom_in%y(iy_inf))/(geom_in%y(iy_sup)-geom_in%y(iy_inf))
-else
-   iy_sup = 1
-   ry_inf = (1.0-y_out)/(1.0-geom_in%y(iy_inf))
-   ry_sup = (y_out-geom_in%y(iy_inf))/(1.0-geom_in%y(iy_inf))
-end if
-
-! Apply bilinear interpolation adjoint
-ih_inf_inf = ix_inf+(iy_inf-1)*geom_in%nx
-ih_inf_sup = ix_inf+(iy_sup-1)*geom_in%nx
-ih_sup_inf = ix_sup+(iy_inf-1)*geom_in%nx
-ih_sup_sup = ix_sup+(iy_sup-1)*geom_in%nx
-gp_in(ih_inf_inf) = gp_in(ih_inf_inf)+rx_inf*ry_inf*gp_out
-gp_in(ih_inf_sup) = gp_in(ih_inf_sup)+rx_inf*ry_sup*gp_out
-gp_in(ih_sup_inf) = gp_in(ih_sup_inf)+rx_sup*ry_inf*gp_out
-gp_in(ih_sup_sup) = gp_in(ih_sup_sup)+rx_sup*ry_sup*gp_out
-
-end subroutine geom_interp_gp_scalar_ad
+end subroutine geom_interp
 
 !----------------------------------------------------------------------
-! Subroutine: geom_interp_sp
+! Subroutine: geom_interp_spectral
 ! Purpose: spectral interpolation (zero padding)
 !----------------------------------------------------------------------
-subroutine geom_interp_sp(geom_in,geom_out,sp_in,sp_out)
+subroutine geom_interp_spectral(geom_in,geom_out,sp_in,sp_out)
 
 implicit none
 
@@ -684,13 +560,121 @@ else
    deallocate(cp_out_full)
 end if
 
-end subroutine geom_interp_sp
+end subroutine geom_interp_spectral
 
 !----------------------------------------------------------------------
-! Subroutine: geom_nearest_interp_scalar
-! Purpose: nearest neighbor interpolation (acting on scalars)
+! Subroutine: geom_interp_bilinear
+! Purpose: bilinar interpolation
 !----------------------------------------------------------------------
-subroutine geom_interp_nearest_scalar(geom,x_out,y_out,gp_in,gp_out)
+subroutine geom_interp_bilinear(geom_in,x_out,y_out,gp_in,gp_out)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom_in
+real(8),intent(in) :: x_out
+real(8),intent(in) :: y_out
+real(8),intent(in) :: gp_in(geom_in%nh)
+real(8),intent(out) :: gp_out
+
+! Local variables
+integer :: ix_inf,ix_sup,iy_inf,iy_sup
+integer :: ih_inf_inf,ih_inf_sup,ih_sup_inf,ih_sup_sup
+real(8) :: rx_inf,rx_sup,ry_inf,ry_sup
+
+! Bilinear interpolation indices and coefficients
+ix_inf = floor(x_out*real(geom_in%nx,8))+1
+iy_inf = floor(y_out*real(geom_in%ny,8))+1
+if (ix_inf<geom_in%nx) then
+   ix_sup = ix_inf+1
+   rx_inf = (geom_in%x(ix_sup)-x_out)/(geom_in%x(ix_sup)-geom_in%x(ix_inf))
+   rx_sup = (x_out-geom_in%x(ix_inf))/(geom_in%x(ix_sup)-geom_in%x(ix_inf))
+else
+   ix_sup = 1
+   rx_inf = (1.0-x_out)/(1.0-geom_in%x(ix_inf))
+   rx_sup = (x_out-geom_in%x(ix_inf))/(1.0-geom_in%x(ix_inf))
+end if
+if (iy_inf<geom_in%ny) then
+   iy_sup = iy_inf+1
+   ry_inf = (geom_in%y(iy_sup)-y_out)/(geom_in%y(iy_sup)-geom_in%y(iy_inf))
+   ry_sup = (y_out-geom_in%y(iy_inf))/(geom_in%y(iy_sup)-geom_in%y(iy_inf))
+else
+   iy_sup = 1
+   ry_inf = (1.0-y_out)/(1.0-geom_in%y(iy_inf))
+   ry_sup = (y_out-geom_in%y(iy_inf))/(1.0-geom_in%y(iy_inf))
+end if
+
+! Apply bilinear interpolation
+ih_inf_inf = ix_inf+(iy_inf-1)*geom_in%nx
+ih_inf_sup = ix_inf+(iy_sup-1)*geom_in%nx
+ih_sup_inf = ix_sup+(iy_inf-1)*geom_in%nx
+ih_sup_sup = ix_sup+(iy_sup-1)*geom_in%nx
+gp_out = rx_inf*ry_inf*gp_in(ih_inf_inf) &
+     & + rx_inf*ry_sup*gp_in(ih_inf_sup) &
+     & + rx_sup*ry_inf*gp_in(ih_sup_inf) &
+     & + rx_sup*ry_sup*gp_in(ih_sup_sup)
+
+end subroutine geom_interp_bilinear
+
+!----------------------------------------------------------------------
+! Subroutine: geom_interp_bilinear_ad
+! Purpose: bilinar interpolation, adjoint
+!----------------------------------------------------------------------
+subroutine geom_interp_bilinear_ad(geom_in,x_out,y_out,gp_out,gp_in)
+
+implicit none
+
+! Passed variables
+class(geom_type),intent(in) :: geom_in
+real(8),intent(in) :: x_out
+real(8),intent(in) :: y_out
+real(8),intent(in) :: gp_out
+real(8),intent(inout) :: gp_in(geom_in%nh)
+
+! Local variables
+integer :: ix_inf,ix_sup,iy_inf,iy_sup
+integer :: ih_inf_inf,ih_inf_sup,ih_sup_inf,ih_sup_sup
+real(8) :: rx_inf,rx_sup,ry_inf,ry_sup
+
+! Bilinear interpolation indices and coefficients
+ix_inf = floor(x_out*real(geom_in%nx,8))+1
+iy_inf = floor(y_out*real(geom_in%ny,8))+1
+if (ix_inf<geom_in%nx) then
+   ix_sup = ix_inf+1
+   rx_inf = (geom_in%x(ix_sup)-x_out)/(geom_in%x(ix_sup)-geom_in%x(ix_inf))
+   rx_sup = (x_out-geom_in%x(ix_inf))/(geom_in%x(ix_sup)-geom_in%x(ix_inf))
+else
+   ix_sup = 1
+   rx_inf = (1.0-x_out)/(1.0-geom_in%x(ix_inf))
+   rx_sup = (x_out-geom_in%x(ix_inf))/(1.0-geom_in%x(ix_inf))
+end if
+if (iy_inf<geom_in%ny) then
+   iy_sup = iy_inf+1
+   ry_inf = (geom_in%y(iy_sup)-y_out)/(geom_in%y(iy_sup)-geom_in%y(iy_inf))
+   ry_sup = (y_out-geom_in%y(iy_inf))/(geom_in%y(iy_sup)-geom_in%y(iy_inf))
+else
+   iy_sup = 1
+   ry_inf = (1.0-y_out)/(1.0-geom_in%y(iy_inf))
+   ry_sup = (y_out-geom_in%y(iy_inf))/(1.0-geom_in%y(iy_inf))
+end if
+
+! Apply bilinear interpolation adjoint
+ih_inf_inf = ix_inf+(iy_inf-1)*geom_in%nx
+ih_inf_sup = ix_inf+(iy_sup-1)*geom_in%nx
+ih_sup_inf = ix_sup+(iy_inf-1)*geom_in%nx
+ih_sup_sup = ix_sup+(iy_sup-1)*geom_in%nx
+gp_in(ih_inf_inf) = gp_in(ih_inf_inf)+rx_inf*ry_inf*gp_out
+gp_in(ih_inf_sup) = gp_in(ih_inf_sup)+rx_inf*ry_sup*gp_out
+gp_in(ih_sup_inf) = gp_in(ih_sup_inf)+rx_sup*ry_inf*gp_out
+gp_in(ih_sup_sup) = gp_in(ih_sup_sup)+rx_sup*ry_sup*gp_out
+
+end subroutine geom_interp_bilinear_ad
+
+!----------------------------------------------------------------------
+! Subroutine: geom_interp_nearest
+! Purpose: nearest neighbor interpolation
+!----------------------------------------------------------------------
+subroutine geom_interp_nearest(geom,x_out,y_out,gp_in,gp_out)
 
 implicit none
 
@@ -700,7 +684,7 @@ real(8),intent(in)          :: x_out,y_out
 real(8),intent(in)          :: gp_in(geom%nh)
 real(8),intent(out)         :: gp_out
 
-!Local variables
+! Local variables
 integer    :: ix,iy
 integer    :: x_keep, y_keep
 real(8)    :: d_new,d_old,dx,dy
@@ -725,239 +709,78 @@ end do
 
 gp_out=gp_in_2d(x_keep,y_keep)
 
-end subroutine geom_interp_nearest_scalar
+end subroutine geom_interp_nearest
 
 !----------------------------------------------------------------------
-! Subroutine: nearest_interp_field
-! Purpose: nearest neighbor interpolation (acting on fields)
+! Subroutine: geom_transitive_interp_test
+! Purpose: test interpolation transitivity
 !----------------------------------------------------------------------
-! subroutine geom_interp_nearest_field(geom_in,geom_out,gp_in,gp_out)
-
-! implicit none
-
-! ! Passed variables
-! class(geom_type),intent(in) :: geom_in
-! type(geom_type),intent(in)  :: geom_out
-! real(8),intent(in) :: gp_in(geom_in%nh)
-! real(8),intent(out) :: gp_out(geom_out%nh)
-
-! !Local variables
-! integer    :: ix,iy,ih
-
-! ih=0
-! do iy=1,geom_out%ny
-!    do ix=1,geom_out%nx
-!       ih = ih+1
-!       ! Apply scalar interpolation
-!       call geom_in%interp_nearest_scalar(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
-!    end do
-! end do
-
-! end subroutine geom_interp_nearest_field
-
-!----------------------------------------------------------------------
-! Subroutine: geom_nearest_interp_ad
-! Purpose: adjoint nearest neighbor interpolation adjoint
-! (acting on scalars)
-!----------------------------------------------------------------------
-subroutine geom_interp_nearest_scalar_ad(geom,x_out,y_out,gp_out,gp_in)
+subroutine geom_transitive_interp_test(geom,geom_full)
 
 implicit none
-
+  
 ! Passed variables
 class(geom_type),intent(in) :: geom
-real(8),intent(in) :: x_out, y_out
-real(8),intent(out) :: gp_in(geom%nh)
-real(8),intent(in) :: gp_out
-
-!Local variables
-integer    :: ix,iy
-integer    :: x_keep, y_keep
-real(8)    :: d_new,d_old,dx,dy
-real(8)    :: gp_in_2d(geom%nx,geom%ny)
-
-gp_in_2d = reshape(gp_in,(/geom%nx,geom%ny/))
-
-d_old=1.0
-
-do iy=1,geom%ny
-   do ix=1,geom%nx
-      dx = x_out - geom%x(ix)
-      dy = y_out - geom%y(iy)
-      d_new = SQRT(dx*dx + dy*dy)
-      if (d_new<d_old) then
-         d_old=d_new
-         x_keep = ix
-         y_keep = iy
-      end if
-   end do
-end do
-
-gp_in_2d(x_keep,y_keep)=gp_out
-gp_in = reshape(gp_in_2d,(/geom%nh/))
-
-end subroutine geom_interp_nearest_scalar_ad
-
-!----------------------------------------------------------------------
-! Subroutine: transitive_interp_diff
-! Purpose: compute the differences when interpolating a field in one
-! or two steps between different resolutions.
-!----------------------------------------------------------------------
-subroutine transitive_interp_diff(nx_test,ny_test,interp_method,diff_123_vs_13)
-
-implicit none
-  
-!Passed variables
-integer,intent(in)             :: nx_test(3)
-integer,intent(in)             :: ny_test(3)
-!logical,intent(in)             :: transitive_interp
-character(len=1024),intent(in) :: interp_method
-real(8),intent(out)            :: diff_123_vs_13
+type(geom_type),intent(in) :: geom_full
 
 ! Local variables
-type(geom_type)                :: geom_test(3)
-real(8),allocatable            :: field_test1(:),field_test12(:),field_test123(:),field_test13(:)
-integer                        :: io,ih
+integer :: nx_inter,ny_inter
+real(8) :: test_upscaling,test_downscaling,test_right_inverse
+real(8),allocatable :: x(:),x_save(:),x_full(:),x_full_save(:),x_inter(:)
+logical :: is_transitive
+type(geom_type)  :: geom_inter
 
-! Setup geometries
-do io=1,3
-   call geom_test(io)%setup(nx_test(io),ny_test(io),interp_method)
-end do
+write(*,'(a,i1)') '   Geometry setup for intermediate resolution (transitivity test)'
 
-allocate(field_test1(geom_test(1)%nh))
-allocate(field_test12(geom_test(2)%nh))
-allocate(field_test123(geom_test(3)%nh))
-allocate(field_test13(geom_test(3)%nh))
+! Setup intermediate geometry
+nx_inter = (geom%nx+geom_full%nx)/2
+if (mod(nx_inter,2)==0) nx_inter = nx_inter+1
+ny_inter = (geom%ny+geom_full%ny)/2
+if (mod(ny_inter,2)==0) ny_inter = ny_inter+1
+call geom_inter%setup(nx_inter,ny_inter,geom%interp_method)
 
-call random_number(field_test1)
+! Allocation
+allocate(x(geom%nh))
+allocate(x_save(geom%nh))
+allocate(x_full(geom_full%nh))
+allocate(x_full_save(geom_full%nh))
+allocate(x_inter(geom_inter%nh))
 
-! Interpolate from resolutions 1->2 then 2->3
-call geom_test(1)%interp_gp(geom_test(2),field_test1,field_test12)
-call geom_test(2)%interp_gp(geom_test(3),field_test12,field_test123)
+!  Upscaling test
+call random_number(x)
+call geom%interp(geom_full,x,x_full_save)
+call geom%interp(geom_inter,x,x_inter)
+call geom_inter%interp(geom_full,x_inter,x_full)
+test_upscaling = maxval(abs(x_full-x_full_save))/maxval(abs(x))
 
-! Interpolate from resolutions 1->3
-call geom_test(1)%interp_gp(geom_test(3),field_test1,field_test13)
-! Compute the difference
-diff_123_vs_13 = 0.0
-do ih=1,geom_test(3)%nh
-   diff_123_vs_13 = diff_123_vs_13 + abs(field_test123(ih)-field_test13(ih))
-end do
+!  Downscaling test
+call random_number(x_full)
+call geom_full%interp(geom,x_full,x_save)
+call geom_full%interp(geom_inter,x_full,x_inter)
+call geom_inter%interp(geom,x_inter,x)
+test_downscaling = maxval(abs(x-x_save))/maxval(abs(x_full))
 
-! (Maybe look at the max value instead) ?
-diff_123_vs_13 = diff_123_vs_13/(1.0*geom_test(3)%nh)
+! Right-inverse test
+call random_number(x)
+x_save = x
+call geom%interp(geom_full,x,x_full)
+call geom_full%interp(geom,x_full,x)
+test_right_inverse = maxval(abs(x-x_save))/maxval(abs(x_save))
 
-deallocate(field_test1)
-deallocate(field_test12)
-deallocate(field_test123)
-deallocate(field_test13)
+! Print results
+is_transitive = (test_upscaling<1.0e-12).and.(test_downscaling<1.0e-12).and.(test_right_inverse<1.0e-12)
+write(*,'(a,l)') '      Transitive interpolation: ', is_transitive
+write(*,'(a,e15.8)') '       - Upscaling:               ',test_upscaling
+write(*,'(a,e15.8)') '       - Downscaling:             ',test_downscaling
+write(*,'(a,e15.8)') '       - Right-inverse:           ',test_right_inverse
 
-end subroutine transitive_interp_diff
+! Release memory
+deallocate(x)
+deallocate(x_save)
+deallocate(x_full)
+deallocate(x_full_save)
+deallocate(x_inter)
 
-!----------------------------------------------------------------------
-! Subroutine: transitive_interp_right_inverse_test
-! Purpose: test the right inverse of the interpolator
-!----------------------------------------------------------------------
-subroutine transitive_interp_right_inverse_test(interp_method,diff)
-
-implicit none
-  
-! Passed variables
-character(len=1024),intent(in) :: interp_method
-!logical,intent(in)             :: transitive_interp
-real(8),intent(out)            :: diff
-
-! Local variables
-integer                        :: nx_test(2)
-integer                        :: ny_test(2)
-type(geom_type)                :: geom_test(2)
-real(8),allocatable            :: field_test(:),field_test12(:),field_test21(:)
-integer                        :: io,ih
-
-nx_test = (/51,101/)
-ny_test = (/51,101/)
-
-! Setup geometries
-do io=1,2
-   call geom_test(io)%setup(nx_test(io),ny_test(io),interp_method)
-end do
-
-allocate(field_test(geom_test(1)%nh))
-allocate(field_test12(geom_test(2)%nh))
-allocate(field_test21(geom_test(1)%nh))
-
-call random_number(field_test)
-
-! Interpolation from resolution 1 -> 2
-call geom_test(1)%interp_gp(geom_test(2),field_test,field_test12)
-! Interpolation from resolution 2 -> 1
-call geom_test(2)%interp_gp(geom_test(1),field_test12,field_test21)
-
-! Compute the difference
-diff = 0.0
-do ih=1,geom_test(1)%nh
-   diff = diff + abs(field_test(ih)-field_test21(ih))
-end do
-
-diff = diff/(1.0*geom_test(1)%nh)
-
-deallocate(field_test)
-deallocate(field_test12)
-deallocate(field_test21)
-
-end subroutine transitive_interp_right_inverse_test
-
-!----------------------------------------------------------------------
-! Subroutine: transitive_interp_test
-! Purpose: test the transitiveness of the interpolator
-!----------------------------------------------------------------------
-subroutine transitive_interp_test(interp_method)
-
-implicit none
-  
-!Passed variables
-character(len=1024),intent(in) :: interp_method
-
-! Local variables
-integer,allocatable            :: nx_test(:)
-integer,allocatable            :: ny_test(:)
-real(8)                        :: diff_l2h, diff_h2l, diff
-
-write(*,'(a)') '---------------------------------'
-write(*,'(a)') '   Transitive interpolation test:'
-
-allocate(nx_test(3))
-allocate(ny_test(3))
-
-! Lower to higher dimension:
-nx_test = (/21,51,101/)
-ny_test = (/21,51,101/)
-write(*,'(a)') ''
-call transitive_interp_diff(nx_test,ny_test,interp_method,diff_l2h)
-write(*,'(a)') ''
-write(*,'(a,e15.8)') '      Ri>Rj>Rk - Ri>Rk :       ', diff_l2h
-
-! Higher to lower dimension:
-nx_test = (/101,51,21/)
-ny_test = (/101,51,21/)
-write(*,'(a)') ''
-call transitive_interp_diff(nx_test,ny_test,interp_method,diff_h2l)
-write(*,'(a)') ''
-write(*,'(a,e15.8)') '      Ri<Rj<Rk - Ri<Rk :       ', diff_h2l
-write(*,'(a)') ''
-
-! Right inverse test
-write(*,'(a)') ''
-call transitive_interp_right_inverse_test(interp_method,diff)
-write(*,'(a)') ''
-write(*,'(a,e15.8)') '      Right inverse   :       ', diff
-write(*,'(a)') '---------------------------------'
-write(*,'(a)') ''
-
-deallocate(nx_test)
-deallocate(ny_test)
-
-end subroutine transitive_interp_test  
-
-!----------------------------------------------------------------------
+end subroutine geom_transitive_interp_test
 
 end module type_geom

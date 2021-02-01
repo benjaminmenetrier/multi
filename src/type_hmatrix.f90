@@ -104,18 +104,17 @@ real(8),intent(in)             :: x(geom%nh)
 integer :: inh
 
 do inh=1,geom%nh
-   if (trim(hmatrix%measure_function) == "4th") then
-      ! power 4 version
-      x_nl(inh) = x(inh)*x(inh)*x(inh)*x(inh)
-   else if (trim(hmatrix%measure_function) == "cubic") then
-      ! Cubic version
-      x_nl(inh) = x(inh)*x(inh)*x(inh)
-   else if (trim(hmatrix%measure_function) == "linear") then
-      ! Linear version
+   select case (trim(hmatrix%measure_function))
+   case ('linear')
+      ! Linear function
       x_nl(inh) = x(inh)
-   else
-      write(*,'(a)') "Error: cannot detremine which H measure function to use"   
-   end if
+   case ('cubic')
+      ! Cubic function
+      x_nl(inh) = x(inh)**3
+   case default
+      write(*,'(a)') 'Error: wrong measure function'
+      stop
+   end select
 end do
 
 end subroutine hmatrix_measure_nl
@@ -138,18 +137,17 @@ real(8),intent(in)             :: xg(geom%nh), x(geom%nh)
 integer :: inh
 
 do inh=1,geom%nh
-   if (trim(hmatrix%measure_function) == "4th") then
-      ! power 4 version
-      x_tl(inh) = 4*xg(inh)*xg(inh)*xg(inh)*x(inh)
-   else if (trim(hmatrix%measure_function) == "cubic") then
-      ! Cubic version
-      x_tl(inh) = 3*xg(inh)*xg(inh)*x(inh)
-   else if (trim(hmatrix%measure_function) == "linear") then
-      ! Linear version
+   select case (trim(hmatrix%measure_function))
+   case ('linear')
+      ! Linear function
       x_tl(inh) = x(inh)
-   else
-      write(*,'(a)') "Error: cannot detremine which H measure function to use"   
-   end if
+   case ('cubic')
+      ! Cubic function
+      x_tl(inh) = 3.0*xg(inh)**2*x(inh)
+   case default
+      write(*,'(a)') 'Error: wrong measure function'
+      stop
+   end select
 end do
 
 end subroutine hmatrix_measure
@@ -178,7 +176,7 @@ call hmatrix%measure(geom,xg,x,x_tl)
 ! Apply observation operator
 y = 0.0
 do iobs=1,hmatrix%nobs
-   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
+   call geom%interp_bilinear(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),x_tl,y(iobs))
 end do
  
 end subroutine hmatrix_apply
@@ -204,7 +202,7 @@ real(8) :: yg(hmatrix%nobs),y_tl(hmatrix%nobs), x(geom%nh)
 ! Apply observation operator adjoint
 x = 0.0
 do iobs=1,hmatrix%nobs
-   call geom%interp_gp_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
+   call geom%interp_bilinear_ad(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),y(iobs),x)
 end do
 
 ! Observation operator linearized around the guess
@@ -236,7 +234,7 @@ call hmatrix%measure_nl(geom,x,xnl)
 ! Apply observation operator
 y = 0.0
 do iobs=1,hmatrix%nobs
-   call geom%interp_gp(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xnl,y(iobs))
+   call geom%interp_bilinear(hmatrix%x_obs(iobs),hmatrix%y_obs(iobs),xnl,y(iobs))
 end do
 
 end subroutine hmatrix_apply_nl
@@ -269,7 +267,7 @@ call hmatrix%apply(geom,xg,x1,y1)
 call hmatrix%apply_ad(geom,xg,y2,x2)
 dp1 = sum(x1*x2)
 dp2 = sum(y1*y2)
-write(*,'(a,e15.8)') '         Direct H + adjoint H test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+write(*,'(a,e15.8)') '            Direct H + adjoint H test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
 end subroutine hmatrix_test
 
