@@ -191,7 +191,7 @@ do io=1,no
    write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
    if (projective_Bmatrix) then
       if (abs(sigmabvar)>0.0) then
-         write(*,'(a)') 'ERROR: sigmabvar should be 0 for a projective B matrix family'
+         write(*,'(a)') 'Error: sigmabvar should be 0 for a projective B matrix family'
          stop
       end if
       call bmatrix(io)%setup(geom(io),geom(no),sigmabvar,Lb,spvarmin)
@@ -601,7 +601,7 @@ do im=1,nm
  & /sum(lmp(io,ia,im)%outer(jo)%lancvec1(:,ji)*lmp(io,ia,im)%outer(jo)%lancvec(:,ji))
                            end if
                            if (abs(proj)>1.0e-6) then
-                              write(*,'(a)') 'ERROR: orthogonality lost'
+                              write(*,'(a)') 'Error: orthogonality lost'
                               stop
                            end if
                         end do
@@ -611,7 +611,7 @@ do im=1,nm
                            norm = sqrt(sum(lmp(io,ia,im)%outer(jo)%lancvec(:,ii)*lmp(io,ia,im)%outer(jo)%lancvec1(:,ii)))
                         end if
                         if (abs(norm-1.0)>1.0e-6) then
-                           write(*,'(a)') 'ERROR: orthogonality lost '
+                           write(*,'(a)') 'Error: orthogonality lost '
                            stop
                         end if
                      end if

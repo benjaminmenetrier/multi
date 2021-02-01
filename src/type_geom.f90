@@ -69,12 +69,12 @@ complex(8),allocatable :: cpsave(:,:),cp(:,:),cp_fullsave(:,:),cp_full(:,:)
 
 ! Check dimensions
 if (mod(nx,2)==0) then
-   write(*,'(a)') '      Error: nx should be odd'
-   stop
+!   write(*,'(a)') '      Error: nx should be odd'
+!   stop
 end if
 if (mod(ny,2)==0) then
-   write(*,'(a)') '      Error: ny should be odd'
-   stop
+!   write(*,'(a)') '      Error: ny should be odd'
+!  stop
 end if
 
 ! Copy dimensions and attributes
@@ -490,7 +490,7 @@ case ('bilinear')
          call geom_in%interp_bilinear(geom_out%x(ix),geom_out%y(iy),gp_in,gp_out(ih))
       end do
    end do
-case ('neareast')
+case ('nearest')
    ih=0
    do iy=1,geom_out%ny
       do ix=1,geom_out%nx
@@ -501,6 +501,7 @@ case ('neareast')
    end do
 case default
    write(*,'(a)') 'Error: wrong interpolation method'
+  stop
 end select
 
 end subroutine geom_interp
@@ -674,40 +675,70 @@ end subroutine geom_interp_bilinear_ad
 ! Subroutine: geom_interp_nearest
 ! Purpose: nearest neighbor interpolation
 !----------------------------------------------------------------------
-subroutine geom_interp_nearest(geom,x_out,y_out,gp_in,gp_out)
+subroutine geom_interp_nearest(geom_in,x_out,y_out,gp_in,gp_out)
 
 implicit none
 
 ! Passed variables
-class(geom_type),intent(in) :: geom
-real(8),intent(in)          :: x_out,y_out
-real(8),intent(in)          :: gp_in(geom%nh)
-real(8),intent(out)         :: gp_out
+class(geom_type),intent(in) :: geom_in
+real(8),intent(in) :: x_out
+real(8),intent(in) :: y_out
+real(8),intent(in) :: gp_in(geom_in%nh)
+real(8),intent(out) :: gp_out
 
 ! Local variables
-integer    :: ix,iy
-integer    :: x_keep, y_keep
-real(8)    :: d_new,d_old,dx,dy
-real(8)    :: gp_in_2d(geom%nx,geom%ny)
+integer :: ix_inf,ix_sup,iy_inf,iy_sup
+integer :: ix,iy,ih
+real(8) :: dist_min,distx_inf,distx_sup,disty_inf,disty_sup
 
-gp_in_2d = reshape(gp_in,(/geom%nx,geom%ny/))
+! Interpolation indices and coefficients
+ix_inf = floor(x_out*real(geom_in%nx,8))+1
+iy_inf = floor(y_out*real(geom_in%ny,8))+1
+if (ix_inf<geom_in%nx) then
+   ix_sup = ix_inf+1
+   distx_inf = (x_out-geom_in%x(ix_inf))**2
+   distx_sup = (geom_in%x(ix_sup)-x_out)**2
+else
+   ix_sup = 1
+   distx_inf = (x_out-geom_in%x(ix_inf))**2
+   distx_sup = (1.0-x_out)**2
+end if
+if (iy_inf<geom_in%ny) then
+   iy_sup = iy_inf+1
+   disty_inf = (y_out-geom_in%y(iy_inf))**2
+   disty_sup = (geom_in%y(iy_sup)-y_out)**2
+else
+   iy_sup = 1
+   disty_inf = (y_out-geom_in%y(iy_inf))**2
+   disty_sup = (1.0-y_out)**2
+end if
 
-d_old=1.0
+! Find minimum (squared) distance
+dist_min = huge(1.0)
+if (distx_inf+disty_inf<dist_min) then
+   dist_min = distx_inf+disty_inf
+   ix = ix_inf
+   iy = iy_inf
+end if
+if (distx_inf+disty_sup<dist_min) then
+   dist_min = distx_inf+disty_sup
+   ix = ix_inf
+   iy = iy_sup
+end if
+if (distx_sup+disty_inf<dist_min) then
+   dist_min = distx_sup+disty_inf
+   ix = ix_sup
+   iy = iy_inf
+end if
+if (distx_sup+disty_sup<dist_min) then
+   dist_min = distx_sup+disty_sup
+   ix = ix_sup
+   iy = iy_sup
+end if
 
-do iy=1,geom%ny
-   do ix=1,geom%nx
-      dx = x_out - geom%x(ix)
-      dy = y_out - geom%y(iy)
-      d_new = SQRT(dx*dx + dy*dy)
-      if (d_new<d_old) then
-         d_old=d_new
-         x_keep = ix
-         y_keep = iy
-      end if
-   end do
-end do
-
-gp_out=gp_in_2d(x_keep,y_keep)
+! Copy nearest neighbor value
+ih = ix+(iy-1)*geom_in%nx
+gp_out = gp_in(ih)
 
 end subroutine geom_interp_nearest
 
@@ -724,6 +755,7 @@ class(geom_type),intent(in) :: geom
 type(geom_type),intent(in) :: geom_full
 
 ! Local variables
+integer :: ix,iy,ih
 integer :: nx_inter,ny_inter
 real(8) :: test_upscaling,test_downscaling,test_right_inverse
 real(8),allocatable :: x(:),x_save(:),x_full(:),x_full_save(:),x_inter(:)
@@ -735,6 +767,7 @@ write(*,'(a,i1)') '   Geometry setup for intermediate resolution (transitivity t
 ! Setup intermediate geometry
 nx_inter = (geom%nx+geom_full%nx)/2
 if (mod(nx_inter,2)==0) nx_inter = nx_inter+1
+nx_inter = geom%nx+1
 ny_inter = (geom%ny+geom_full%ny)/2
 if (mod(ny_inter,2)==0) ny_inter = ny_inter+1
 call geom_inter%setup(nx_inter,ny_inter,geom%interp_method)
@@ -747,7 +780,13 @@ allocate(x_full_save(geom_full%nh))
 allocate(x_inter(geom_inter%nh))
 
 !  Upscaling test
-call random_number(x)
+do iy=1,geom%ny
+   do ix=1,geom%nx
+      ih = ix+(iy-1)*geom%nx
+      x(ih) = geom%x(ix)
+   end do
+end do
+!call random_number(x)
 call geom%interp(geom_full,x,x_full_save)
 call geom%interp(geom_inter,x,x_inter)
 call geom_inter%interp(geom_full,x_inter,x_full)
@@ -766,6 +805,10 @@ x_save = x
 call geom%interp(geom_full,x,x_full)
 call geom_full%interp(geom,x_full,x)
 test_right_inverse = maxval(abs(x-x_save))/maxval(abs(x_save))
+print*, x
+print*, x_save
+print*, x-x_save
+print*
 
 ! Print results
 is_transitive = (test_upscaling<1.0e-12).and.(test_downscaling<1.0e-12).and.(test_right_inverse<1.0e-12)
@@ -773,7 +816,7 @@ write(*,'(a,l)') '      Transitive interpolation: ', is_transitive
 write(*,'(a,e15.8)') '       - Upscaling:               ',test_upscaling
 write(*,'(a,e15.8)') '       - Downscaling:             ',test_downscaling
 write(*,'(a,e15.8)') '       - Right-inverse:           ',test_right_inverse
-
+stop
 ! Release memory
 deallocate(x)
 deallocate(x_save)
