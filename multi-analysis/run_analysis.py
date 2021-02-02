@@ -40,7 +40,7 @@ ny = "11,31,51,101"
 # Observations:
 nobs = 100
 sigma_obs = 0.1
-measure_function = '"linear"'
+Hnl_coeff = 1
 # Background:
 sigmabvar = 0.0
 Lb = 0.12
@@ -80,7 +80,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/full_res_check')
+results_dir_root = os.path.join(directories['analysis_results'] + '/check')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -106,32 +106,31 @@ res_dir_list = []
 outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
-i_no = [6]
-i_ni = [2,6]
+i_no = [4]
+i_ni = [6]
 
-i_nx = ['101,101,101,101,101,101']
+i_nx = ['101,101,101','21,51,101']
 
 i_nobs = [2000]
-i_sigma_obs = [0.001, 0.01, 0.1]
-i_measure_function = ['"cubic"','"linear"']
+i_sigma_obs = [0.01]
+i_Hnl_coeff = [0,0.5,1]
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
 
-i_interp_method = ['"bilinear"','"spectral"']
-#i_interp_method = ['"spectral"']
+i_interp_method = ['"spectral"']
 
-i_project_B = ["T","F"]
-#i_project_B = ["F"]
+#i_project_B = ["T","F"]
+i_project_B = ["T"]
 
 i_test_ortho = ["T"]
 
 iter_params = itertools.product(i_no, i_ni, i_nx, i_nobs, i_sigma_obs,
-                                i_measure_function, i_sigmabvar, i_Lb,
+                                i_Hnl_coeff, i_sigmabvar, i_Lb,
                                 i_interp_method, i_project_B,
                                 i_test_ortho, repeat=1)
 
-for no, ni, nx, nobs, sigma_obs, measure_function, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
+for no, ni, nx, nobs, sigma_obs, Hnl_coeff, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
     # square grid:
     ny=nx
     
@@ -158,7 +157,7 @@ for no, ni, nx, nobs, sigma_obs, measure_function, sigmabvar, Lb, interp_method,
 
     res_file_name = ""
 
-    dir_name = '{}-H'.format(measure_function.replace('"',''))
+    dir_name = f'Hnl{Hnl_coeff}'
     res_file_name = dir_name
     res_dir = os.path.join(res_dir_raw + '/' +  dir_name)
     #if not os.path.exists(res_dir):
@@ -216,7 +215,7 @@ for no, ni, nx, nobs, sigma_obs, measure_function, sigmabvar, Lb, interp_method,
                             shutoff_type, shutoff_value,
                             interp_method, projective_Bmatrix]
     parameters['resolution'] = [nx, ny]
-    parameters['obs'] = [nobs, sigma_obs, measure_function]
+    parameters['obs'] = [nobs, sigma_obs, Hnl_coeff]
     parameters['background'] = [sigmabvar, Lb, spvarmin]
     parameters['miscellanous'] = [new_seed, filename]
     

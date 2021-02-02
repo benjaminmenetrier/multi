@@ -767,7 +767,6 @@ write(*,'(a,i1)') '   Geometry setup for intermediate resolution (transitivity t
 ! Setup intermediate geometry
 nx_inter = (geom%nx+geom_full%nx)/2
 if (mod(nx_inter,2)==0) nx_inter = nx_inter+1
-nx_inter = geom%nx+1
 ny_inter = (geom%ny+geom_full%ny)/2
 if (mod(ny_inter,2)==0) ny_inter = ny_inter+1
 call geom_inter%setup(nx_inter,ny_inter,geom%interp_method)
@@ -805,10 +804,10 @@ x_save = x
 call geom%interp(geom_full,x,x_full)
 call geom_full%interp(geom,x_full,x)
 test_right_inverse = maxval(abs(x-x_save))/maxval(abs(x_save))
-print*, x
-print*, x_save
-print*, x-x_save
-print*
+!print*, x
+!print*, x_save
+!print*, x-x_save
+!print*
 
 ! Print results
 is_transitive = (test_upscaling<1.0e-12).and.(test_downscaling<1.0e-12).and.(test_right_inverse<1.0e-12)
@@ -816,7 +815,7 @@ write(*,'(a,l)') '      Transitive interpolation: ', is_transitive
 write(*,'(a,e15.8)') '       - Upscaling:               ',test_upscaling
 write(*,'(a,e15.8)') '       - Downscaling:             ',test_downscaling
 write(*,'(a,e15.8)') '       - Right-inverse:           ',test_right_inverse
-stop
+
 ! Release memory
 deallocate(x)
 deallocate(x_save)

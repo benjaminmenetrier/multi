@@ -23,7 +23,7 @@ import itertools
 from analysis_tools import netcdf_extract
 
 # Allow the use of tex format for the labels:
-plt.rcParams.update({"text.usetex": True, "font.size" : 15})
+plt.rcParams.update({"text.usetex": True, "font.size" : 20})
 
 ################################################################################
 ################################################################################

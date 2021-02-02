@@ -18,7 +18,7 @@ type hmatrix_type
    real(8),allocatable :: x_obs(:)
    real(8),allocatable :: y_obs(:)
    real(8),allocatable :: yo(:)
-   character(len=1024) :: measure_function
+   real(8),allocatable :: Hnl_coeff
 contains
    procedure :: setup => hmatrix_setup
    procedure :: write => hmatrix_write
@@ -36,18 +36,18 @@ contains
 ! Subroutine: hmatrix_setup
 ! Purpose: setup H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_setup(hmatrix,nobs,measure_function)
+subroutine hmatrix_setup(hmatrix,nobs,Hnl_coeff)
 
 implicit none
 
 ! Passed variables
 class(hmatrix_type),intent(inout) :: hmatrix
 integer,intent(in)                :: nobs
-character(len=1024)               :: measure_function
+real(8),intent(in)                :: Hnl_coeff
 
 ! Copy dimension
 hmatrix%nobs = nobs
-hmatrix%measure_function = measure_function
+hmatrix%Hnl_coeff = Hnl_coeff
 
 ! Allocation
 allocate(hmatrix%x_obs(hmatrix%nobs))
@@ -104,17 +104,7 @@ real(8),intent(in)             :: x(geom%nh)
 integer :: inh
 
 do inh=1,geom%nh
-   select case (trim(hmatrix%measure_function))
-   case ('linear')
-      ! Linear function
-      x_nl(inh) = x(inh)
-   case ('cubic')
-      ! Cubic function
-      x_nl(inh) = x(inh)**3
-   case default
-      write(*,'(a)') 'Error: wrong measure function'
-      stop
-   end select
+   x_nl(inh) = (1-hmatrix%Hnl_coeff)*x(inh) + hmatrix%Hnl_coeff*x(inh)*x(inh)*x(inh)
 end do
 
 end subroutine hmatrix_measure_nl
@@ -137,17 +127,7 @@ real(8),intent(in)             :: xg(geom%nh), x(geom%nh)
 integer :: inh
 
 do inh=1,geom%nh
-   select case (trim(hmatrix%measure_function))
-   case ('linear')
-      ! Linear function
-      x_tl(inh) = x(inh)
-   case ('cubic')
-      ! Cubic function
-      x_tl(inh) = 3.0*xg(inh)**2*x(inh)
-   case default
-      write(*,'(a)') 'Error: wrong measure function'
-      stop
-   end select
+   x_tl(inh) = (1-hmatrix%Hnl_coeff)*x(inh) + hmatrix%Hnl_coeff*3*xg(inh)*xg(inh)*x(inh)
 end do
 
 end subroutine hmatrix_measure
@@ -267,7 +247,7 @@ call hmatrix%apply(geom,xg,x1,y1)
 call hmatrix%apply_ad(geom,xg,y2,x2)
 dp1 = sum(x1*x2)
 dp2 = sum(y1*y2)
-write(*,'(a,e15.8)') '            Direct H + adjoint H test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
+write(*,'(a,e15.8)') '         Direct H + adjoint H test: ',2.0*abs(dp1-dp2)/abs(dp1+dp2)
 
 end subroutine hmatrix_test
 
