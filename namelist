@@ -14,14 +14,14 @@ projective_Bmatrix = T
 /
 
 &resolutions
-nx = 51,101,101
-ny = 51,101,101
+nx = 101,101,101
+ny = 101,101,101
 /
 
 &observations
 nobs = 2000
 sigma_obs = 0.01
-Hnl_coeff = 1
+Hnl_coeff = 0.01
 /
 
 &background

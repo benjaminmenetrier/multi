@@ -80,7 +80,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/check')
+results_dir_root = os.path.join(directories['analysis_results'] + '/reso_full_h_nl_coeff')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -106,18 +106,18 @@ res_dir_list = []
 outer_iterations_list = []
 
 # Loop over the parametrizations and run the code:
-i_no = [4]
-i_ni = [6]
+i_no_ni = [[4,6],[6,4]]
 
-i_nx = ['101,101,101','21,51,101']
+i_nx = ['101,101,101']
 
 i_nobs = [2000]
 i_sigma_obs = [0.01]
-i_Hnl_coeff = [0,0.5,1]
+i_Hnl_coeff = [0,0.01]
 
 i_sigmabvar = [0.]
 i_Lb = [0.1]
 
+#i_interp_method = ['"spectral"','"bilinear"','"nearest"']
 i_interp_method = ['"spectral"']
 
 #i_project_B = ["T","F"]
@@ -125,12 +125,16 @@ i_project_B = ["T"]
 
 i_test_ortho = ["T"]
 
-iter_params = itertools.product(i_no, i_ni, i_nx, i_nobs, i_sigma_obs,
+iter_params = itertools.product(i_no_ni, i_nx, i_nobs, i_sigma_obs,
                                 i_Hnl_coeff, i_sigmabvar, i_Lb,
                                 i_interp_method, i_project_B,
                                 i_test_ortho, repeat=1)
 
-for no, ni, nx, nobs, sigma_obs, Hnl_coeff, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
+for no_ni, nx, nobs, sigma_obs, Hnl_coeff, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
+
+    no = no_ni[0]
+    ni = no_ni[1]
+    
     # square grid:
     ny=nx
     
