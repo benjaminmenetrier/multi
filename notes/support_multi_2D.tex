@@ -38,235 +38,338 @@
 
 \begin{frame}{Content}
 \begin{itemize}
-\item Added features
-\item Comparision between linear and non linear H
-\item Comparision between interpolation methods with/without projective B matrix
+\item Influence of the $\sigma^o$ and $n_{obs}$.
+\item Non linearity induced by H operator:\\
+($Hx = (1-\alpha) x+ \alpha x^3$).
+\item Non linearity induced by changing the resolution at outer loop level.
 \end{itemize}
 \end{frame}
 
 
-\begin{frame}{Added features}
+\begin{frame}{Influence of the $\sigma^o$}
 \begin{itemize}
- \item Cubic H operator and adjoint:
- \begin{itemize}
-  \item $H_{nl}$: 1) $x \rightarrow x^3$, 2) interpolation on obs points.
-  \item $H$: 1) $x \rightarrow 3 x^g  x^g  x^3$, 2) interpolation on obs points.
-  \item $H^*$: 1) interpolation on grid points, 2) $x \rightarrow 3 x^g  x^g  x^3$. 
- \end{itemize}
- \vspace{+0.2cm}
- \item Truth:\\
-  1) $x^t = \textrm{rand\_normal}(n_h)$.\\
-  2) $x^t = B^{1/2} x^t$.
-  \vspace{+0.2cm}
- \item Observations from the truth:\\
-     $y = H x^t + N(0,\sigma^o)$.
- \vspace{+0.2cm}
- \item Nearest Neighbor interpolation.    
+\item Tuning the $\sigma^o$ only modifies the magnitude of $J^o$, which is anyway several orders of magnitudes higher than $J^b$.\\
+\item Two results obtained with different $\sigma^o$ have identical behaviour regarding the cost functions, and the ratio between the two $J^o$ is equal to ${(\Delta \sigma^o)}^2$.
+\item Thus, in the following, I decided to arbitrarily use a fixed value of $\sigma^o = 0.01$.
+\item Tuning the number of observation also results in a change of magnitude but not in qualitative modifications of the cost functions.
 \end{itemize}
 \end{frame}
 
+% ------------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------------
 
-%------------------------------------------------------------------------------------------
-\begin{frame}{Check the observations from $x^t$}
+\begin{frame}
 \begin{center}
-$ \sigma^o = 0.001$\\ 
+\large{Full resolution, varying $\alpha$ parameter with the same relinearization scheme: $no=4, ni=6$,\\
+spectral interpolation and projective B matrix,
+$\sigma^o=0.01$}
+\end{center}
+\end{frame}
+
+%alpha=0
+\begin{frame}{Full resolution; linear H; $J$ vs $J^{nl}$}
+\begin{center}
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=0.95\linewidth]{img/xt.png}
-  \caption{$x^t$}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0/compare_j.png}
+  \caption{$\alpha = 0$}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=0.95\linewidth]{img/obs.png}
-  \caption{Obs with a linear H}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0/compare_j_nl.png}
+  \caption{$\alpha = 0$}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Check the observations from $x^t$}
+%alpha=0.01
+\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
 \begin{center}
-$ \sigma^o = 0.001$\\ 
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=0.95\linewidth]{img/xt.png}
-  \caption{$x^t$}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.01/compare_j.png}
+  \caption{$\alpha = 0.01$}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=0.95\linewidth]{img/obs_nl.png}
-  \caption{Obs with a cubic H}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.01/compare_j_nl.png}
+  \caption{$\alpha = 0.01$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%alpha=0.02
+\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.02/compare_j.png}
+  \caption{$\alpha = 0.02$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.02/compare_j_nl.png}
+  \caption{$\alpha = 0.02$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%alpha=0.05
+\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.05/compare_j.png}
+  \caption{$\alpha = 0.05$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.05/compare_j_nl.png}
+  \caption{$\alpha = 0.05$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%alpha=0.1
+\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.1/compare_j.png}
+  \caption{$\alpha = 0.1$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.1/compare_j_nl.png}
+  \caption{$\alpha = 0.1$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%alpha=0.5
+\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.5/compare_j.png}
+  \caption{$\alpha = 0.5$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.5/compare_j_nl.png}
+  \caption{$\alpha = 0.5$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%alpha=1
+\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/1/compare_j.png}
+  \caption{$\alpha = 1$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/1/compare_j_nl.png}
+  \caption{$\alpha = 1$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Conclusion on the non linearity induced by H}
+ \begin{itemize}
+  \item Very sensitive to $\alpha$ even for small values.
+  \item The case with $\alpha = 1$ seems better than the case with $\alpha = 0.05$...\\
+  $\longrightarrow$ What could be the reason for it ?
+  \item It seems that there are too much inner loops before relinearization but the iteration at which the "jump" occurs seems NOT correlated to the value of $\alpha$.
+ \end{itemize}
+ \vspace{+0.5cm}
+$\longrightarrow$ Need to study the number of inner iterations vs. outer iterations.
+\end{frame}
+
+% ------------------------------------------------------------------------------------------
+% ------------------------------------------------------------------------------------------
+
+\begin{frame}
+\begin{center}
+\large{Full resolution, varying the number of inner and outer loops with a non linear H and the same total number of iterations ($n_o \times n_i =24$)\\
+(spectral interpolation and projective B matrix,
+$\sigma^o=0.01$)}
+\end{center}
+\end{frame}
+
+% ------------------------------------------------------------------------------------------
+%alpha = 0.05
+
+%Jnl
+\begin{frame}{Full resolution; non linear H ($\alpha = 0.05$): $J^{nl}$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no2_ni12/compare_j_nl.png}
+  \caption{$n_o = 2, n_i = 12$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no4_ni6/compare_j_nl.png}
+  \caption{$n_o = 4, n_i = 6$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Full resolution; non linear H ($\alpha = 0.05$): $J^{nl}$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no4_ni6/compare_j_nl.png}
+  \caption{$n_o = 4, n_i = 6$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no6_ni4/compare_j_nl.png}
+  \caption{$n_o = 6, n_i = 4$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%J
+\begin{frame}{Full resolution; non linear H ($\alpha = 0.05$): $J$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no2_ni12/compare_j.png}
+  \caption{$n_o = 2, n_i = 12$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no4_ni6/compare_j.png}
+  \caption{$n_o = 4, n_i = 6$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Full resolution; non linear H ($\alpha = 0.05$): $J$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no4_ni6/compare_j.png}
+  \caption{$n_o = 4, n_i = 6$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no6_ni4/compare_j.png}
+  \caption{$n_o = 6, n_i = 4$}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
 %------------------------------------------------------------------------------------------
-\begin{frame}{Comparision between linear and non linear H: $J^o$}
+%alpha = 0.1
+
+%Jnl
+\begin{frame}{Full resolution; non linear H ($\alpha = 0.1$): $J^{nl}$}
 \begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/Hcomp/jo_linear300.png}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.1/no4_ni6/compare_j_nl.png}
+  \caption{$n_o = 4, n_i = 6$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.1/no6_ni4/compare_j_nl.png}
+  \caption{$n_o = 6, n_i = 4$}
+\endminipage
+\end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Comparision between linear and non linear H:$J^o$}
+%J
+\begin{frame}{Full resolution; non linear H ($\alpha = 0.1$): $J$}
 \begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Cubic case:\\
-\includegraphics[scale=0.3]{./img/Hcomp/jo_nl300.png}
-\end{center}
-\end{frame}
-
-\begin{frame}{Comparision between linear and non linear H:$J^o_{nl}$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Cubic case:\\
-\includegraphics[scale=0.3]{./img/Hcomp/jo_nl_nl300.png}
-\end{center}
-\end{frame}
-%------------------------------------------------------------------------------------------
-
-
-\begin{frame}
-\begin{center}
-\huge{Projective B-matrix}
-\end{center}
-\end{frame}
-
-\begin{frame}{Projective B matrix: nearest interpolation: $J^o$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/near/jo_linear_T.png}
-\end{center}
-\end{frame}
-\begin{frame}{Projective B matrix: nearest interpolation: $J^b$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/near/jb_linear_T.png}
-\end{center}
-\end{frame}
-
-\begin{frame}{Projective B matrix: bilinear interpolation: $J^o$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/bil/jo_linear_T.png}
-\end{center}
-\end{frame}
-
-\begin{frame}{Projective B matrix: bilinear interpolation: $J^b$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/bil/jb_linear_T.png}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.1/no4_ni6/compare_j.png}
+  \caption{$n_o = 4, n_i = 6$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.1/no6_ni4/compare_j.png}
+  \caption{$n_o = 6, n_i = 4$}
+\endminipage
+\end{figure}
 \end{center}
 \end{frame}
 
 %------------------------------------------------------------------------------------------
+%alpha = 1
 
-
-\begin{frame}
+%Jnl
+\begin{frame}{Full resolution; non linear H ($\alpha = 1$): $J^{nl}$}
 \begin{center}
-\huge{Non projective B-matrix}
-\end{center}
-\end{frame}
-
-\begin{frame}{Non projective B matrix: spectral interpolation: $J^o$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/spec/jo_linear_F.png}
-\end{center}
-\end{frame}
-\begin{frame}{Non projective B matrix: spectral interpolation: $J^b$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/spec/jb_linear_F.png}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha1/no4_ni6/compare_j_nl.png}
+  \caption{$n_o = 4, n_i = 6$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha1/no6_ni4/compare_j_nl.png}
+  \caption{$n_o = 6, n_i = 4$}
+\endminipage
+\end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Non projective B matrix: bilinear interpolation: $J^o$}
+%J
+\begin{frame}{Full resolution; non linear H ($\alpha = 1$): $J$}
 \begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/bil/jo_linear_F.png}
-\end{center}
-\end{frame}
-\begin{frame}{Non projective B matrix: bilinear interpolation: $J^b$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/bil/jb_linear_F.png}
-\end{center}
-\end{frame}
-
-\begin{frame}{Non projective B matrix: nearest interpolation: $J^o$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/near/jo_linear_F.png}
-\end{center}
-\end{frame}
-\begin{frame}{Non projective B matrix: nearest interpolation: $J^b$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-Linear case:\\
-\includegraphics[scale=0.3]{./img/projB/near/jb_linear_F.png}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha1/no4_ni6/compare_j.png}
+  \caption{$n_o = 4, n_i = 6$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha1/no6_ni4/compare_j.png}
+  \caption{$n_o = 6, n_i = 4$}
+\endminipage
+\end{figure}
 \end{center}
 \end{frame}
 
 %------------------------------------------------------------------------------------------
+\begin{frame}{Conclusion on the number of inner and outer loops}
+\begin{itemize}
+ \item As expected, the assimilation scheme with the more outer loops is equal or better than the others. 
+ \item There is often a "jump" in the linear cost functions just after relinearization, BUT it seems not necessarily correlated to the behaviour of the non linear cost function (or it is not trivial at all).
+ \item Problem: The firsts inner iterations in the first case with 12 inner iterations seems better than the case with 6 inner iterations whereas the case with 6 inner iterations seems better than the case with 4 inner iterations:\\
+ $\longrightarrow$ The problem is too much dependant on the initial background and observation states that are randomly generated (?): there is a difference of $10^7$ at the beggining in this case!
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------------------------------------------------
+\begin{frame}
+\begin{center}
+ \large{Comparing the interpolation methods and projective B matrix options when changing the resolution between the outer loops}\\
+ Reassuring: (No differences have been found between the interpolation methods, nor between the projective B matrix options when no resolution changes are made).
+\end{center}
+\end{frame}
 
 \begin{frame}
 \begin{center}
-\huge{Non projective B-matrix with cubic H}
-\end{center}
-\end{frame}
-
-\begin{frame}{Non projective B matrix: spectral interpolation: $J$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-cubic case:\\
-\includegraphics[scale=0.3]{./img/projB/spec/j_cubic_F.png}
-\end{center}
-\end{frame}
-
-\begin{frame}{Non projective B matrix: spectral interpolation: $J^o_{nl}$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-cubic case:\\
-\includegraphics[scale=0.3]{./img/projB/spec/jo_nl_cubic_F.png}
-\end{center}
-\end{frame}
-
-\begin{frame}{Non projective B matrix: spectral interpolation: $J^o$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-cubic case:\\
-\includegraphics[scale=0.3]{./img/projB/spec/jo_cubic_F.png}
-\end{center}
-\end{frame}
-
-\begin{frame}{Non projective B matrix: spectral interpolation: $J^b$}
-\begin{center}
-$n_x=n_y=23,51,101 ; \sigma^o = 0.001 ; \sigma^b_{var} = 0 ; L_b = 0.1 ; n_{obs}=300$.\\
-cubic case:\\
-\includegraphics[scale=0.3]{./img/projB/spec/jb_cubic_F.png}
+ \large{Non linearity induced by changing the resolution}
 \end{center}
 \end{frame}
 
 
+
+
+
+
+%------------------------------------------------------------------------------------------
 % Conclusions ------------------------------------------------------------------------------------------
 \begin{frame}{Short conclusion and questions:}
 \begin{itemize}
-\item As expected: The only way to get no differences between the methods (th, std, alt) is to have a transitive interpolation AND the projective B matrix condition.\\
-\item There is often a change of variation at the first inner loop level (except for the first outer loop).\\
-\item Nearest neighbor interpolation seems not transitive (?) (+periodic domain ? + very slow...)\\
-\item Similar behaviour with H measuring $x^4$ (not shown).
-\item Question: What happens if two observations are interpolated at the same grid point with the bilinear and nearest neighbor interpolations ?
-\item Question: equation 38 from the notes.
+\item lala
 \end{itemize}
 \end{frame}
 %------------------------------------------------------------------------------------------
