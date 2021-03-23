@@ -1,0 +1,419 @@
+%\documentclass[francais]{beamer}
+\documentclass[10pt]{beamer}
+\usepackage[francais]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath, amssymb, amsfonts}
+
+\setbeamertemplate{caption}[numbered]
+
+
+%CHOIX DU THEME et/ou DE SA COULEUR
+% => essayer différents thèmes (en décommantant une des trois lignes suivantes)
+%\usetheme{PaloAlto}
+\usetheme{Madrid}
+
+% => il est possible, pour un thème donné, de modifier seulement la couleur
+\usecolortheme{default}
+%\usecolortheme{whale}
+
+%\useoutertheme[left]{sidebar}
+
+
+\title[Nicolas Baillot d'Etivaux]{}
+
+
+\begin{document}
+
+%Présentation:
+\setbeamertemplate{blocks}[rounded]%
+[shadow=false]
+
+
+\begin{frame}
+\begin{center}
+ \Huge{Projet SuNDAE: Point d'étape}\\
+ \vspace{+2cm}
+ \Large{Nicolas Baillot d'Etivaux - Postdoc GMAP/RECYF}
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Content}
+ \begin{itemize}
+  \item Multi-Incremental Multi-Resolution Data Assimilation scheme.
+  \item Guess consistency.
+  \item Building a toy model code.
+  \item Results
+  \item Future prospects
+ \end{itemize}
+\end{frame}
+
+
+% ------------------------------------------------------------------------------------------
+%Multi-incremental DA scheme:
+% ------------------------------------------------------------------------------------------
+\begin{frame}{Full nonquadratic cost function}
+In data assimilation, one wants to minimize a non linear cost function which can be written as:
+\begin{align}
+\hspace{-0.7cm} \mathcal{J}(\mathbf{x}) = \frac{1}{2} \left(\mathbf{x}-\mathbf{x}^b\right)^\mathrm{T} \mathbf{B}^{-1} \left(\mathbf{x}-\mathbf{x}^b\right) + \frac{1}{2} \left(\mathbf{y}^o-\mathcal{H}(\mathbf{x})\right)^\mathrm{T} \mathbf{R}^{-1} \left(\mathbf{y}^o-\mathcal{H}(\mathbf{x})\right)
+\end{align}
+where:
+\begin{itemize}
+\item $\mathbf{x} \in \mathbb{R}^n$ is the state in model space,
+\item $\mathbf{x}^b \in \mathbb{R}^n$ is the background state,
+\item $\mathbf{B} \in \mathbb{B}^{n \times n}$ is the background error covariance matrix,
+\item $\mathbf{y}^o \in \mathbb{R}^p$ is the observation vector,
+\item $\mathbf{R} \in \mathbb{R}^{p \times p}$ is the observation error covariance matrix,
+\item $\mathcal{H} : \mathbb{R}^n \rightarrow \mathbb{R}^p$ is the observation operator, nonlinear.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Linearization of the problem}
+\begin{itemize}
+\item One can linearize the observation operator around a guess state $\mathbf{x}^g_k \in \mathbb{R}^n$ and define the increment $\delta \mathbf{x}_k$ at iteration $k$ of the minimization by $\delta \mathbf{x}_k =  \mathbf{x}-\mathbf{x}^g_k$, so that
+$\mathcal{H}(\mathbf{x}) \approx \mathcal{H}(\mathbf{x}^g_k) + \mathbf{H}_k \delta \mathbf{x}_k$,\\
+where $\mathbf{H}_k \in \mathbb{R}^{p \times m}$ is defined as: $\mathbf{H}_{k,ij} = \left.\frac{\partial \mathcal{H}_i}{\partial x_j}\right|_{\mathbf{x} = \mathbf{x}^g_k}$.
+
+\item Instead of minimizing the full cost function $\mathcal{J}(\mathbf{x})$, we minimize successive quadratic approximations $J(\mathbf{x})$ around the guess $\mathbf{x}^g_k$:
+\begin{align}
+J \left(\delta \mathbf{x}_k\right) & = \frac{1}{2} \left(\delta \mathbf{x}_k-\delta \mathbf{x}^b_k\right)^\mathrm{T} \mathbf{B}^{-1} \left(\delta \mathbf{x}_k-\delta \mathbf{x}^b_k\right) \nonumber \\
+& + \frac{1}{2} \left(\mathbf{d}_k - \mathbf{H}_k \delta \mathbf{x}_k\right)^\mathrm{T} \mathbf{R}^{-1} \left(\mathbf{d}_k - \mathbf{H}_k \delta \mathbf{x}_k\right)
+\end{align}
+where $\delta \mathbf{x}^b_k  \in \mathbb{R}^n$ is the background increment: $\delta \mathbf{x}^b_k = \mathbf{x}^b - \mathbf{x}^g_k$ and $\mathbf{d}_k \in \mathbb{R}^p$ is the innovation vector: $\mathbf{d}_k = \mathbf{y}^o - \mathcal{H}(\mathbf{x}^g_k)$.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Linear system}
+Setting the gradient of $J(\delta \mathbf{x}_k)$ to zero gives the analysis increment $\delta \mathbf{x}^a_k$:
+\begin{align}
+\label{eq:inc}
+& \ \mathbf{B}^{-1} \left(\delta \mathbf{x}^a_k - \delta \mathbf{x}^b_k\right) - \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \left(\mathbf{d}_k - \mathbf{H}_k \delta \mathbf{x}^a_k\right) = 0 \nonumber \\
+\Leftrightarrow & \ \left(\mathbf{B}^{-1} + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k\right) \delta \mathbf{x}^a_k = \mathbf{B}^{-1} \delta \mathbf{x}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k \nonumber \\
+\Leftrightarrow & \ \boxed{\mathbf{A}^\mathbf{x}_k \delta \mathbf{x}^a_k = \mathbf{b}^\mathbf{x}_k}
+\end{align}
+with $\mathbf{A}^\mathbf{x}_k \in \mathbb{R}^{n \times n}$ and $\mathbf{b}^\mathbf{x}_k \in \mathbb{R}^{n}$ defined as:
+\begin{align}
+\mathbf{A}^\mathbf{x}_k & = \mathbf{B}^{-1} + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \\
+\mathbf{b}^\mathbf{x}_k & = \mathbf{B}^{-1} \delta \mathbf{x}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k
+\end{align}
+\end{frame}
+
+\begin{frame}{Linear system: preconditionning}
+ The dimension of the $\mathbf{B}$ matrix being huge in practice, one can transform this linear system in order to lower its conditionning number by using preconditionners and the associated algorithms. We compare two types of preconditionning:
+ \vspace{+0.3cm}
+ \begin{itemize}
+  \item The full $\mathbf{B}$ preconditionning, defining a new variable $\delta \overline{\mathbf{x}}_k = \mathbf{B}_k^{-1} \delta \mathbf{x}_k$ so that the linear system \eqref{eq:inc} is transformed into: $\boxed{\mathbf{A}^{\overline{\mathbf{x}}}_k \delta \overline{\mathbf{x}}^a_k = \mathbf{b}^{\overline{\mathbf{x}}}_k}$ with:\\
+  \begin{center}
+  $\mathbf{A}^{\overline{\mathbf{x}}}_k = \mathbf{I}_n + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \mathbf{B}_k$, and $\mathbf{b}^{\overline{\mathbf{x}}}_k =  \delta \overline{\mathbf{x}}^b_k + \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k$.
+  \end{center}
+  \vspace{+0.3cm}
+  \item The square root $\mathbf{B}^{1/2}$ preconditionning: since $\mathbf{B}$ is positive definite, there is an infinity of square-roots $\mathbf{U} \in \mathbb{R}^{n \times m}$ with $m \ge n$ verifying $\mathbf{B} = \mathbf{U} \mathbf{U}^\mathrm{T}$, so that a new variable can be defined as $\delta \mathbf{v}_k = \mathbf{U}^\mathrm{T} \mathbf{B}^{-1} \delta \mathbf{x}_k$, transforming the linear system \eqref{eq:inc} into: $\boxed{\mathbf{A}^\mathbf{v}_k \delta \mathbf{v}^a_k = \mathbf{b}^\mathbf{v}_k}$ with:\\
+  \begin{center}
+  $\mathbf{A}^\mathbf{v}_k = \mathbf{I}_m + \mathbf{U}^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{H}_k \mathbf{U}$, and $\mathbf{b}^\mathbf{v}_k = \delta \mathbf{v}^b_k + \mathbf{U}^\mathrm{T} \mathbf{H}_k^\mathrm{T} \mathbf{R}^{-1} \mathbf{d}_k$
+  \end{center}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Linear system: preconditionning}
+Once the system has been preconditionned with one of two above-mentionned preconditionners, the system can be solved by using different algorithms:\\
+\vspace{+0.3cm}
+\begin{itemize}
+ \item For the full B preconditionning, the \textbf{PLanczosIF} method with a preconditioner $\mathbf{P}_k = \mathbf{B}\mathbf{C}_k$, where $\mathbf{C}_k \in \mathbb{R}^{n \times n}$ and $\mathbf{P}_k \in \mathbb{R}^{n \times n}$ is detailed in ref selime.
+ \vspace{+0.3cm}
+ \item For the square root $\mathbf{B}^{1/2}$ preconditionning, the \textbf{Lanczos} method with a preconditioner $\mathbf{Q}_k = \mathbf{Q}_k^{1/2} \mathbf{Q}_k^{\mathrm{T}/2}$, where $\mathbf{Q}_k^{1/2} \in \mathbb{R}^{m \times m}$, is detailed in algorithm (ref selime).\\
+ \end{itemize}
+ \vspace{+0.3cm}
+A common (but not unique) way to define the preconditioners $\mathbf{P}_k = \mathbf{B}\mathbf{C}_k$ or $\mathbf{Q}_k$ consists in using the spectral Limited Memory Preconditioner (LMP) approximated from the Ritz pairs.\\
+We do not detail it here since we have left these LMPs for the moment in order to better understand the results, and we plan to take them into account in a near future.
+\end{frame}
+
+\begin{frame}{Equivalence condition for preconditionners}
+Both approaches are equivalent if the preconditioners are linked via $\mathbf{P}^{1/2}_k = \mathbf{Q}^{1/2}_k \mathbf{U}$ \small{which is verified for the spectral preconditioner approximated with the Ritz pairs.}
+\begin{center}
+ \begin{figure}
+ \label{relation}
+  \includegraphics[scale=0.7]{img/relationship.png}
+  \caption{Summary of the relationship between all the introduced variables}
+ \end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Practical computation: Getting rid of $\mathbf{B}^{-1}$}
+In practice, the inverse of the background error covariance matrix $\mathbf{B}^{-1}$ is not available, even if it is needed in general to compute the right-hand sides $\mathbf{b}^{\overline{\mathbf{x}}}_k$ and $\mathbf{b}^\mathbf{v}_k$. However, it is very usual to define the guess as follows:
+\begin{itemize}
+\item for $k = 1$:
+\begin{align}
+\delta \mathbf{x}^b_1 = \mathbf{x}^g_1 - \mathbf{x}^b = 0
+\end{align}
+\item for $k > 1$:
+\begin{align}
+\delta \mathbf{x}^b_k & = \mathbf{x}^b - \mathbf{x}^g_k \nonumber \\
+& = \mathbf{x}^b - \mathbf{x}^a_{k-1} \nonumber \\
+& = \mathbf{x}^b - \left(\mathbf{x}^g_{k-1} + \delta \mathbf{x}^a_{k-1}\right) \nonumber \\
+& = \delta \mathbf{x}^b_{k-1} - \delta \mathbf{x}^a_{k-1}
+\end{align}
+\end{itemize}
+which can be combined recursively to yield:
+\begin{align}
+\label{eq:back_inc}
+\delta \mathbf{x}^b_k & = - \sum_{i=1}^{k-1} \delta \mathbf{x}^a_i
+\end{align}
+\end{frame}
+
+\begin{frame}{Practical computation: Getting rid of $\mathbf{B}^{-1}$}
+ With the full $\mathbf{B}$ preconditioning, $\mathbf{B}^{-1}$ can be applied on both side of equation \eqref{eq:back_inc}:
+\begin{align}
+\label{eq:back_inc_B}
+\boxed{\delta \overline{\mathbf{x}}^b_k = - \sum_{i=1}^{k-1} \delta \overline{\mathbf{x}}^a_i}
+\end{align}
+and with the square-root $\mathbf{B}$ preconditioning, $\mathbf{U}^\mathrm{T} \mathbf{B}^{-1}$ can be applied on both side of equation \eqref{eq:back_inc}:
+\begin{align}
+\label{eq:back_inc_U}
+\boxed{\delta \mathbf{v}^b_k = - \sum_{i=1}^{k-1} \delta \mathbf{v}^a_i}
+\end{align}
+Equations \eqref{eq:back_inc_B} and \eqref{eq:back_inc_U} can be used to compute $\mathbf{b}^{\overline{\mathbf{x}}}_k$ and $\mathbf{b}^\mathbf{v}_k$ respectively, without requiring $\mathbf{B}^{-1}$.
+\end{frame}
+
+\begin{frame}{Practical computation: Updating $\mathbf{B}$}
+The $\mathbf{B}$ matrix can be updated between outer iterations and may depend on iteration $k$. In this case, the previous trick to get rid of $\mathbf{B}^{-1}$ does not work systematically. Equation \eqref{eq:back_inc} is valid and yield:
+\vspace{+0.3cm}
+\begin{itemize}
+\item With the full $\mathbf{B}$ preconditioning: $\delta \overline{\mathbf{x}}^b_k = - \mathbf{B}_k^{-1}\sum_{i=1}^{k-1} \delta \mathbf{x}^a_i \nonumber = - \sum_{i=1}^{k-1} \mathbf{B}_k^{-1} \mathbf{B}_i \delta \overline{\mathbf{x}}^a_i$\\
+\vspace{+0.2cm}
+If $\mathbf{B}_k^{-1} \mathbf{B}_i \delta \overline{\mathbf{x}}^a_i \ne \delta \overline{\mathbf{x}}^a_i$, equation \eqref{eq:back_inc_B} cannot be used consistently.
+\vspace{+0.3cm}
+\item With the square-root $\mathbf{B}$ preconditioning: $\delta \mathbf{v}^b_k = - \mathbf{U}_k^\mathrm{T} \mathbf{B}_k^{-1} \sum_{i=1}^{k-1} \delta \mathbf{x}^a_i = - \sum_{i=1}^{k-1} \mathbf{U}_k^\mathrm{T} \mathbf{B}_k^{-1} \mathbf{U}_i \delta \mathbf{v}^a_i$\\
+\vspace{+0.2cm}
+If $\mathbf{U}_k^\mathrm{T} \mathbf{B}_k^{-1} \mathbf{U}_i \delta \mathbf{v}^a_i \ne \delta \mathbf{v}^a_i$, equation \eqref{eq:back_inc_U} cannot be used consistently.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Changing the resolution: Interpolation}
+For computational efficiency, it is common to start the optimization at a lower resolution, and to increase it at each outer iteration $k$. We define two interpolators from resolution $\mathcal{R}_i$ at iteration $i$ to resolution $\mathcal{R}_k$ at iteration $k$:
+\begin{itemize}
+\item $\mathbf{T}^\mathbf{x}_{i \rightarrow k} \in \mathbb{R}^{n_k \times n_i}$ in model space,
+\item $\mathbf{T}^\mathbf{v}_{i \rightarrow k} \in \mathbb{R}^{m_k \times m_i}$ in control space,
+\end{itemize}
+$  $\\
+A special class of interpolators called ``transitive interpolators'' have three extra properties:
+\begin{itemize}
+\item Upscaling transitivity: for $n_i \le n_j$ and $n_i \le n_k$:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{j \rightarrow k} \mathbf{T}^\mathbf{x}_{i \rightarrow j} = \mathbf{T}^\mathbf{x}_{i \rightarrow k}
+\end{align}
+\item Downscaling transitivity: for $n_i \le n_j \le n_k$:
+\begin{align}
+\mathbf{T}^\mathbf{x}_{j \rightarrow i} \mathbf{T}^\mathbf{x}_{k \rightarrow j} = \mathbf{T}^\mathbf{x}_{k \rightarrow i}
+\end{align}
+\item Right-inverse: for $n_i \le n_k$
+\begin{align}
+\mathbf{T}^\mathbf{x}_{k \rightarrow i} \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{I}_{n_i}
+\end{align}
+\end{itemize}
+and similarly for $\mathbf{T}^\mathbf{v}_{i \rightarrow k}$ in control space.
+\end{frame}
+
+\begin{frame}{Changing the resolution: Projective B matrix family}
+Associated to the various resolution, we qualify a $\mathbf{B}$ matrix family as ``projective'' if the low-resolution members can be defined as a projection of the high-resolution one, using transitive interpolators. For $n_i \le n_k$, that would mean:
+\begin{align}
+\label{eq:projective_definition_B}
+\mathbf{B}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{T}^\mathbf{x}_{i \rightarrow k} \mathbf{B}_i
+\end{align}
+and for the square-root of $\mathbf{B}$:
+\begin{align}
+\label{eq:projective_definition_U}
+\mathbf{U}_k \mathbf{T}^\mathbf{v}_{i \rightarrow k} = \mathbf{T}^\mathbf{x}_{i \rightarrow k} \mathbf{U}_i
+\end{align}
+\end{frame}
+
+\begin{frame}{Changing the resolution: General requirements}
+ The multi-resolution problem should be solved with the following requirements in mind:
+\begin{itemize}
+\item The background $\mathbf{x}^b$ is provided at full resolution, but it can be simplified at resolution $\mathcal{R}_k$:
+\begin{align}
+\boxed{\mathbf{x}^b_k = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^b}
+\end{align}
+\item A full resolution guess denoted $\mathbf{x}^{g+}_k$ has to be computed at each outer iteration to run model trajectories used in the operators linearization. This full resolution guess can be simplified at resolution $\mathcal{R}_k$ to give the actual guess of the outer iteration $k$:
+\begin{align}
+\boxed{\mathbf{x}^g_k = \mathbf{T}^\mathbf{x}_{K \rightarrow k} \mathbf{x}^{g+}_k}
+\end{align}
+\item Only $\delta$-quantities should be interpolated to higher resolution, and then possibly added to full quantities at high resolution.
+\end{itemize}
+\end{frame}
+
+
+% ------------------------------------------------------------------------------------------
+%Guess consistency and methods:
+% ------------------------------------------------------------------------------------------
+
+\begin{frame}{Guess Consistency}
+ In the linear systems solved at each outer iteration, the guess appears explicitely as the linearization state for nonlinear operators and to compute the innovation, and implicitely in the first term of the right-hand side.\\
+\vspace{+0.2cm}
+For the first iteration, the full resolution guess is the background state, also provided at full resolution: $\mathbf{x}^{g+}_1 = \mathbf{x}^b$.\\
+\vspace{+0.2cm}
+At the end of iteration $k$, an analysis increment $\delta \mathbf{x}^a_k$ is produced at resolution $\mathcal{R}_k$. In the previous section, the guess of iteration $k$ was defined as the analysis of iteration $k-1$, which is not possible anymore since the resolution increases.\\
+\vspace{+0.2cm}
+Some interpolation of the output of the previous outer iteration is required to generate the analysis increment at full resolution $\delta \mathbf{x}^{a+}_{k-1}$, which updates the full resolution guess: $\mathbf{x}^{g+}_k = \mathbf{x}^{g+}_{k-1} + \delta \mathbf{x}^{a+}_{k-1}$. 
+\end{frame}
+
+\begin{frame}{Guess Consistency: Theoretical method}
+If we assume that the $\mathbf{B}^{-1}$ is available, the first term of the right-hand side can be obtained as:
+\begin{align}
+\label{eq:correct_dxb}
+\delta \overline{\mathbf{x}}^b_k & = \mathbf{B}^{-1}_k \delta \mathbf{x}^b_k \nonumber \\
+& = \mathbf{B}^{-1}_k \left(\mathbf{x}^b_k - \mathbf{x}^g_k\right)
+\end{align}
+or
+\begin{align}
+\label{eq:correct_dvb}
+\delta \mathbf{v}^b_k & = \mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \delta \mathbf{x}^b_k \nonumber \\
+& = \mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \left(\mathbf{x}^b_k - \mathbf{x}^g_k\right)
+\end{align}
+Here, both explicit and implicit guesses are consistent, thanks to the use of $\mathbf{B}^{-1}$.\\
+\vspace{+0.2cm}
+We refer to this method as the \textbf{theoretical method}.
+\end{frame}
+
+\begin{frame}{Guess consistency: Standard method}
+If $\mathbf{B}^{-1}$ is not available, the first term of the right-hand side is computed separately, using transformed versions of equations \eqref{eq:back_inc_B} and \eqref{eq:back_inc_U} with appropriate interpolations:
+\begin{align}
+\label{eq:back_inc_Bvar}
+\boxed{\delta \underline{\overline{\mathbf{x}}}^b_k = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i}
+\end{align}
+and 
+\begin{align}
+\label{eq:back_inc_Uvar}
+\boxed{\delta \underline{\mathbf{v}}^b_k = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i}
+\end{align}
+Underlines emphasize the fact that these quantities are not necessarily equal to their exact counterparts of equations \eqref{eq:correct_dxb} and \eqref{eq:correct_dvb}.\\
+\vspace{+0.2cm}
+We refer to this method as the \textbf{standard method}.
+\end{frame}
+
+\begin{frame}{Guess consistency: Alternative method}
+Reversing the order of computations yields the same results as the consistent standard method, but with fewer and simpler computations. The first term of the right-hand side is computed first from equations \eqref{eq:back_inc_Bvar} or \eqref{eq:back_inc_Uvar}. Then, the background increment is given by:
+\begin{align}
+\delta \mathbf{x}^b_k & = \mathbf{B}_k \delta \underline{\overline{\mathbf{x}}}^b_k
+\end{align}
+or
+\begin{align}
+\delta \mathbf{x}^b_k & = \mathbf{U}_k \delta \underline{\mathbf{v}}^b_k
+\end{align}
+Finally, the explicit guess is deduced at resolution $\mathcal{R}_k$ as $\mathbf{x}^g_k = \mathbf{x}^b_k - \delta \mathbf{x}^b_k$ and at full resolution as $\mathbf{x}^{g+}_k = \mathbf{x}^b - \mathbf{T}^\mathbf{x}_{k \rightarrow K} \delta \mathbf{x}^b_k$.\\
+\vspace{+0.2cm}
+We refer to this method as the \textbf{alternative method}.
+\end{frame}
+
+\begin{frame}{Summary on the methods}
+\begin{center}
+ \begin{figure}
+ \label{fig:schema}
+  \includegraphics[scale=0.9]{img/schema.png}
+  \caption{Summary of the different methods}
+ \end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Preconditioning equivalence}
+When the resolution changes between outer iterations, the equivalence between full $\mathbf{B}$ and square-root $\mathbf{B}$ preconditionings is not guaranteed anymore. Two kinds of conditions can be required to get similar results with both preconditionings:
+\begin{enumerate}
+\item $\delta \mathbf{x}^{a+}_i$ is computed in a similar way for both preconditionings, whatever the interpolation space and the order of interpolations and $\mathbf{B}$ matrix (or its square-root) applications.
+\item Equations \eqref{eq:back_inc_Bvar} and \eqref{eq:back_inc_Uvar} can be related by:
+\begin{align}\mathbf{U}^\mathrm{T}_k \delta \underline{\overline{\mathbf{x}}}^b_k = \delta \underline{\mathbf{v}}^b_k \Leftrightarrow \ - \mathbf{U}^\mathrm{T}_k  \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i = - \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i
+\end{align}
+If the previous outer iterations were equivalent for both preconditionings, then $\delta \mathbf{v}^a_i = \mathbf{U}^\mathrm{T}_i \delta \overline{\mathbf{x}}^a_i$ so this condition becomes $\mathbf{U}^\mathrm{T}_k \mathbf{T}^\mathbf{x}_{i \rightarrow k} = \mathbf{T}^\mathbf{v}_{i \rightarrow k} \mathbf{U}^\mathrm{T}_i$ which is the condition for a projective $\mathbf{B}$ matrix family.
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Preconditioning equivalence}
+ Depending on the method, the equivalence conditions may vary:
+\begin{itemize}
+\item \textbf{Theoretical method}: condition 1. is sufficient since the first term of the right-hand side is deduced from the full resolution guess.
+\item \textbf{Standard method}: both conditions 1. and 2. are required since the full resolution guess and the first term of the right-hand side are computed independently.
+\item \textbf{Alternative method}: condition 2. is sufficient, since the full resolution guess is deduced from the first term of the right-hand side.
+\end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Guess consistency II}
+We are looking for sufficient conditions to make sure that both explicit and implicit guesses are consistent, i.e. $\delta \underline{\overline{\mathbf{x}}}^b_k = \delta \overline{\mathbf{x}}^b_k$ and $\delta \underline{\mathbf{v}}^b_k = \delta \mathbf{v}^b_k$.\\
+\vspace{+0.2cm}
+It is possible to mathematically demonstrate that in the case of projective $\mathbf{B}$ matrix family and transitive interpolators, the guesses of the three methods are consistent.\\
+\vspace{+0.2cm}
+We have developped a toy model code in order to prove this and to study the potential differences between the results given by the three methods when one of these condition is not satisfied.
+\end{frame}
+
+% ------------------------------------------------------------------------------------------
+%Toy model code brief description:
+% ------------------------------------------------------------------------------------------
+\begin{frame}{Building a toy model code}
+ We have built a 2D toy model in order to monitor the differences between the three mentionned strategies and the interpolation method used to compute the guess between two outer loops, as well as the preconditionning techniques.\\
+ We briefly describe the fortran code in the following slides:
+\end{frame} 
+ 
+ \begin{frame}{Toy model code: Initialisation of the problem}
+ \begin{itemize}
+  \item Generation of a spectral \textbf{B} matrix (Background error covariance matrix).
+  \item Generation of a gaussian random background state $\mathbf{x^b}$ and a gaussian random truth state $\mathbf{x^t}$ at full resolution (by applying $\mathbf{B}^{1/2}$ on random fields with normal distributions).
+  \item Generation of a diagonal \textbf{R} matrix (Observation error covariance matrix): $\mathbf{R}_{ij}=\sigma^o \delta_{ij}$, where $\sigma^o$ is a scalar and $\delta_{ij}$ is the  Kronecker symbol.
+  \item Generation of an observation state from the truth, and its associated errors drawn from applying $\mathbf{R}^{1/2}$ to a random vector matching the observation points with a normal distribution.
+  \item Generation of an observation operator $\mathcal{H}$ that maps the grid points to the observation points. We have choosen the following form in order to be able to tune the non-linearity induced by this operator: $\mathcal{H}\mathbf{x} = (1-\alpha)\mathbf{x}+\alpha \mathbf{x}^3$, where $\alpha$ is a scalar and $\mathbf{x}$ a is grid point field.
+ \end{itemize}
+\end{frame}
+
+\begin{frame}{Toy model code: Minimization}
+The code runs several configurations of the minimization of the problem according to:\\
+\vspace{+0.5cm}
+\begin{itemize}
+ \item The method used to compute the guess between the outer loops (theoretical, standard, and alternative).
+ \item The preconditionning used in the inner loops and the associated algorithm (Lanczos, and PLanczosIF (see ref selime)).
+ \item The interpolation method used for the change of resolution (nearest neighbor, bilinear or spectral).
+ \item The B matrix "family" used (projective or not).
+ \item The Low Memory Preconditionners used in the inner loops (Ritz, Spectral or None see ref) - (we have left this part for the moment and we plan to go back to it in a near future).
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Toy model code: Monitoring}
+ Finally we can monitor various quantities in order to better understand the behaviour of a Multi-Incremental Data Assimilation scheme and the differences that appear between the different methods used to evaluate the guess between two outer loops when the resolution is changing.\\
+ These quantities include the cost functions, the increments, the matrices elements, the guess and so on and so far...
+\end{frame}
+
+
+
+
+% ------------------------------------------------------------------------------------------
+%Results
+% ------------------------------------------------------------------------------------------
+\begin{frame}{Results}
+As expected, we found that there are no differences between the different strategies when the resolution is not changing between the outer loops. 
+\end{frame}
+
+
+
+
+%alpha=0.01
+\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+%  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.01/compare_j.png}
+  \caption{$\alpha = 0.01$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+%  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.01/compare_j_nl.png}
+  \caption{$\alpha = 0.01$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+
+\usebackgroundtemplate{}
+
+
+
+
+\end{document}
