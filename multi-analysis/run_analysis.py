@@ -80,7 +80,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/changing_resolution_vs_hnl_coeff_no4_ni6_proj_F')
+results_dir_root = os.path.join(directories['analysis_results'] + '/Shuffle_with_sigmao0.1')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
@@ -108,20 +108,18 @@ outer_iterations_list = []
 # Loop over the parametrizations and run the code:
 i_no_ni = [[4,6]]
 
-i_nx = ['11,25,51,101','51,71,91,101','11,31,51,101']
+i_nx = ['51,61,71,101','101,101,101,101']
 
 i_nobs = [2000]
-i_sigma_obs = [0.01]
-i_Hnl_coeff = [0.,0.1]
+i_sigma_obs = [0.1]
+i_Hnl_coeff = [0.0,0.05,0.1,1]
 
-i_sigmabvar = [0.]
+i_sigmabvar = [0.0]
 i_Lb = [0.1]
 
 i_interp_method = ['"spectral"','"bilinear"','"nearest"']
-#i_interp_method = ['"spectral"']
 
-i_project_B = ["F"]
-#i_project_B = ["T"]
+i_project_B = ["T","F"]
 
 i_test_ortho = ["T"]
 
