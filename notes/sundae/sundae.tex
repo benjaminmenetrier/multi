@@ -1,5 +1,5 @@
 %\documentclass[francais]{beamer}
-\documentclass[10pt]{beamer}
+\documentclass[8pt]{beamer}
 \usepackage[francais]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -35,7 +35,10 @@
 \begin{center}
  \Huge{Projet SuNDAE: Point d'étape}\\
  \vspace{+2cm}
- \Large{Nicolas Baillot d'Etivaux - Postdoc GMAP/RECYF}
+ \Large{Nicolas Baillot d'Etivaux - Postdoc GMAP/RECYF}\\
+ \Large{Under the supervision of Yann Michel}\\
+ \vspace{+0.5cm}
+ \Large{In collaboration with:\\ Benjamin Ménétrier, Selime Gürol, Anthony Weaver}
 \end{center}
 \end{frame}
 
@@ -43,9 +46,10 @@
 \begin{frame}{Content}
  \begin{itemize}
   \item Multi-Incremental Multi-Resolution Data Assimilation scheme.
-  \item Guess consistency.
+  \item Practical computation.
+  \item Guess consistency and preconditionning equivalence.
   \item Building a toy model code.
-  \item Results
+  \item Preliminary results
   \item Future prospects
  \end{itemize}
 \end{frame}
@@ -309,11 +313,41 @@ We refer to this method as the \textbf{alternative method}.
 \begin{frame}{Summary on the methods}
 \begin{center}
  \begin{figure}
- \label{fig:schema}
   \includegraphics[scale=0.9]{img/schema.png}
-  \caption{Summary of the different methods}
+  \caption{Summary of the different methods: Theoretical (left); Standard (middle); Alternative (right).}
  \end{figure}
 \end{center}
+\end{frame}
+
+\begin{frame}{Guess consistency}
+We are looking for sufficient conditions to make sure that both explicit and implicit guesses are consistent, i.e. $\delta \underline{\overline{\mathbf{x}}}^b_k = \delta \overline{\mathbf{x}}^b_k$ and $\delta \underline{\mathbf{v}}^b_k = \delta \mathbf{v}^b_k$.\\
+\vspace{+0.3cm}
+One can write the guess as $\mathbf{x}^{g+}_k = \mathbf{x}^{b} + \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i$ which can be introduced into equations \eqref{eq:correct_dxb} and \eqref{eq:correct_dvb} to get background increments as functions of the analysis increment at full resolution $\delta \mathbf{x}^{a+}_i$, leading to:
+\begin{align}
+\label{eq:correct_dxb_2}
+\delta \overline{\mathbf{x}}^b_k = -\mathbf{B}^{-1}_k \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i
+\end{align}
+and
+\begin{align}
+\label{eq:correct_dvb_2}
+\delta \mathbf{v}^b_k = -\mathbf{U}_k^\mathrm{T} \mathbf{B}^{-1}_k \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-1} \delta \mathbf{x}^{a+}_i
+\end{align}
+\end{frame}
+
+\begin{frame}{Guess consistency}
+It is mathematically possible to show that $\delta \underline{\overline{\mathbf{x}}}^b_k = \delta \overline{\mathbf{x}}^b_k$ if:
+\begin{align}
+\label{eq:general_condition_B}
+\mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_{k-1} & =  \mathbf{B}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{x}_{i \rightarrow k} \delta \overline{\mathbf{x}}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i
+\end{align}
+And similarly in control space $\delta \underline{\mathbf{v}}^b_k = \delta \mathbf{v}^b_k$ if and only if:
+\begin{align}
+\label{eq:general_condition_U}
+\mathbf{T}^\mathbf{x}_{K \rightarrow k} \delta \mathbf{x}^{a+}_{k-1} & = \mathbf{U}_k \sum_{i=1}^{k-1} \mathbf{T}^\mathbf{v}_{i \rightarrow k} \delta \mathbf{v}^a_i - \mathbf{T}^\mathbf{x}_{K \rightarrow k} \sum_{i=1}^{k-2} \delta \mathbf{x}^{a+}_i
+\end{align}
+Conditions \eqref{eq:general_condition_B} and \eqref{eq:general_condition_U} on $\delta \mathbf{x}^{a+}_{k-1}$ are based on its interpolation at full resolution, and do not provide an explicit expression.\\
+\vspace{+0.3cm}
+One can show that these conditions are verified in the case of transitive interpolators and projective $\mathbf{B}$ matrix.
 \end{frame}
 
 \begin{frame}{Preconditioning equivalence}
@@ -338,47 +372,44 @@ If the previous outer iterations were equivalent for both preconditionings, then
 
 
 
-\begin{frame}{Guess consistency II}
-We are looking for sufficient conditions to make sure that both explicit and implicit guesses are consistent, i.e. $\delta \underline{\overline{\mathbf{x}}}^b_k = \delta \overline{\mathbf{x}}^b_k$ and $\delta \underline{\mathbf{v}}^b_k = \delta \mathbf{v}^b_k$.\\
-\vspace{+0.2cm}
-It is possible to mathematically demonstrate that in the case of projective $\mathbf{B}$ matrix family and transitive interpolators, the guesses of the three methods are consistent.\\
-\vspace{+0.2cm}
-We have developped a toy model code in order to prove this and to study the potential differences between the results given by the three methods when one of these condition is not satisfied.
-\end{frame}
 
 % ------------------------------------------------------------------------------------------
 %Toy model code brief description:
 % ------------------------------------------------------------------------------------------
 \begin{frame}{Building a toy model code}
- We have built a 2D toy model in order to monitor the differences between the three mentionned strategies and the interpolation method used to compute the guess between two outer loops, as well as the preconditionning techniques.\\
+ We have built a 2D toy model in order to monitor the differences between the three mentionned strategies and the two types of preconditionning according to the choice of the $\mathbf{B}$ matrix family and the interpolation method used to compute the guess between two outer loops.\\
  We briefly describe the fortran code in the following slides:
 \end{frame} 
  
  \begin{frame}{Toy model code: Initialisation of the problem}
  \begin{itemize}
-  \item Generation of a spectral \textbf{B} matrix (Background error covariance matrix).
+  \item Generation of a spectral \textbf{B} matrix (Background error covariance matrix)
   \item Generation of a gaussian random background state $\mathbf{x^b}$ and a gaussian random truth state $\mathbf{x^t}$ at full resolution (by applying $\mathbf{B}^{1/2}$ on random fields with normal distributions).
-  \item Generation of a diagonal \textbf{R} matrix (Observation error covariance matrix): $\mathbf{R}_{ij}=\sigma^o \delta_{ij}$, where $\sigma^o$ is a scalar and $\delta_{ij}$ is the  Kronecker symbol.
+  \item Generation of a diagonal \textbf{R} matrix (Observation error covariance matrix): $\mathbf{R}_{ij}=(\sigma^o)^2 \delta_{ij}$, where $\sigma^o$ is a scalar and $\delta_{ij}$ is the  Kronecker symbol.
   \item Generation of an observation state from the truth, and its associated errors drawn from applying $\mathbf{R}^{1/2}$ to a random vector matching the observation points with a normal distribution.
-  \item Generation of an observation operator $\mathcal{H}$ that maps the grid points to the observation points. We have choosen the following form in order to be able to tune the non-linearity induced by this operator: $\mathcal{H}\mathbf{x} = (1-\alpha)\mathbf{x}+\alpha \mathbf{x}^3$, where $\alpha$ is a scalar and $\mathbf{x}$ a is grid point field.
+  \item Generation of an observation operator $\mathcal{H}$ that maps the grid points to the observation points. We have choosen the following form in order to be able to tune the non-linearity induced by this operator: $\mathcal{H}\mathbf{x} = (1-\alpha)\mathbf{x}+\alpha \mathbf{x}^3$, where $\alpha$ is a scalar and $\mathbf{x}$ a is grid point field stored as a vector.
  \end{itemize}
 \end{frame}
 
-\begin{frame}{Toy model code: Minimization}
-The code runs several configurations of the minimization of the problem according to:\\
-\vspace{+0.5cm}
+\begin{frame}{Toy model code: Solving the problem}
+ In this toy problem, one can vary the values of the error attached to the observations $\sigma^o$; the number of observations; the correlation lenghtscale $L_b$, and the variance of the elements of the $\mathbf{B}$ matrix $\sigma^b_{var}$; the number of inner and outer loops and their respective resolutions; and the $\alpha$ parameter.\\
+ \vspace{+0.5cm}
+The minimization will be calculated in several ways according to:
 \begin{itemize}
  \item The method used to compute the guess between the outer loops (theoretical, standard, and alternative).
- \item The preconditionning used in the inner loops and the associated algorithm (Lanczos, and PLanczosIF (see ref selime)).
- \item The interpolation method used for the change of resolution (nearest neighbor, bilinear or spectral).
- \item The B matrix "family" used (projective or not).
- \item The Low Memory Preconditionners used in the inner loops (Ritz, Spectral or None see ref) - (we have left this part for the moment and we plan to go back to it in a near future).
+ \item The preconditionning method used in the inner loops and the associated algorithm (Full $\mathbf{B}$ or $\mathbf{B}^{1/2}$).
+ \item The interpolators used for the change of resolution between the outer loops (nearest neighbor, bilinear or spectral). Note that only the spectral interpolator is transitive.
+ \item The $\mathbf{B}$ matrix "family" (projective or not).
+ \item The Low Memory Preconditionners used in the inner loops - (we have left this part for the moment and we plan to go back to it in a near future).
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Toy model code: Monitoring}
- Finally we can monitor various quantities in order to better understand the behaviour of a Multi-Incremental Data Assimilation scheme and the differences that appear between the different methods used to evaluate the guess between two outer loops when the resolution is changing.\\
- These quantities include the cost functions, the increments, the matrices elements, the guess and so on and so far...
+\begin{frame}{Toy model code: Tuning and Monitoring}
+ Finally we can monitor various quantities in order to better understand the behaviour of this Multi-Incremental Multi-Resolution Data Assimilation scheme and the differences that appear between the different methods.\\
+ \vspace{+0.3cm}
+These quantities include all the guesses, the increments in the inner and outer loops, the cost functions (non-linear and linearized; in observation space and in model space), the residues in the inner loops, the innovations and the $\mathbf{B}$ matrices.\\
+\vspace{+0.5cm}
+Some preliminary results are shown in the following. We have arbitrarily used 2000 observations with a full resolution of 101x101 grid points, $\sigma^o=0.01$, $L_b=0.1$, $\sigma^b_{var}=0$.
 \end{frame}
 
 
@@ -387,29 +418,139 @@ The code runs several configurations of the minimization of the problem accordin
 % ------------------------------------------------------------------------------------------
 %Results
 % ------------------------------------------------------------------------------------------
-\begin{frame}{Results}
-As expected, we found that there are no differences between the different strategies when the resolution is not changing between the outer loops. 
-\end{frame}
 
-
-
-
-%alpha=0.01
-\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
-\begin{center}
+\begin{frame}{Results: Equivalence at full resolution}
+ As expected, when no resolution change are maid between the outer loops, the three methods (theoretical, standard and alternative) are equivalent, whatever the choice of interpolators, preconditionning, or the $\mathbf{B}$ matrix family.
+ \begin{center}
 \begin{figure}
-\minipage{0.49\textwidth}
-%  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.01/compare_j.png}
-  \caption{$\alpha = 0.01$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-%  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.01/compare_j_nl.png}
-  \caption{$\alpha = 0.01$}
-\endminipage
+  \begin{minipage}[c]{0.67\textwidth}
+    \includegraphics[scale=0.3]{img/full_res/compare_j_nl.png}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.27\textwidth}
+    \caption{\textbf{Top plot}: illustrative case of the non linear cost functions calculated with all the strategies with 6 outer loops of 4 inner loops, with a non linear observation operator ($\alpha=0.1$) and using a spectral interpolation and projective $\mathcal{B}$ matrix. \textbf{Bottom plot}: differences between full $\mathbf{B}$ and square root $\mathbf{B}$ preconditionning.}
+  \end{minipage}
 \end{figure}
 \end{center}
 \end{frame}
 
+\begin{frame}{Results: Effects of a non linear observation operator}
+When the problem is linearized at the begining of a new outer loop around a NEW guess state (obtained from the previous analysis), the linearized cost function in the new outer loop may start at a higher value than its last value in the previous outer loop, since the problem have been updated.
+\vspace{-0.2cm}
+ \begin{center}
+\begin{figure}
+  \begin{minipage}[c]{0.67\textwidth}
+    \includegraphics[scale=0.3]{img/full_res/compare_j.png}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.23\textwidth}
+    \caption{\textbf{Top plot}: Corresponding linearized cost functions calculated with all the strategies with 6 outer loops of 4 inner loops, with a non linear observation operator ($\alpha=0.1$) and using a spectral interpolation and projective $\mathbf{B}$ matrix. \textbf{Bottom plot}: differences between full $\mathbf{B}$ and square root $\mathbf{B}$ preconditionning.}
+  \end{minipage}
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Results: Changing the resolution}
+When the resolution changes between the outer loops but with a linear $\mathcal{H}$, $J$ and $J^{nl}$ are the same and may show the same feature as previously, but this time the "jump" is induced by the resolution changing and not by $\mathcal{H}$. We found that the "jump" occurs at the biggest resolution changing (other examples not shown).
+\vspace{-0.2cm}
+\begin{center}
+\begin{figure}
+  \begin{minipage}[c]{0.67\textwidth}
+    \includegraphics[scale=0.3]{img/11-31-51-101-Linear/sp/T/compare_j_nl.png}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.23\textwidth}
+    \caption{Illustration with the same configuration as previously but with a linear $\mathcal{H}$ and the resolutions in the 4 outer loops being sccessively 11x11, 31x31, 51x51 and 101x101.}
+  \end{minipage}
+\end{figure}
+\end{center}
+\end{frame}
+
+%------------------------------------------- methods:
+\begin{frame}{Equivalence of the methods}
+As expected, when changing the resolution and even using a non linear $\mathcal{H}$ operator, the three methods give the same results when the interpolation is transitive and the $\mathbf{B}$ matrix is projective.
+\vspace{-0.2cm}
+\begin{center}
+\begin{figure}
+  \begin{minipage}[c]{0.67\textwidth}
+    \includegraphics[scale=0.3]{img/11-31-51-101-nl/T/sp/compare_j_nl.png}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.23\textwidth}
+    \caption{Illustration of the non linear cost function with a non linear observation operator ($\alpha=0.1$) and using a spectral interpolation and projective $\mathbf{B}$ matrix, the resolutions in the 4 outer loops being sccessively 11x11, 31x31, 51x51 and 101x101. \textbf{Bottom plot}: differences between full $\mathbf{B}$ and square root $\mathbf{B}$ preconditionning.}
+    \label{fig:jnlsp}
+  \end{minipage}
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Breaking the condition on the transitive interpolators}
+If one uses non transitive interpolators, the three methods differ as shown below. The difference occurs after the first outer loop since the problem is the same in the first one. In this example, the alternative method diverge from the others (the theoretical one being supperposed with the standard).
+\begin{center}
+\begin{figure}
+  \begin{minipage}[c]{0.48\textwidth}
+    \includegraphics[scale=0.25]{img/11-31-51-101-nl/T/bi/compare_j_nl.png}
+    \caption{same figure as figure \ref{fig:jnlsp} but using a bilinear interpolation between the outer loops}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.48\textwidth}
+  \includegraphics[scale=0.25]{img/11-31-51-101-nl/T/near/compare_j_nl.png}
+    \caption{same figure as figure \ref{fig:jnlsp} but using a nearest neighbor interpolation between the outer loops}
+  \end{minipage}
+\end{figure}
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Breaking the condition on projective B matrix}
+If one satisfy the transitive interpolation condition but violate the condition on the projective $\mathbf{B}$ matrix, the difference between the methods also appears but this time, the theoretical one differs from the others.
+\vspace{-0.2cm}
+\begin{center}
+\begin{figure}
+  \begin{minipage}[c]{0.67\textwidth}
+    \includegraphics[scale=0.3]{img/11-31-51-101-nl/F/sp/compare_j_nl.png}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.23\textwidth}
+    \caption{Same figure as \ref{fig:jnlsp} (spectral interpolation) but using a non projective $\mathbf{B}$ matrix.}
+    \label{fig:jnlspF}
+  \end{minipage}
+\end{figure}
+\end{center}
+\end{frame}
+
+
+\begin{frame}{Breaking the condition on the transitive interpolators and B matrix family}
+Finally if none of the conditions are respected, obviously the three methodes differ (not really explicit in the present case for altrenative vs. standard), and only the theoretical method does not diverge.
+\begin{center}
+\begin{figure}
+  \begin{minipage}[c]{0.48\textwidth}
+    \includegraphics[scale=0.25]{img/11-31-51-101-nl/F/bi/compare_j_nl.png}
+    \caption{same figure as  but using a bilinear interpolation between the outer loops and a non projective $\mathbf{B}$ matrix}
+  \end{minipage}\hfill
+  \begin{minipage}[c]{0.48\textwidth}
+  \includegraphics[scale=0.25]{img/11-31-51-101-nl/F/near/compare_j_nl.png}
+    \caption{same figure as  but using a nearest neighbor interpolation between the outer loops and a non projective $\mathbf{B}$ matrix}
+  \end{minipage}
+\end{figure}
+\end{center}
+\end{frame}
+
+
+
+\begin{frame}{Short conclusion}
+\begin{itemize}
+\item As expected, if the resolution changes between the outer loops, we found some differences between the different methods only if at least one of the two conditions (on the transitive interpolators and $\mathbf{B}$ matrix family) is not satisfied.
+\item It seems that breaking the condition on the projective $\mathbf{B}$ matrix have the effect of making the theoretical method diverging from the others.
+\item Similarly, it seems that breaking the condition on the transitive interpolator makes the alternative method differ from the others.
+\item Finally of cours, breaking the two conditions at the same time makes the three methods diverging each other.
+\item The two preconditionning methods are shown equivalent in the presented examples BUT it might be due to a bug in the code that we need to check (work in progress).
+\item The choosen example may be too non-linear for a good illustration since some methods are diverging in the last plots.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Future prospects}
+\begin{itemize}
+\item These results ar preleminar and need to be cross checked and discussed a little bit more.
+\item We have to find configurations of the code (tuning the parameters as for example the number of inner vs. outer loops, $\sigma^o$ etc...) in which we are certain that there is no "side effects".
+\item A future prospect would be a MCMC-like sampling of the parameter space in order to study the dependance of the differences between the methods/preconditionnings as a function of those parameters (as for example the factor by which the resolution is changed betwwen the outer loops).
+\item Once our understanding of the behaviour of the Multi-Incremental Multi-Resolution will be better, we should try to implement it in a more realistic model.
+\end{itemize}
+\end{frame}
 
 \usebackgroundtemplate{}
 
