@@ -1,5 +1,5 @@
 &solver
-nm = 5
+nm = 6
 method = "theoretical", "standard", "alternative"
 na = 2
 algorithm = "lanczos", "planczosif"
