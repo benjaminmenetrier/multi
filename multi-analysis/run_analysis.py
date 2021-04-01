@@ -80,7 +80,7 @@ code_output = os.path.join(directories['multi'] + '/output.nc')
 out_dirs = []
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/Shuffle_with_sigmao0.1')
+results_dir_root = os.path.join(directories['analysis_results'] + '/Shuffle_30mars')
 out_dirs.append(results_dir_root)
 
 # Raw results of the analysis: 
