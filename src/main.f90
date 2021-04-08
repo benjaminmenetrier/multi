@@ -676,7 +676,7 @@ do im=1,nm
          call ncerr('main',nf90_put_var(subgrpid,d_id,d))
       
          ! Write algo data
-         call algo(io,1,im)%write(geom(io),grpid(io,im),subgrpid)
+         call algo(io,ia,im)%write(geom(io),grpid(io,im),subgrpid)
       
          ! Release memory
          deallocate(xb)
