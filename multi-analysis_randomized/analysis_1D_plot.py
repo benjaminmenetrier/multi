@@ -4,10 +4,10 @@
 # analysis_1D_plot.py
 
 # purpose: Contains functions plotting 1D variables.
+
 # Author: Nicolas Baillot d'Etivaux
 
 ################################################################################
-
 # Imported packages:
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec 
@@ -16,11 +16,10 @@ from matplotlib import cm
 from matplotlib.offsetbox import AnchoredText
 import numpy as np
 import os
-import sys
-import netCDF4 as nc
 import itertools
-
+# Personal packages:
 from analysis_tools import netcdf_extract
+################################################################################
 
 # Allow the use of tex format for the labels:
 plt.rcParams.update({"text.usetex": True, "font.size" : 20})
