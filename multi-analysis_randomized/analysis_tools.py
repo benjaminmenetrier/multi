@@ -27,7 +27,7 @@ def netcdf_extract(res_dir):
 ################################################################################
 ################################################################################
 # Write the parameters in namelist file:
-def namelist_write(parameters,directory):
+def namelist_write(parameters, directory, rand_seed):
     """Write the namelist file according to the given parameters.
     """
     
@@ -40,7 +40,7 @@ def namelist_write(parameters,directory):
     parameters_name['background'] = ['sigmabvar', 'Lb', 'spvarmin']
     parameters_name['miscellanous'] = ['new_seed', 'filename']
 
-    namelist = open(os.path.join(directory + "/namelist"),"w")
+    namelist = open(os.path.join(directory + f"/namelist_{rand_seed}"),"w")
 
     # Solver:
     namelist.write("&solver\n")

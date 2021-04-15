@@ -23,9 +23,9 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
     """
     # Path to the executable from multi:
     exec_command = os.path.join(directories['multi'] + '/build/bin/multi ')
-    
+
     # Location of the raw output of the code:
-    code_output = os.path.join(directories['multi'] + '/output.nc')
+    code_output = os.path.join(directories['multi'] + f'/output_{rand_seed}.nc')
     
     #---------------------------
     # Default values for the parameters in the namelist:
@@ -56,7 +56,7 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
     spvarmin = 1.0e-5
     # Miscellanous:
     new_seed = "T"
-    filename = '"output.nc"'
+    filename = f'"output_{rand_seed}.nc"'
     #---------------------------
     
     # Store the results directories:
@@ -144,7 +144,7 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
         parameters['background'] = [sigmabvar, Lb, spvarmin]
         parameters['miscellanous'] = [new_seed, filename]
 
-        namelist_write(parameters,directories['multi'])
+        namelist_write(parameters,directories['multi'],rand_seed)
 
         # Run the code:
         os.chdir(directories['multi'])
@@ -153,8 +153,8 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
             rmtree(os.path.join(res_dir + "/src"))
             copytree("src", os.path.join(res_dir + "/src"))
             #os.system('echo "namelist" | '+exec_command)
-        os.system(exec_command + " namelist")
-        copyfile("namelist", os.path.join(res_dir + "/namelist"))                                    
+        os.system(exec_command + f" namelist_{rand_seed}")
+        copyfile(f"namelist_{rand_seed}", os.path.join(res_dir + f"/namelist_{rand_seed}"))                                    
         os.chdir(directories['run_analysis'])
         # Copy the results:
         copyfile(code_output, os.path.join(res_dir + "/output.nc"))

@@ -12,7 +12,8 @@
 import os
 import sys
 import itertools
-from multiprocessing import Pool
+import multiprocessing
+import concurrent.futures
 # Personal packages:
 from run_plots import *
 from run_multi import *
@@ -52,17 +53,14 @@ i_sigma_obs = [0.1]
 i_Hnl_coeff = [0.0]
 i_sigmabvar = [0.0]
 i_Lb = [0.1]
-#i_interp_method = ['"spectral"','"bilinear"','"nearest"']
-i_interp_method = ['"spectral"']
+i_interp_method = ['"spectral"','"bilinear"','"nearest"']
+#i_interp_method = ['"spectral"']
 i_project_B = ["T"]
 i_test_ortho = ["T"]
 
 # Size of the ensemble tu run:
-ensemble_size=2
+ensemble_size=4
 i_rand_seed=list(range(ensemble_size))
-
-# If True, gives more plots of all the variables:
-extra_monitoring=False
 
 # iterations to run:
 iter_params = list(itertools.product(i_no_ni, i_nx, i_nobs, i_sigma_obs,
@@ -72,12 +70,34 @@ iter_params = list(itertools.product(i_no_ni, i_nx, i_nobs, i_sigma_obs,
 
 print('Running the code multi')
 ################################################################################
-for rand_seed in i_rand_seed:
-   res_dir_list, outer_iterations_list = run_multi(rand_seed, iter_params, directories, results_dir_root)
 
-#with Pool(4) as p:
-#    p.map(run_multi, [(12, iter_params, directories, results_dir_root),(12, iter_params, directories, results_dir_root)])
-
+def run_element_analysis(rand_seed, iter_params, directories, results_dir_root):
+    """Runs the code multi and then produces the individual plots for every elements
+    of the ensemble.
+    """
+    # If True, gives more plots of all the variables:
+    extra_monitoring=False
+    
+    result = run_multi(rand_seed, iter_params, directories, results_dir_root)
+    res_dir_list, outer_iterations_list = result[0], result[1]
+    run_plots(res_dir_list, outer_iterations_list, extra_monitoring)
+    return res_dir_list, outer_iterations_list
+    
+processes = []
+ensemble_results = []
+with concurrent.futures.ProcessPoolExecutor() as executor:
+    for rand_seed in i_rand_seed:
+        args = (rand_seed, iter_params, directories, results_dir_root)
+        processes.append(executor.submit(run_element_analysis, *args))
+        
+    for process in concurrent.futures.as_completed(processes):
+        ensemble_results.append(process.result())
+        print(process.result())
+        
+print(ensemble_results)
+        #ensemble_res_dir_list.append(result)
+        #ensemble_outer_iterations_list
+        
 print('Starting analysis:')
 ################################################################################
 
