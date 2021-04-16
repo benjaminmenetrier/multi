@@ -65,7 +65,7 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
     outer_iterations_list = []
 
     for no_ni, nx, nobs, sigma_obs, Hnl_coeff, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
-        
+
         no = no_ni[0]
         ni = no_ni[1]
 
@@ -153,12 +153,12 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
             rmtree(os.path.join(res_dir + "/src"))
             copytree("src", os.path.join(res_dir + "/src"))
             #os.system('echo "namelist" | '+exec_command)
-        os.system(exec_command + f" namelist_{rand_seed}")
+        os.system(exec_command + f" namelist_{rand_seed} > multi.log")
         copyfile(f"namelist_{rand_seed}", os.path.join(res_dir + f"/namelist_{rand_seed}"))                                    
         os.chdir(directories['run_analysis'])
         # Copy the results:
         copyfile(code_output, os.path.join(res_dir + "/output.nc"))
 
-        return res_dir_list, outer_iterations_list
+    return [res_dir_list, outer_iterations_list]
 ################################################################################
 ################################################################################

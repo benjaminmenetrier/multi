@@ -24,16 +24,14 @@ def run_plots(res_dir_list, outer_iterations_list, extra_monitoring):
     #----------------------------------------------------------------------------
     # Comparision between the different methods:
     for r, res_dir in enumerate(res_dir_list):
-        if True:
-        #try:
+        try:
             ds = netcdf_extract(res_dir)
             # Comparision for 1D variables (cost functions, rho, beta ...):
             compare_methods_plot(ds, outer_iterations_list[r], res_dir)
             compare_methods_plot2(ds, outer_iterations_list[r], res_dir)
-
             # Comparision for 2D variables at outer loop level:
             compare_methods_2D_outer(ds, res_dir)
-        #except:
+        except:
             print("Cannot compare methods with file \n", res_dir)
     #----------------------------------------------------------------------------
 
