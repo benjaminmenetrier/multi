@@ -11,6 +11,7 @@
 from distutils.dir_util import copy_tree
 from shutil import copyfile, copytree, rmtree
 import os
+import numpy as np
 # Personal packages:
 from analysis_tools import *
 ################################################################################
@@ -76,8 +77,7 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
         outer_iterations = []
         for io in range(no+1):
             outer_iterations.append((ni)*io)
-            outer_iterations_list.append(outer_iterations)
-
+            
         res_file_name = ""
 
         dir_name = f'Hnl{Hnl_coeff}'
@@ -134,6 +134,7 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
             os.mkdir(res_dir)
 
         res_dir_list.append(res_dir)
+        outer_iterations_list.append(outer_iterations)
 
         parameters={}
         parameters['solver'] = [nm, method, na, algo, no, ni, lmp_mode, test_ortho,
@@ -158,7 +159,7 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
         os.chdir(directories['run_analysis'])
         # Copy the results:
         copyfile(code_output, os.path.join(res_dir + "/output.nc"))
-
+        
     return [res_dir_list, outer_iterations_list]
 ################################################################################
 ################################################################################

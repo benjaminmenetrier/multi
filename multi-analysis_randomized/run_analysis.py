@@ -47,7 +47,7 @@ os.chdir(directories['run_analysis'])
 
 ################################################################################
 # Parameters configurations:
-i_no_ni = [[4,6]]
+i_no_ni = [[3,2],[12,2]]
 i_nx = ['51,61,71,101']
 i_nobs = [2000]
 i_sigma_obs = [0.1]
@@ -104,10 +104,18 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
 ################################################################################
 print('Starting ensemble analysis')
 
+print('before',np.shape(ensemble_res_dir_list), np.shape(ensemble_outer_iterations_list))
+
 # Makes the 1st dimension of ensemble lists being the seed instead of
 # the iterables defined with itertools.
 ensemble_res_dir_list = np.array(ensemble_res_dir_list).T
-ensemble_outer_iterations_list = np.array(ensemble_outer_iterations_list).T
+#for dir in ensemble_res_dir_list:
+    #print(dir)
+
+ensemble_outer_iterations_list = np.array(ensemble_outer_iterations_list)
+ensemble_outer_iterations_list = ensemble_outer_iterations_list.transpose(1,0)
+
+print('after', np.shape(ensemble_res_dir_list), np.shape(ensemble_outer_iterations_list))
 
 
 ensemble_compare_methods_plot(ensemble_res_dir_list, ensemble_outer_iterations_list)
