@@ -47,7 +47,7 @@ os.chdir(directories['run_analysis'])
 
 ################################################################################
 # Parameters configurations:
-i_no_ni = [[3,2],[12,2]]
+i_no_ni = [[12,2]]
 i_nx = ['51,61,71,101']
 i_nobs = [2000]
 i_sigma_obs = [0.1]
@@ -68,60 +68,46 @@ iter_params = list(itertools.product(i_no_ni, i_nx, i_nobs, i_sigma_obs,
                                 i_interp_method, i_project_B,
                                 i_test_ortho,repeat=1))
 
+# Creates the results directories and outer_iterations_list:
+res_dir_dict = {}
+outer_iterations_dict = {}
+for rand_seed in i_rand_seed:
+    res_dir_list, outer_iterations_list = create_res_dirs(rand_seed, iter_params, results_dir_root)
+    res_dir_dict[rand_seed] = res_dir_list
+    outer_iterations_dict[rand_seed] = outer_iterations_list
+
 print('Running the code multi')
 ################################################################################
-
-def run_element_analysis(rand_seed, iter_params, directories, results_dir_root):
+#-------------------------------------------------------------------------------
+# Analysis for each seed independently:
+def run_element_analysis(rand_seed, iter_params, directories, res_dir_list, outer_iterations_list):
     """Runs the code multi and then produces the individual plots for every elements
     of the ensemble.
     """
     # If True, gives more plots of all the variables:
     extra_monitoring=False
     
-    result = run_multi(rand_seed, iter_params, directories, results_dir_root)
-    res_dir_list, outer_iterations_list = result[0], result[1]
+    run_multi(rand_seed, iter_params, directories, res_dir_list)
     #run_plots(res_dir_list, outer_iterations_list, extra_monitoring)
-    return res_dir_list, outer_iterations_list
+#-------------------------------------------------------------------------------
 
 print('Starting analysis:')
 
 processes = []
-ensemble_results = []
-ensemble_res_dir_list = []
-ensemble_outer_iterations_list = []
 with concurrent.futures.ProcessPoolExecutor() as executor:
     for rand_seed in i_rand_seed:
-        args = (rand_seed, iter_params, directories, results_dir_root)
+        res_dir_list = res_dir_dict[rand_seed]
+        outer_iterations_list = outer_iterations_dict[rand_seed]
+        args = (rand_seed, iter_params, directories, res_dir_list, outer_iterations_list)
         processes.append(executor.submit(run_element_analysis, *args))
         
-    for process in concurrent.futures.as_completed(processes):
-        ensemble_results.append(process.result())
-
-    for res in ensemble_results:
-        ensemble_res_dir_list.append(res[0])
-        ensemble_outer_iterations_list.append(res[1])
+    #for process in concurrent.futures.as_completed(processes):
+    #    ensemble_results.append(process.result())
         
 ################################################################################
 print('Starting ensemble analysis')
 
-print('before',np.shape(ensemble_res_dir_list), np.shape(ensemble_outer_iterations_list))
-
-# Makes the 1st dimension of ensemble lists being the seed instead of
-# the iterables defined with itertools.
-ensemble_res_dir_list = np.array(ensemble_res_dir_list).T
-#for dir in ensemble_res_dir_list:
-    #print(dir)
-
-ensemble_outer_iterations_list = np.array(ensemble_outer_iterations_list)
-ensemble_outer_iterations_list = ensemble_outer_iterations_list.transpose(1,0)
-
-print('after', np.shape(ensemble_res_dir_list), np.shape(ensemble_outer_iterations_list))
-
-
-ensemble_compare_methods_plot(ensemble_res_dir_list, ensemble_outer_iterations_list)
-    
-
-
+ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict)
 
 print('analysis completed')   
 ################################################################################

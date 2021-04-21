@@ -19,7 +19,7 @@ from analysis_tools import *
 
 ################################################################################
 ################################################################################
-def run_multi(rand_seed, iter_params, directories, results_dir_root):
+def run_multi(rand_seed, iter_params, directories, res_dir_list):
     """Run the code multi with the parametrizations given in iter_params
     """
     # Path to the executable from multi:
@@ -30,7 +30,6 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
     
     #---------------------------
     # Default values for the parameters in the namelist:
-    
     # Solver:
     nm = 3
     method = '"theoretical", "standard", "alternative"'
@@ -59,7 +58,73 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
     new_seed = "T"
     filename = f'"output_{rand_seed}.nc"'
     #---------------------------
-    
+
+    res_dir_counter = 0
+    for no_ni, nx, nobs, sigma_obs, Hnl_coeff, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
+
+        parameters={}
+        parameters['solver'] = [nm, method, na, algo, no, ni, lmp_mode, test_ortho,
+                                shutoff_type, shutoff_value,
+                                interp_method, projective_Bmatrix]
+        parameters['resolution'] = [nx, ny]
+        parameters['obs'] = [nobs, sigma_obs, Hnl_coeff]
+        parameters['background'] = [sigmabvar, Lb, spvarmin]
+        parameters['miscellanous'] = [new_seed, filename]
+
+        namelist_write(parameters,directories['multi'],rand_seed)
+
+        res_dir = res_dir_list[res_dir_counter]
+        print(res_dir)
+        
+        # Run the code:
+        os.chdir(directories['multi'])
+        # Copy the source code:
+        if os.path.exists(os.path.join(res_dir + "/src")):
+            rmtree(os.path.join(res_dir + "/src"))
+            copytree("src", os.path.join(res_dir + "/src"))
+            #os.system('echo "namelist" | '+exec_command)
+        os.system(exec_command + f" namelist_{rand_seed} > multi.log")
+        copyfile(f"namelist_{rand_seed}", os.path.join(res_dir + f"/namelist_{rand_seed}"))                                    
+        os.chdir(directories['run_analysis'])
+        # Copy the results:
+        copyfile(code_output, os.path.join(res_dir + "/output.nc"))
+        res_dir_counter += 1
+################################################################################
+################################################################################
+def create_res_dirs(rand_seed, iter_params, results_dir_root):
+    """Creates the results directories and the corresponding outer iterations lists
+    """
+    #---------------------------
+    # Default values for the parameters in the namelist:
+    # Solver:
+    nm = 3
+    method = '"theoretical", "standard", "alternative"'
+    na = 2
+    algo = '"lanczos", "planczosif"'
+    no = 2
+    ni = 4
+    lmp_mode = '"none"'
+    test_ortho = "F"
+    shutoff_type = 0
+    shutoff_value = 1e-2
+    interp_method = '"spectral"'
+    projective_Bmatrix = "T"
+    # Resolution:
+    nx = "11,31,51,101"
+    ny = "11,31,51,101"
+    # Observations:
+    nobs = 100
+    sigma_obs = 0.1
+    Hnl_coeff = 1
+    # Background:
+    sigmabvar = 0.0
+    Lb = 0.12
+    spvarmin = 1.0e-5
+    # Miscellanous:
+    new_seed = "T"
+    filename = f'"output_{rand_seed}.nc"'
+    #---------------------------
+
     # Store the results directories:
     res_dir_list=[]
     # Store the outer iteraions for plotting:
@@ -136,30 +201,6 @@ def run_multi(rand_seed, iter_params, directories, results_dir_root):
         res_dir_list.append(res_dir)
         outer_iterations_list.append(outer_iterations)
 
-        parameters={}
-        parameters['solver'] = [nm, method, na, algo, no, ni, lmp_mode, test_ortho,
-                                shutoff_type, shutoff_value,
-                                interp_method, projective_Bmatrix]
-        parameters['resolution'] = [nx, ny]
-        parameters['obs'] = [nobs, sigma_obs, Hnl_coeff]
-        parameters['background'] = [sigmabvar, Lb, spvarmin]
-        parameters['miscellanous'] = [new_seed, filename]
-
-        namelist_write(parameters,directories['multi'],rand_seed)
-
-        # Run the code:
-        os.chdir(directories['multi'])
-        # Copy the source code:
-        if os.path.exists(os.path.join(res_dir + "/src")):
-            rmtree(os.path.join(res_dir + "/src"))
-            copytree("src", os.path.join(res_dir + "/src"))
-            #os.system('echo "namelist" | '+exec_command)
-        os.system(exec_command + f" namelist_{rand_seed} > multi.log")
-        copyfile(f"namelist_{rand_seed}", os.path.join(res_dir + f"/namelist_{rand_seed}"))                                    
-        os.chdir(directories['run_analysis'])
-        # Copy the results:
-        copyfile(code_output, os.path.join(res_dir + "/output.nc"))
-        
-    return [res_dir_list, outer_iterations_list]
+    return res_dir_list, outer_iterations_list
 ################################################################################
-################################################################################
+################################################################################        

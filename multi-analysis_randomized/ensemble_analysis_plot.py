@@ -27,7 +27,7 @@ plt.rcParams.update({"text.usetex": True, "font.size" : 20})
 
 ################################################################################
 ################################################################################
-def ensemble_compare_methods_plot(ensemble_res_dir_list, ensemble_outer_iterations_list):
+def ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict):
     """Plots the comparision between the different methods:
     """
 
@@ -38,40 +38,42 @@ def ensemble_compare_methods_plot(ensemble_res_dir_list, ensemble_outer_iteratio
               r'$\sqrt{\rho}$', r'$\beta$']
 
     ens_lanczos, ens_planczosif, ens_obj_list, ens_diff_list =  {}, {}, {}, {}
+    ens_res_dir_list = []
     
-    for rl, res_dir_list in enumerate(ensemble_res_dir_list):
-        # Loop over the iterables (rl indexes the different configurations that
-        # have been ran:
-        
-        # Results directory for the analysis averaged over the seeds:
-        ensemble_res_dir = res_dir_list[0].split("seed")[0]
-        ensemble_res_dir = os.path.join(ensemble_res_dir, "averaged")
-        if not os.path.exists(ensemble_res_dir):
-            os.mkdir(ensemble_res_dir)
+    for rs in res_dir_dict:
+        res_dir_list = res_dir_dict[rs]
 
-        
-        ens_lanczos[rl] = {}
-        ens_planczosif[rl] = {}
-        ens_obj_list[rl] = {}
-        ens_diff_list[rl] =  {}
+        ens_lanczos[rs] = {}
+        ens_planczosif[rs] = {}
+        ens_obj_list[rs] = {}
+        ens_diff_list[rs] =  {}
 
         legend = []
         for r, res_dir in enumerate(res_dir_list):
             # Loop over the different seeds:
             rand_seed = res_dir.split("seed_")[1]
 
-            print('shape outer', rl, r, np.shape(ensemble_outer_iterations_list))
-            outer_iterations_list = ensemble_outer_iterations_list[rl][r]
+            # Results directory for the analysis averaged over the seeds:
+            ensemble_res_dir = res_dir_dict[rs][r].split("seed")[0]
+            ensemble_res_dir = os.path.join(ensemble_res_dir, "averaged")
+            if not os.path.exists(ensemble_res_dir):
+                os.mkdir(ensemble_res_dir)
+
+            outer_iterations_list = outer_iterations_dict[rs][r]
+            ens_res_dir_list.append(ensemble_res_dir)
             
-            ens_lanczos[rl][r] = {}
-            ens_planczosif[rl][r] = {}
-            ens_obj_list[rl][r] = {}
-            ens_diff_list[rl][r] = {}
+            ens_lanczos[rs][r] = {}
+            ens_planczosif[rs][r] = {}
+            ens_obj_list[rs][r] = {}
+            ens_diff_list[rs][r] = {}
             
             ds = netcdf_extract(res_dir)
 
+            # Save the methods name for plotting:
+            if (rs == 0) and (r == 0):
+                methods = ds.groups
+            
             # Build the legend:
-            # ! Maybe make it only once
             legend_met = []
             for met in ds.groups:
                 for algo in ds[met]['outer_1'].groups:
@@ -79,58 +81,65 @@ def ensemble_compare_methods_plot(ensemble_res_dir_list, ensemble_outer_iteratio
                     legend.append(legend_met)
                     
             for k, key in enumerate(keys):
-                ens_lanczos[rl][r][key] = {}
-                ens_planczosif[rl][r][key] = {}
-                ens_obj_list[rl][r][key] = {}
-                ens_diff_list[rl][r][key] = {}
+                ens_lanczos[rs][r][key] = {}
+                ens_planczosif[rs][r][key] = {}
+                ens_obj_list[rs][r][key] = {}
+                ens_diff_list[rs][r][key] = {}
 
                 for m, met in enumerate(ds.groups):
-                    ens_lanczos[rl][r][key][met] = []
-                    ens_planczosif[rl][r][key][met] = []
-                    ens_obj_list[rl][r][key][met] = []
-                    ens_diff_list[rl][r][key][met] = []
+                    ens_lanczos[rs][r][key][met] = []
+                    ens_planczosif[rs][r][key][met] = []
+                    ens_obj_list[rs][r][key][met] = []
+                    ens_diff_list[rs][r][key][met] = []
 
                     for j, io in enumerate(ds[met].groups):
                         if j == 0:
-                            ens_lanczos[rl][r][key][met].append(np.array(ds[met][io]['lanczos'][key][:]))
-                            ens_planczosif[rl][r][key][met].append(np.array(ds[met][io]['planczosif'][key][:]))
+                            ens_lanczos[rs][r][key][met].append(np.array(ds[met][io]['lanczos'][key][:]))
+                            ens_planczosif[rs][r][key][met].append(np.array(ds[met][io]['planczosif'][key][:]))
                         else:    
-                            ens_lanczos[rl][r][key][met].append(np.array(ds[met][io]['lanczos'][key][1:]))
-                            ens_planczosif[rl][r][key][met].append(np.array(ds[met][io]['planczosif'][key][1:]))
+                            ens_lanczos[rs][r][key][met].append(np.array(ds[met][io]['lanczos'][key][1:]))
+                            ens_planczosif[rs][r][key][met].append(np.array(ds[met][io]['planczosif'][key][1:]))
                     # Reshape the lists along iteration axis:        
-                    ens_lanczos[rl][r][key][met] = list(itertools.chain(*ens_lanczos[rl][r][key][met]))
-                    ens_planczosif[rl][r][key][met] = list(itertools.chain(*ens_planczosif[rl][r][key][met]))
+                    ens_lanczos[rs][r][key][met] = list(itertools.chain(*ens_lanczos[rs][r][key][met]))
+                    ens_planczosif[rs][r][key][met] = list(itertools.chain(*ens_planczosif[rs][r][key][met]))
                     
-                    ens_obj_list[rl][r][key][met] = [ens_lanczos[rl][r][key][met],ens_planczosif[rl][r][key][met]]
+                    ens_obj_list[rs][r][key][met] = [ens_lanczos[rs][r][key][met],ens_planczosif[rs][r][key][met]]
                     # Compute the difference between lanczos and planczosif:
                     diff_tmp = []
-                    for j in range(len(ens_lanczos[rl][r][key][met])):
-                        diff_tmp.append(ens_lanczos[rl][r][key][met][j] - ens_planczosif[rl][r][key][met][j])
-                    ens_diff_list[rl][r][key][met] = diff_tmp
+                    for j in range(len(ens_lanczos[rs][r][key][met])):
+                        diff_tmp.append(ens_lanczos[rs][r][key][met][j] - ens_planczosif[rs][r][key][met][j])
+                    ens_diff_list[rs][r][key][met] = diff_tmp
 
-        # Plots all the curves:
-        new_obj_list = {}
-        new_diff_list = {}
+
+    print('r = ', r, len(ens_res_dir_list), len(res_dir_list))
+    new_obj_list = {}
+    new_diff_list = {}
+    for r, res_dir in enumerate(ens_res_dir_list):
+        new_obj_list[r] = {}
+        new_diff_list[r] = {}
         for k, key in enumerate(keys):
-            new_obj_list[key] = []
-            new_diff_list[key] = []
-            for m, met in enumerate(ds.groups):
-                for r, res_dir in enumerate(res_dir_list):
-                    new_obj_list[key].append(ens_obj_list[rl][r][key][met])
-                    new_diff_list[key].append(ens_diff_list[rl][r][key][met])
-                
-            ylabel1 = labels[k]
-            ylabel2 = r"lanczos - PlanczosIF"
-            xmax = 0
-            for obj in new_obj_list[key]:
-                xmax = max(len(obj[0]), len(obj[1]))
-            x = list(range(xmax))
-            xlabel = "iterations"
-            out_name = os.path.join(ensemble_res_dir + f'/compare_{key}.png')
-            print('plotting:', out_name)
-            compare_plots_2N(new_obj_list[key], ylabel1, new_diff_list[key], ylabel2, x,
-                         xlabel, outer_iterations_list, legend, out_name)
-        
+            new_obj_list[r][key] = {}
+            new_diff_list[r][key] = {}
+            for m, met in enumerate(methods):
+                new_obj_list[r][key][met] = []
+                new_diff_list[r][key][met] = []
+                for rs in res_dir_dict:
+                    print(r,key,met,rs)
+                    new_obj_list[r][key][met].append(ens_obj_list[rs][r][key][met])
+                    new_diff_list[r][key][met].append(ens_diff_list[rs][r][key][met])
+
+                ylabel1 = labels[k]
+                ylabel2 = r"$Lanczos$ - PlanczosIF"
+                xmax = 0
+                for obj in new_obj_list[r][key][met]:
+                    xmax = max(len(obj[0]), len(obj[1]))
+                x = list(range(xmax))
+                xlabel = "iterations"
+                out_name = os.path.join(ensemble_res_dir + f'/compare_{key}.png')
+                #print('plotting:', out_name)
+                compare_plots_2N(new_obj_list[r][key][met], ylabel1, new_diff_list[r][key][met], ylabel2, x,
+                             xlabel, outer_iterations_list, legend, out_name)
+
 ################################################################################
 ################################################################################
 def compare_methods_plot2(ds, outer_iterations, res_dir):
@@ -212,7 +221,6 @@ def compare_plots_2N(obj_list, ylabel1, diff_list, ylabel2, x, xlabel,
     Return:
         (void): Creates the plot and save it in the png file named by out_name arg.
     """
-    
     color_map = cm.get_cmap('copper', len(obj_list))
     colors = color_map(range(len(obj_list)))
     # Create figure window to plot data:
