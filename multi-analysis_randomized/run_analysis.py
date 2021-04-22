@@ -47,10 +47,10 @@ os.chdir(directories['run_analysis'])
 
 ################################################################################
 # Parameters configurations:
-i_no_ni = [[7,3],[3,2]]
+i_no_ni = [[3,2],[6,3],[4,6]]
 i_nx = ['51,61,71,101']
 i_nobs = [2000]
-i_sigma_obs = [0.1]
+i_sigma_obs = [0.1, 0.001]
 i_Hnl_coeff = [0.0]
 i_sigmabvar = [0.0]
 i_Lb = [0.1]
@@ -59,7 +59,7 @@ i_project_B = ["T"]
 i_test_ortho = ["T"]
 
 # Size of the ensemble tu run:
-ensemble_size=5
+ensemble_size=20
 i_rand_seed=list(range(ensemble_size))
 
 # iterations to run:
