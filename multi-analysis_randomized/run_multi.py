@@ -62,6 +62,12 @@ def run_multi(rand_seed, iter_params, directories, res_dir_list):
     res_dir_counter = 0
     for no_ni, nx, nobs, sigma_obs, Hnl_coeff, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
 
+        no = no_ni[0]
+        ni = no_ni[1]
+        
+        # square grid:
+        ny=nx
+        
         parameters={}
         parameters['solver'] = [nm, method, na, algo, no, ni, lmp_mode, test_ortho,
                                 shutoff_type, shutoff_value,
@@ -134,7 +140,7 @@ def create_res_dirs(rand_seed, iter_params, results_dir_root):
 
         no = no_ni[0]
         ni = no_ni[1]
-
+        
         # square grid:
         ny=nx
         

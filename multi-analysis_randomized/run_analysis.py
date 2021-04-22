@@ -47,7 +47,7 @@ os.chdir(directories['run_analysis'])
 
 ################################################################################
 # Parameters configurations:
-i_no_ni = [[12,2]]
+i_no_ni = [[7,3],[3,2]]
 i_nx = ['51,61,71,101']
 i_nobs = [2000]
 i_sigma_obs = [0.1]
