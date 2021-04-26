@@ -42,7 +42,8 @@ def ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict):
     ens_res_dir_lists = []
 
     legend = []
-    
+
+    # Recover the results for each seeds:
     for rs in res_dir_dict:
         # Loop over the seeds:
         res_dir_list = res_dir_dict[rs]
@@ -66,8 +67,10 @@ def ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict):
 
             # Build the legend for plotting:
             if (r == 0):
+                avg_legend = []
                 for met in ds.groups:
                     legend.append([f'({rand_seed}){met}' + '-$B^{1/2}$', f'({rand_seed}){met}' + '-$B$'])
+                    avg_legend.append([f'{met}' + '-$B^{1/2}$', f'{met}-$B$'])
                     
             # Save the methods name and number of configurations for plotting:
             if (rs == 0) and (r == 0):
@@ -105,27 +108,86 @@ def ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict):
                     for j in range(len(ens_lanczos[rs][r][key][met])):
                         diff_tmp.append(ens_lanczos[rs][r][key][met][j] - ens_planczosif[rs][r][key][met][j])
                     ens_diff_list[rs][r][key][met] = diff_tmp
-
-
-
+    
     final_obj_list = {}
     final_diff_list = {}
+
+    avg_obj_list = {}
+    avg_diff_list = {}
+
     for r in range(ndirs):
         final_obj_list[r] = {}
         final_diff_list[r] = {}
+
+        avg_obj_list[r] = {}
+        avg_diff_list[r] = {}
+
+        # Outer iterations list and results directory:
+        outer_iterations_list = outer_iterations_dict[0][r]
+        n_iterations = max(outer_iterations_list)+1
+        
+        ensemble_res_dir = res_dir_dict[0][r].split("seed")[0]
+        ensemble_res_dir = os.path.join(ensemble_res_dir, "averaged")
+        if not os.path.exists(ensemble_res_dir):
+            os.mkdir(ensemble_res_dir)
+                
         for k, key in enumerate(keys):
             final_obj_list[r][key] = []
             final_diff_list[r][key] = []
+
+            avg_obj_list[r][key] = []
+            avg_diff_list[r][key] = []
+                    
             for m, met in enumerate(methods):
+                
+                # Store the results for all the seeds in order to plot each curve:
+                nseeds = 0
                 for rs in res_dir_dict:
-                    outer_iterations_list = outer_iterations_dict[rs][r]
-                    ensemble_res_dir = res_dir_dict[rs][r].split("seed")[0]
-                    ensemble_res_dir = os.path.join(ensemble_res_dir, "averaged")
-                    if not os.path.exists(ensemble_res_dir):
-                        os.mkdir(ensemble_res_dir)  
                     final_obj_list[r][key].append(ens_obj_list[rs][r][key][met])
                     final_diff_list[r][key].append(ens_diff_list[rs][r][key][met])
 
+                    #avg_obj_list[r][key][met].append(ens_obj_list[rs][r][key][met])
+                    #avg_diff_list[r][key][met].append(ens_diff_list[rs][r][key][met])
+                    nseeds += 1
+
+                # Compute the averaged values over the seeds:
+                avg_lanczos = []
+                avg_planczosif = []
+                avg_diff = []
+                for j in range(n_iterations):
+                    # Loop over the iterations:
+                    avg_j_lanczos = 0
+                    avg_j_planczosif = 0
+                    avg_j_diff = 0
+                    for rs in range(nseeds):
+                        avg_j_lanczos += ens_obj_list[rs][r][key][met][0][j]
+                        avg_j_planczosif += ens_obj_list[rs][r][key][met][1][j]
+                        avg_j_diff += ens_diff_list[rs][r][key][met][j]
+                        
+                    avg_j_lanczos = avg_j_lanczos / (nseeds*1.)
+                    avg_j_planczosif = avg_j_planczosif / (nseeds*1.)
+                    avg_j_diff = avg_j_diff / (nseeds*1.)
+                    
+                    avg_lanczos.append(avg_j_lanczos)
+                    avg_planczosif.append(avg_j_planczosif)
+                    avg_diff.append(avg_j_diff)
+                    
+                avg_obj_list[r][key].append([avg_lanczos , avg_planczosif])
+                avg_diff_list[r][key].append(avg_diff)
+            # Plots the averaged curves:            
+            ylabel1 = labels[k]
+            ylabel2 = r"$B^{1/2}$ - $B$"
+            xmax = 0
+            for obj in avg_obj_list[r][key]:
+                xmax = max(len(obj[0]), len(obj[1]))
+            x = list(range(xmax))
+            xlabel = "iterations"
+            avg_out_name = os.path.join(ensemble_res_dir + f'/compare_{key}.png')
+            print('plotting:', avg_out_name)
+            compare_plots_2N(avg_obj_list[r][key], ylabel1, avg_diff_list[r][key], ylabel2, x,
+                             xlabel, outer_iterations_list, avg_legend, avg_out_name)
+
+            # Plots all the curves corresponding to each seed:
             ylabel1 = labels[k]
             ylabel2 = r"$B^{1/2}$ - $B$"
             xmax = 0
@@ -133,76 +195,10 @@ def ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict):
                 xmax = max(len(obj[0]), len(obj[1]))
             x = list(range(xmax))
             xlabel = "iterations"
-            out_name = os.path.join(ensemble_res_dir + f'/compare_{key}.png')
+            out_name = os.path.join(ensemble_res_dir + f'/compare_{key}_all.png')
             print('plotting:', out_name)
             compare_plots_2N(final_obj_list[r][key], ylabel1, final_diff_list[r][key], ylabel2, x,
                              xlabel, outer_iterations_list, legend, out_name)
-
-################################################################################
-################################################################################
-def compare_methods_plot2(ds, outer_iterations, res_dir):
-    """Plots the comparision between the different methods:
-    """
-    diff_dict = {}
-
-    keys=['j_nl', 'jo_nl', 'jb_nl', 'j','jo', 'jb', 'rho_sqrt', 'beta']
-
-    labels=[r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
-            r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
-
-    ds_th = ds['theoretical']
-    for k, key in enumerate(keys):
-        diff_dict[key] = {}
-        for algo in ds_th['outer_1'].groups:
-            diff_dict[key][algo] = {}
-            for m, met in enumerate(ds.groups):
-                data_to_compare = []
-                outer_iterations = []
-                for j, io in enumerate(ds[met].groups):
-                    data = np.array(ds[met][io][algo][key][:])
-                    if j == 0:
-                        data_to_compare.append(list(data[:]))
-                    else:
-                        data_to_compare.append(list(data[1:]))
-                # Concatenate the outer iterations:
-                data_to_compare=list(itertools.chain(*data_to_compare))
-                diff_dict[key][algo][met] = data_to_compare
-        # Plotting:
-        color_map = cm.get_cmap('copper', len(ds_th['outer_1'].groups))
-        colors = color_map(range(len(ds_th['outer_1'].groups)))
-        for m, met in enumerate(ds.groups):
-            fig = plt.figure()
-
-            compare_dir = os.path.join(res_dir + f'/theoretical_vs_{met}')
-            if not os.path.exists(compare_dir):
-                os.mkdir(compare_dir)
-            out_name = os.path.join(compare_dir + f'/{key}.png')
-            print('plotting :', out_name)
-            
-            label = []
-            for a, algo in enumerate(ds_th['outer_1'].groups):
-                label = algo
-                diff_methods_algo = []
-                iterations = []
-                for i in range(len(diff_dict[key][algo][met])):
-                    # Compute the difference between met and "theoretical":
-                    diff = diff_dict[key][algo][met][i] - diff_dict[key][algo]['theoretical'][i]
-                    diff_methods_algo.append(diff)
-                    iterations.append(i)
-                
-                plt.plot(iterations[:],diff_methods_algo[:],label=label, color=colors[a])    
-            plt.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc='lower left',
-                       ncol=2, mode="expand", borderaxespad=0.1)
-            plt.vlines(outer_iterations, min(diff_methods_algo), max(diff_methods_algo),
-                       colors='black', linestyles='dashed')
-            # Bottom plot:
-            plt.xlabel('iterations')
-            plt.ylabel(labels[k] + f'({met} - theoretical)')
-            plt.gcf().subplots_adjust(left=0.2, bottom=0.15)
-            plt.savefig(out_name)
-            plt.clf()
-            plt.close()
-            
 ################################################################################
 ################################################################################
 def compare_plots_2N(obj_list, ylabel1, diff_list, ylabel2, x, xlabel,

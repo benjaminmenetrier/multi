@@ -88,12 +88,15 @@ def run_multi(rand_seed, iter_params, directories, res_dir_list):
         if os.path.exists(os.path.join(res_dir + "/src")):
             rmtree(os.path.join(res_dir + "/src"))
             copytree("src", os.path.join(res_dir + "/src"))
-            #os.system('echo "namelist" | '+exec_command)
         os.system(exec_command + f" namelist_{rand_seed} > multi.log")
-        copyfile(f"namelist_{rand_seed}", os.path.join(res_dir + f"/namelist_{rand_seed}"))                                    
-        os.chdir(directories['run_analysis'])
-        # Copy the results:
+        # Copy the namelist in results directory:
+        copyfile(f"namelist_{rand_seed}", os.path.join(res_dir + f"/namelist_{rand_seed}"))
+        # Copy the results in the results directory:
         copyfile(code_output, os.path.join(res_dir + "/output.nc"))
+        # Remove the results file and namelist from multi:
+        os.remove(f"namelist_{rand_seed}")
+        os.remove(f"output_{rand_seed}.nc")
+        os.chdir(directories['run_analysis'])
         res_dir_counter += 1
 ################################################################################
 ################################################################################

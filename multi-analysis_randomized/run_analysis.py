@@ -39,7 +39,7 @@ os.chdir(directories['build'])
 os.system('make')
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/test_randomize_mean')
+results_dir_root = os.path.join(directories['analysis_results'] + '/spreading_test')
 if not os.path.exists(results_dir_root):
     os.mkdir(results_dir_root)
 
@@ -47,10 +47,10 @@ os.chdir(directories['run_analysis'])
 
 ################################################################################
 # Parameters configurations:
-i_no_ni = [[3,2],[6,3],[4,6]]
-i_nx = ['51,61,71,101']
-i_nobs = [2000]
-i_sigma_obs = [0.1, 0.001]
+i_no_ni = [[4,6],[7,3]]
+i_nx = ['51,31,61,101']
+i_nobs = [200]
+i_sigma_obs = [0.1]
 i_Hnl_coeff = [0.0]
 i_sigmabvar = [0.0]
 i_Lb = [0.1]
@@ -59,7 +59,7 @@ i_project_B = ["T"]
 i_test_ortho = ["T"]
 
 # Size of the ensemble tu run:
-ensemble_size=20
+ensemble_size=2
 i_rand_seed=list(range(ensemble_size))
 
 # iterations to run:
