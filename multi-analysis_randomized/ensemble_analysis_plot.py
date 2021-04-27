@@ -317,109 +317,164 @@ def linearization_check(res_dir_dict, outer_iterations_dict, results_obj):
     """Check if the linearization of the cost functions is correct:
     """
     
-    ens_obj_list, ens_diff_list = results_obj['objs']
-    legend, avg_legend = results_obj['legends']
+    ens_obj_list = results_obj['objs'][0]
+    legend = results_obj['legends'][1]
     methods, ndirs = results_obj['miscellaneous']
     
-    # Dirty trick here: j_nl is doubled because of a problem of figure size ...
-    # ... cannot find how to fix it...
-    nl_keys = ['j_nl', 'jo_nl', 'jb_nl']
-    l_keys = ['j', 'jo', 'jb']
-    
-    nl_labels = [r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$']
-    l_labels = [r'$J$', r'$J_o$', r'$J_b$']
-    
-    final_obj_list = {}
-    final_diff_list = {}
+    nkeys = 3
+    nl_keys = ['j_nl']#, 'jo_nl', 'jb_nl']
+    l_keys = ['j']#, 'jo', 'jb']
 
-    avg_obj_list = {}
-    avg_diff_list = {}
+    labels = [r'$R(J)$', r'$R(J_o)$', r'$R(J_b)$']
+    
+    nl_avg_obj_list = {}
+    l_avg_obj_list = {}
+    linearization_test = {}
 
     for r in range(ndirs):
-        final_obj_list[r] = {}
-        final_diff_list[r] = {}
 
-        avg_obj_list[r] = {}
-        avg_diff_list[r] = {}
-
+        nl_avg_obj_list[r] = {}
+        l_avg_obj_list[r] = {}
+        linearization_test[r] = {}
+        
         # Outer iterations list and results directory:
         outer_iterations_list = outer_iterations_dict[0][r]
         n_iterations = max(outer_iterations_list)+1
+
+        no = len(outer_iterations_list)-1
+        ni = outer_iterations_list[1]
         
         ensemble_res_dir = res_dir_dict[0][r].split("seed")[0]
         ensemble_res_dir = os.path.join(ensemble_res_dir, "averaged")
         if not os.path.exists(ensemble_res_dir):
             os.mkdir(ensemble_res_dir)
-                
-        for k, key in enumerate(keys):
-            final_obj_list[r][key] = []
-            final_diff_list[r][key] = []
-
-            avg_obj_list[r][key] = []
-            avg_diff_list[r][key] = []
+            
+        for k, key in enumerate(l_keys):
+            
+            linearization_test[r][key] = []
                     
             for m, met in enumerate(methods):
+                nseeds = len(res_dir_dict)
                 
-                # Store the results for all the seeds in order to plot each curve:
-                nseeds = 0
-                for rs in res_dir_dict:
-                    final_obj_list[r][key].append(ens_obj_list[rs][r][key][met])
-                    final_diff_list[r][key].append(ens_diff_list[rs][r][key][met])
+                linearization_test_lanczos = []
+                linearization_test_planczosif = []
+                
+                linearization_test_met = []
 
-                    nseeds += 1
-
-                # Compute the averaged values over the seeds:
-                avg_lanczos = []
-                avg_planczosif = []
-                avg_diff = []
-                for j in range(n_iterations):
-                    # Loop over the iterations:
-                    avg_j_lanczos = 0
-                    avg_j_planczosif = 0
-                    avg_j_diff = 0
-                    for rs in range(nseeds):
-                        avg_j_lanczos += ens_obj_list[rs][r][key][met][0][j]
-                        avg_j_planczosif += ens_obj_list[rs][r][key][met][1][j]
-                        avg_j_diff += ens_diff_list[rs][r][key][met][j]
+                for io in range(no):
+                    # Loop over the outer iterations:
+                    linearization_test_io_lanczos = []
+                    linearization_test_io_planczosif = []
+                    
+                    linearization_test_io = []
+                    
+                    for ii in range(ni):
+                        # Loop over the inner iterations:
+                        linearization_test_ii_lanczos = 0
+                        linearization_test_ii_planczosif = 0
                         
-                    avg_j_lanczos = avg_j_lanczos / (nseeds*1.)
-                    avg_j_planczosif = avg_j_planczosif / (nseeds*1.)
-                    avg_j_diff = avg_j_diff / (nseeds*1.)
-                    
-                    avg_lanczos.append(avg_j_lanczos)
-                    avg_planczosif.append(avg_j_planczosif)
-                    avg_diff.append(avg_j_diff)
-                    
-                avg_obj_list[r][key].append([avg_lanczos , avg_planczosif])
-                avg_diff_list[r][key].append(avg_diff)
+                        # Compute the average linearization test over the seeds:
+                        for rs in range(nseeds):
+                            # Lanczos:
+                            nl_diff_lanczos = ens_obj_list[rs][r][nl_keys[k]][met][0][ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][0][ii]
+                            l_diff_lanczos = ens_obj_list[rs][r][key][met][0][ii+1] - ens_obj_list[rs][r][key][met][0][ii]
+                            linearization_test_ii_lanczos += nl_diff_lanczos / (l_diff_lanczos*1.)
 
+                            # PlanczosIF:
+                            nl_diff_planczosif = ens_obj_list[rs][r][nl_keys[k]][met][1][ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][1][ii]
+                            l_diff_planczosif = ens_obj_list[rs][r][key][met][1][ii+1] - ens_obj_list[rs][r][key][met][1][ii]
+                            linearization_test_ii_planczosif += nl_diff_planczosif / (l_diff_planczosif*1.)
+                            
+                        linearization_test_ii_lanczos = linearization_test_ii_lanczos / (nseeds*1.)
+                        linearization_test_ii_planczosif = linearization_test_ii_planczosif / (nseeds*1.)
+
+                        linearization_test_io_lanczos.append(linearization_test_ii_lanczos)
+                        linearization_test_io_planczosif.append(linearization_test_ii_planczosif)
+
+                        linearization_test_io.append([linearization_test_io_lanczos, linearization_test_io_planczosif])
+                        
+                    linearization_test_lanczos.append(linearization_test_io_lanczos)
+                    linearization_test_planczosif.append(linearization_test_io_planczosif)
+
+                    linearization_test_met.append(linearization_test_io)
+                    
+                #linearization_test[r][key].append(linearization_test_met)
+                linearization_test[r][key].append([linearization_test_lanczos, linearization_test_planczosif])
+                #print('shape', np.shape(linearization_test[r][key]))
+                
+            linearization_test[r][key] = np.array(linearization_test[r][key]).transpose(0,2,1,3)
+            
             # Plots the averaged curves:            
             ylabel1 = labels[k]
             ylabel2 = r"$B^{1/2}$ - $B$"
-            xmax = 0
-            for obj in avg_obj_list[r][key]:
-                xmax = max(len(obj[0]), len(obj[1]))
-            x = list(range(xmax))
             xlabel = "iterations"
-            avg_out_name = os.path.join(ensemble_res_dir + f'/compare_{key}.png')
-            print('plotting:', avg_out_name)
-            compare_plots_2N(avg_obj_list[r][key], ylabel1, avg_diff_list[r][key], ylabel2, x,
-                             xlabel, outer_iterations_list, avg_legend, avg_out_name)
-
-            # Plots all the curves corresponding to each seed:
-            ylabel1 = labels[k]
-            ylabel2 = r"$B^{1/2}$ - $B$"
-            xmax = 0
-            for obj in final_obj_list[r][key]:
-                xmax = max(len(obj[0]), len(obj[1]))
-            x = list(range(xmax))
-            xlabel = "iterations"
-            out_name = os.path.join(ensemble_res_dir + f'/compare_{key}_all.png')
+            out_name = os.path.join(ensemble_res_dir + f'/linearization_test_{key}.png')
             print('plotting:', out_name)
-            compare_plots_2N(final_obj_list[r][key], ylabel1, final_diff_list[r][key], ylabel2, x,
+            compare_plots_2N_updated(linearization_test[r][key], ylabel1, linearization_test[r][key], ylabel2,
                              xlabel, outer_iterations_list, legend, out_name)
-            
+
 ################################################################################
+################################################################################
+def compare_plots_2N_updated(obj_list, ylabel1, diff_list, ylabel2, xlabel,
+                     outer_iterations_list, legend, out_name):
+    """Produces usefull comparision with 2N plots:
+    Args:
+        out_name (string): Name of the output png file.
+        obj_list (list)      : List containing lists to be compared together.
+        yabel (string)   : Label of the y-axis.
+        diff_list (list)      : List of numbers regarding which one wants to compare.
+        ylabel (string)  : Label of diff_list.
+        x (list)         : List of numbers for x-axis.
+        xlabel (string)  : Label of x-axis
+    Return:
+        (void): Creates the plot and save it in the png file named by out_name arg.
+    """
+    
+    ymax = obj_list[0][0][0][0]
+    ymin = obj_list[0][0][0][0]
+    for m, met_obj in enumerate(obj_list):
+        for io, io_obj in enumerate(met_obj):
+            ymax_tmp = max(max(io_obj[0]), max(io_obj[1]))
+            ymin_tmp = max(min(io_obj[0]), min(io_obj[1]))
+            if (ymax_tmp > ymax):    
+                ymax = ymax_tmp
+            if (ymin_tmp < ymin):    
+                ymin = ymin_tmp
+
+    print('max min = ', ymin, ymax)
+    
+    ni = outer_iterations_list[1]
+
+    color_map = cm.get_cmap('copper', len(obj_list))
+    colors = color_map(range(len(obj_list)))
+    # Create figure window to plot data:
+    fig = plt.figure(1, figsize=(10,10))
+    
+    for m, met_obj in enumerate(obj_list):
+        xi = 0
+        xf = ni
+        for io, io_obj in enumerate(met_obj):
+            x = list(range(xi,xf))
+            if io == 0:
+                plt.plot(x, io_obj[0], color=colors[m], label=legend[m][0])
+                plt.plot(x, io_obj[1], color=colors[m], linestyle='dashed', label=legend[m][1])
+            else:
+                plt.plot(x, io_obj[0], color=colors[m])
+                plt.plot(x, io_obj[1], color=colors[m], linestyle='dashed')
+            xi += ni
+            xf += ni
+    plt.legend(bbox_to_anchor=(0., 1.01 , 1., .102), loc='lower left',
+               ncol=3, mode='expand',  borderaxespad=0)     
+    plt.subplots_adjust(top=1)
+                
+    plt.ylabel(ylabel1)
+    plt.vlines(outer_iterations_list, ymin, ymax, colors='blue', linestyles='dashed')
+
+    plt.ticklabel_format(axis="y", style="sci", scilimits=(0,0))
+    plt.savefig(out_name, bbox_inches='tight')
+    plt.clf()
+    plt.close()
+################################################################################w
 ################################################################################
 def compare_plots_2N(obj_list, ylabel1, diff_list, ylabel2, x, xlabel,
                      outer_iterations, legend, out_name):

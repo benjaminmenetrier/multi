@@ -51,7 +51,7 @@ i_no_ni = [[4,6]]
 i_nx = ['51,31,61,101']
 i_nobs = [200]
 i_sigma_obs = [0.1]
-i_Hnl_coeff = [0.0]
+i_Hnl_coeff = [0.1]
 i_sigmabvar = [0.0]
 i_Lb = [0.1]
 i_interp_method = ['"spectral"','"bilinear"','"nearest"']
@@ -108,7 +108,9 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
 print('Starting ensemble analysis')
 
 results_obj = build_results_object(res_dir_dict, outer_iterations_dict)
-ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict, results_obj)
+
+linearization_check(res_dir_dict, outer_iterations_dict, results_obj)
+#ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict, results_obj)
 
 print('analysis completed')   
 ################################################################################

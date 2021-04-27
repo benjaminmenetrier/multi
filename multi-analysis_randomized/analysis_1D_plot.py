@@ -249,7 +249,7 @@ def compare_methods_plot2(ds, outer_iterations, res_dir):
             plt.savefig(out_name)
             plt.clf()
             plt.close()
-            
+           
 ################################################################################
 ################################################################################
 def compare_plots_2N(obj_list, ylabel1, diff_list, ylabel2, x, xlabel,
