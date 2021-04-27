@@ -39,7 +39,7 @@ os.chdir(directories['build'])
 os.system('make')
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/spreading_test')
+results_dir_root = os.path.join(directories['analysis_results'] + '/spreading_test_10')
 if not os.path.exists(results_dir_root):
     os.mkdir(results_dir_root)
 
@@ -47,7 +47,7 @@ os.chdir(directories['run_analysis'])
 
 ################################################################################
 # Parameters configurations:
-i_no_ni = [[4,6],[7,3]]
+i_no_ni = [[4,6]]
 i_nx = ['51,31,61,101']
 i_nobs = [200]
 i_sigma_obs = [0.1]
@@ -59,7 +59,7 @@ i_project_B = ["T"]
 i_test_ortho = ["T"]
 
 # Size of the ensemble tu run:
-ensemble_size=2
+ensemble_size=1
 i_rand_seed=list(range(ensemble_size))
 
 # iterations to run:
@@ -107,7 +107,8 @@ with concurrent.futures.ProcessPoolExecutor() as executor:
 ################################################################################
 print('Starting ensemble analysis')
 
-ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict)
+results_obj = build_results_object(res_dir_dict, outer_iterations_dict)
+ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict, results_obj)
 
 print('analysis completed')   
 ################################################################################
