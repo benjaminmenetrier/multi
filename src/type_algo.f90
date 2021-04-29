@@ -524,7 +524,7 @@ end subroutine algo_apply_planczosif
 ! Subroutine: algo_compute_cost
 ! Purpose: compute nonlinear cost function
 !----------------------------------------------------------------------
-subroutine algo_compute_cost(algo,geom,bmatrix,hmatrix,rmatrix,xb,xg,ni)
+subroutine algo_compute_cost(algo,geom,bmatrix,hmatrix,rmatrix,xb,xg)
 
 implicit none
 
@@ -536,7 +536,6 @@ type(hmatrix_type),intent(in) :: hmatrix
 type(rmatrix_type),intent(in) :: rmatrix
 real(8),intent(in) :: xb(geom%nh)
 real(8),intent(in) :: xg(geom%nh)
-integer,intent(in) :: ni
 
 ! Local variables
 integer :: ii
@@ -565,3 +564,5 @@ end do
 end subroutine algo_compute_cost
 
 end module type_algo
+
+

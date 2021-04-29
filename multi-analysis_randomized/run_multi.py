@@ -80,7 +80,6 @@ def run_multi(rand_seed, iter_params, directories, res_dir_list):
         namelist_write(parameters,directories['multi'],rand_seed)
 
         res_dir = res_dir_list[res_dir_counter]
-        print(res_dir)
         
         # Run the code:
         os.chdir(directories['multi'])

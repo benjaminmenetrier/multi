@@ -39,7 +39,9 @@ os.chdir(directories['build'])
 os.system('make')
 
 # Root directory of the results of the analysis:
-results_dir_root = os.path.join(directories['analysis_results'] + '/spreading_test_10')
+# /!\ the word "seed" is forbidden in this string because of the use of a split
+# method in the function that builds the results files.
+results_dir_root = os.path.join(directories['analysis_results'] + '/test_cost_full1')
 if not os.path.exists(results_dir_root):
     os.mkdir(results_dir_root)
 
@@ -49,9 +51,9 @@ os.chdir(directories['run_analysis'])
 # Parameters configurations:
 i_no_ni = [[4,6]]
 i_nx = ['51,31,61,101']
-i_nobs = [200]
+i_nobs = [2000]
 i_sigma_obs = [0.1]
-i_Hnl_coeff = [0.1]
+i_Hnl_coeff = [0.]
 i_sigmabvar = [0.0]
 i_Lb = [0.1]
 i_interp_method = ['"spectral"','"bilinear"','"nearest"']
@@ -109,8 +111,9 @@ print('Starting ensemble analysis')
 
 results_obj = build_results_object(res_dir_dict, outer_iterations_dict)
 
+ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict, results_obj)
+
 linearization_check(res_dir_dict, outer_iterations_dict, results_obj)
-#ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict, results_obj)
 
 print('analysis completed')   
 ################################################################################

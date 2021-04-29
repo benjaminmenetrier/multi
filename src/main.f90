@@ -52,6 +52,7 @@ integer,allocatable            :: grpid(:,:)
 real(8)                        :: proj,norm
 real(8),allocatable            :: maxdiff(:,:,:,:)
 real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:,:),xt(:)
+real(8),allocatable            :: xb_full_io(:,:),xg_full_io(:,:)
 real(8),allocatable            :: xb(:),xg(:),dxb(:),dxbbar(:),dvb(:),dva(:),dxa(:),dxa_tmp(:),dxabar(:),dxa_prev(:)
 real(8),allocatable            :: xb_2d(:,:),xg_2d(:,:),xt_2d(:,:)
 real(8),allocatable            :: d(:),hxg(:)
@@ -278,6 +279,10 @@ do io=1,no
    deallocate(xb)
    deallocate(xb_2d)
 end do
+
+! Allocations for computing the nonlinear cost functions at full resolution (added by Nico -> not sure to be well done)
+!allocate(xg_full_io(no,geom(no)%nh))
+!allocate(xb_full_io(no,geom(no)%nh))
 
 write(*,'(a)') ''
 
@@ -644,8 +649,18 @@ do im=1,nm
          end if
 
          ! Compute nonlinear cost function
-         call algo(io,ia,im)%compute_cost(geom(io),bmatrix(io),hmatrix,rmatrix,xb,xg,ni)
-      
+         call algo(io,ia,im)%compute_cost(geom(io),bmatrix(io),hmatrix,rmatrix,xb,xg)
+
+         !-------------------------------------------------------------------------------
+         ! (modified by nico, compute the cost function at full resolution ?):
+         
+         ! Compute nonlinear cost functions:
+         !call algo(io,ia,im)%compute_cost(geom(no),bmatrix(no),hmatrix,rmatrix,xb_full,xg_full)
+
+
+         !-------------------------------------------------------------------------------
+
+         
          ! Result
          write(*,'(a)') '         Cost function: J = Jb+Jo / J_nl = Jb_nl+Jo_nl'
          do ii=0,ni
