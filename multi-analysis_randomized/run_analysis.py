@@ -110,8 +110,8 @@ def run_element_analysis(rand_seed, iter_params, directories, res_dir_list, oute
     # If True, gives more plots of all the variables:
     extra_monitoring=False
 
-    run_multi(rand_seed, iter_params, directories, res_dir_list)
-    #run_plots(res_dir_list, outer_iterations_list, extra_monitoring)
+    run_multi_loops(rand_seed, iter_params, directories, res_dir_list)
+    run_plots(res_dir_list, outer_iterations_list, extra_monitoring)
 #-------------------------------------------------------------------------------
 
 print('Starting analysis:')
