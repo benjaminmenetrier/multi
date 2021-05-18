@@ -17,20 +17,14 @@ integer,parameter   :: nmmax = 3           ! Maximum number of methods (theoreti
 integer,parameter   :: namax = 2           ! Maximum number of algorithms (lanczos, planczosif)
 integer,parameter   :: nomax = 9           ! Maximum number of outer iterations
 integer,parameter   :: namelist_unit = 9   ! Namelist unit
-
 integer,parameter   :: xt_unit = 42        ! xt_file unit
-integer,parameter   :: xb_unit = 43        ! xb file unit
-integer,parameter   :: obs_unit = 44       ! xb file unit
-
+integer,parameter   :: xb_unit = 42        ! xb file unit
 real(8),parameter   :: threshold = 1.0e-12 ! Threshold for similar results
 
 ! Namelist parameters
 character(len=1024) :: namelist_name       ! name of the namelist file to use (default='namelist')
-
 character(len=1024) :: xt_file             ! Name of the file containing xt.
 character(len=1024) :: xb_file             ! Name of the file containing xb.
-character(len=1024) :: obs_file            ! Name of the file containing the obs.
-
 integer             :: nm                  ! Number of methods
 character(len=1024) :: method(nmmax)       ! Solver methods
 integer             :: na                  ! Number of algorithms
@@ -193,6 +187,10 @@ end do
 ! Test interpolation transitivity
 if ((no>1).and.(geom(1)%nh<geom(no)%nh)) call geom(1)%transitive_interp_test(geom(no))
 
+! Allocation (model/control space)
+allocate(xb_full(geom(no)%nh))
+allocate(xg_full(geom(no)%nh))
+
 ! Setup B matrices
 do io=1,no
    write(*,'(a,i1)') '   B matrix setup for outer iteration ',io
@@ -210,45 +208,28 @@ do io=1,no
    end do
 end do
 
-! Allocation (model/control space)
-
-! Background
-allocate(xb_full(geom(no)%nh))
-
-! Guess
-allocate(xg_full(geom(no)%nh))
-
-! Truth
+! Truth allocation
 allocate(xt(geom(no)%nh))
 allocate(xt_2d(geom(no)%nx,geom(no)%ny))
 
-! Initialize the states (xt, xb and obs):
+! Truth initialization
 
-! Old method:
-!call rand_normal(geom(no)%nh,xt)
-!call bmatrix(no)%apply_sqrt(geom(no),xt,xt)
+!open (unit=42, file=xt_file, status='old', action='read')
+!read(42, *), xt
 
-! New method
-xt_file = 'xt_full.dat'
-xb_file = 'xb_full.dat'
-obs_file = 'obs.dat'
+!open (unit=43, file=xb_file, status='old', action='read')
+!read(43, *), xb_full
 
-! Truth
-xt = 0.0
-open (unit=42, file=xt_file, status='old', action='read')
-read(42,*) xt
+!if (SIZE(xt) .NOT. == geom(no)%nh) then
+!   write(*,'(a)') 'Error: The size of xt should be the size of the grid.'
+!   stop
+!end if
+
+call rand_normal(geom(no)%nh,xt)
 call bmatrix(no)%apply_sqrt(geom(no),xt,xt)
-
 xt_2d=reshape(xt,(/geom(no)%nx,geom(no)%ny/))
 
-! Background
-xb_full = 0.0
-open (unit=43, file=xb_file, status='old', action='read')
-read(43, *) xb_full
-
-call bmatrix(no)%apply_sqrt(geom(no),xb_full,xb_full)
-
-! Write initial variables:
+! Write the truth
 
 ! Create dimensions
 call ncerr('hmatrix_write',nf90_def_dim(ncid,'nx_full',geom(no)%nx,nx_full_id))
@@ -281,11 +262,11 @@ call ncerr('main',nf90_def_var(ncid,'obs_val',nf90_double,(/nobs_id/),obs_val_id
 call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
 
 ! New seed for the background
-!call set_seed(new_seed)
+call set_seed(new_seed)
 
 ! Generate background state
-!xb_full = 0.0
-!call bmatrix(no)%randomize(geom(no),xb_full)
+xb_full = 0.0
+call bmatrix(no)%randomize(geom(no),xb_full)
 
 do io=1,no
    ! Allocation

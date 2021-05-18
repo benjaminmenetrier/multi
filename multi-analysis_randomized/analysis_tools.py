@@ -11,8 +11,59 @@
 # Imported packages:
 import os
 import netCDF4 as nc
+import numpy as np
 ################################################################################
 
+################################################################################
+################################################################################
+def init_state_gen(full_res, directory):
+    """Generates random vectors to produce the truth and the background initial states at full resolution
+    """
+    npts = full_res*full_res
+    xt_full = np.random.normal(0, 1, npts)
+    xb_full = np.random.normal(0, 1, npts)
+    
+    #print('xt_full shape:', np.shape(xt_full))
+    #print('xb_full shape:', np.shape(xb_full))
+    
+    xt_full_file = open(os.path.join(directory,"xt_full.dat"), "w")
+    xb_full_file = open(os.path.join(directory,"xb_full.dat"), "w")
+    
+    for xt_val in xt_full:
+        xt_full_file.write(f'{xt_val} ')
+    xt_full_file.write('\n')    
+    xt_full_file.close()
+
+    for xb_val in xb_full:
+        xb_full_file.write(f'{xb_val} ')    
+    xb_full_file.write('\n')
+    xb_full_file.close()
+
+    #-------------------------------------------------------------------------------
+    # Old trial with netcdf files:
+    
+
+    # Read the netcdf file containing xb, xt and observations:
+    #file = sys.argv[1]
+    
+    #ds=nc.Dataset("init_state.nc","r")
+    
+    # # Get the truth:
+    # xt_full = np.array(ds['xt'])
+    
+    # # Get the observations:
+    # x_obs = np.array(ds['x_obs'])
+    # y_obs = np.array(ds['y_obs'])
+    # obs_val = np.array(ds['obs_val'])
+    
+    # # Get the last iteration (full resolution):
+    # for io in ds['theoretical'].groups:
+    #     no = io
+    
+    # # Get the background:    
+    # xb_full = np.array(ds['theoretical'][no]['xb'])
+    #--------------------------------------------------------------------------------
+    
 ################################################################################
 ################################################################################
 def netcdf_extract(res_dir):

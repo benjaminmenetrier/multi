@@ -133,7 +133,7 @@ def ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict, results_o
     
     keys = ['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
     
-    labels = [r'$J^{nl}$', r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$',
+    labels = [r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$',
               r'$J_o$', r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
     
     final_obj_list = {}
