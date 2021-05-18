@@ -16,15 +16,18 @@ import numpy as np
 
 ################################################################################
 ################################################################################
-def init_state_gen(full_res, directory):
+def init_state_gen(full_res, nobs_max, directory):
     """Generates random vectors to produce the truth and the background initial states at full resolution
     """
+
+    # Truth and background:
     npts = full_res*full_res
     xt_full = np.random.normal(0, 1, npts)
     xb_full = np.random.normal(0, 1, npts)
     
     #print('xt_full shape:', np.shape(xt_full))
     #print('xb_full shape:', np.shape(xb_full))
+    print(nobs_max)
     
     xt_full_file = open(os.path.join(directory,"xt_full.dat"), "w")
     xb_full_file = open(os.path.join(directory,"xb_full.dat"), "w")
@@ -38,6 +41,35 @@ def init_state_gen(full_res, directory):
         xb_full_file.write(f'{xb_val} ')    
     xb_full_file.write('\n')
     xb_full_file.close()
+
+    # Observations:
+    x_obs = []
+    y_obs = []
+    obs_err = []
+    for obs in range(nobs_max):
+        x_obs.append(np.random.random())
+        y_obs.append(np.random.random())
+        
+    obs_err = np.random.normal(0, 1, nobs_max)
+        
+    x_obs_file = open(os.path.join(directory,"x_obs.dat"), "w")
+    y_obs_file = open(os.path.join(directory,"y_obs.dat"), "w")
+    obs_err_file = open(os.path.join(directory,"obs_err.dat"), "w")
+
+    for x in x_obs:
+        x_obs_file.write(f'{x} ')
+    x_obs_file.write('\n')
+    x_obs_file.close()    
+
+    for y in y_obs:
+        y_obs_file.write(f'{y} ')
+    y_obs_file.write('\n')
+    y_obs_file.close()
+
+    for obs in obs_err:
+        obs_err_file.write(f'{obs} ')
+    obs_err_file.write('\n')
+    obs_err_file.close()
 
     #-------------------------------------------------------------------------------
     # Old trial with netcdf files:

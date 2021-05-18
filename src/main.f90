@@ -20,7 +20,9 @@ integer,parameter   :: namelist_unit = 9   ! Namelist unit
 
 integer,parameter   :: xt_unit = 42        ! xt_file unit
 integer,parameter   :: xb_unit = 43        ! xb file unit
-integer,parameter   :: obs_unit = 44       ! xb file unit
+integer,parameter   :: x_obs_unit = 44     ! x_obs file unit
+integer,parameter   :: y_obs_unit = 45     ! y_obs file unit
+integer,parameter   :: obs_err_unit = 46   ! obs_err file unit
 
 real(8),parameter   :: threshold = 1.0e-12 ! Threshold for similar results
 
@@ -29,7 +31,9 @@ character(len=1024) :: namelist_name       ! name of the namelist file to use (d
 
 character(len=1024) :: xt_file             ! Name of the file containing xt.
 character(len=1024) :: xb_file             ! Name of the file containing xb.
-character(len=1024) :: obs_file            ! Name of the file containing the obs.
+character(len=1024) :: x_obs_file          ! Name of the file containing the x_obs.
+character(len=1024) :: y_obs_file          ! Name of the file containing the y_obs.
+character(len=1024) :: obs_err_file        ! Name of the file containing the y_obs.
 
 integer             :: nm                  ! Number of methods
 character(len=1024) :: method(nmmax)       ! Solver methods
@@ -59,6 +63,7 @@ integer                        :: ncid,subgrpid,nx_id,ny_id,xb_id,xg_id,hxg_id,d
 integer                        :: x_obs_id,y_obs_id,nobs_id,obs_val_id,nx_full_id,ny_full_id,x_full_id,y_full_id,xt_id
 integer                        :: io,jo,ii,ji,im,jm,ia,ja
 integer,allocatable            :: grpid(:,:)
+real(8),allocatable            :: x_obs(:),y_obs(:),obs_err(:)
 real(8)                        :: proj,norm
 real(8),allocatable            :: maxdiff(:,:,:,:)
 real(8),allocatable            :: xb_full(:),xg_full(:),dxb_full(:),dxa_full(:,:),xt(:)
@@ -224,14 +229,19 @@ allocate(xt_2d(geom(no)%nx,geom(no)%ny))
 
 ! Initialize the states (xt, xb and obs):
 
-! Old method:
+! Old method for the truth generation:
 !call rand_normal(geom(no)%nh,xt)
 !call bmatrix(no)%apply_sqrt(geom(no),xt,xt)
+
+! Old method for the background generation:
+!call set_seed(new_seed)
+! Generate background state
+!xb_full = 0.0
+!call bmatrix(no)%randomize(geom(no),xb_full)
 
 ! New method
 xt_file = 'xt_full.dat'
 xb_file = 'xb_full.dat'
-obs_file = 'obs.dat'
 
 ! Truth
 xt = 0.0
@@ -264,9 +274,27 @@ call ncerr('main',nf90_put_var(ncid,xt_id,xt_2d))
 ! Allocation (obs space)
 allocate(d(nobs))
 allocate(hxg(nobs))
+allocate(x_obs(nobs))
+allocate(y_obs(nobs))
+allocate(obs_err(nobs))
+
+x_obs_file = 'x_obs.dat'
+x_obs = 0.0
+open (unit=44, file=x_obs_file, status='old', action='read')
+read(44, *) x_obs
+
+y_obs_file = 'y_obs.dat'
+y_obs = 0.0
+open (unit=45, file=y_obs_file, status='old', action='read')
+read(45, *) y_obs
+
+obs_err_file = 'obs_err.dat'
+obs_err = 0.0
+open (unit=46, file=obs_err_file, status='old', action='read')
+read(46, *) obs_err
 
 ! Setup obserations locations
-call hmatrix%setup(nobs,Hnl_coeff)
+call hmatrix%setup(nobs,Hnl_coeff,x_obs,y_obs)
 call hmatrix%write(ncid,x_obs_id,y_obs_id,nobs_id)
 
 ! Setup R matrix
@@ -274,18 +302,12 @@ call rmatrix%setup(nobs,sigma_obs)
 
 ! Setup observations
 call hmatrix%apply_nl(geom(no),xt,hmatrix%yo)
-call rmatrix%randomize(hmatrix%yo)
+call rmatrix%randomize(obs_err,hmatrix%yo)
 
 ! Write observations
 call ncerr('main',nf90_def_var(ncid,'obs_val',nf90_double,(/nobs_id/),obs_val_id))
 call ncerr('main',nf90_put_var(ncid,obs_val_id,hmatrix%yo))
 
-! New seed for the background
-!call set_seed(new_seed)
-
-! Generate background state
-!xb_full = 0.0
-!call bmatrix(no)%randomize(geom(no),xb_full)
 
 do io=1,no
    ! Allocation

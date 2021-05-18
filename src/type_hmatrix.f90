@@ -36,7 +36,7 @@ contains
 ! Subroutine: hmatrix_setup
 ! Purpose: setup H matrix
 !----------------------------------------------------------------------
-subroutine hmatrix_setup(hmatrix,nobs,Hnl_coeff)
+subroutine hmatrix_setup(hmatrix,nobs,Hnl_coeff,x_obs,y_obs)
 
 implicit none
 
@@ -44,6 +44,8 @@ implicit none
 class(hmatrix_type),intent(inout) :: hmatrix
 integer,intent(in)                :: nobs
 real(8),intent(in)                :: Hnl_coeff
+real(8),intent(in)                :: x_obs(nobs)
+real(8),intent(in)                :: y_obs(nobs)
 
 ! Copy dimension
 hmatrix%nobs = nobs
@@ -54,9 +56,13 @@ allocate(hmatrix%x_obs(hmatrix%nobs))
 allocate(hmatrix%y_obs(hmatrix%nobs))
 allocate(hmatrix%yo(hmatrix%nobs))
 
+! Old method:
 ! Grid coordinates
-call random_number(hmatrix%x_obs)
-call random_number(hmatrix%y_obs)
+!call random_number(hmatrix%x_obs)
+!call random_number(hmatrix%y_obs)
+
+hmatrix%x_obs = x_obs
+hmatrix%y_obs = y_obs
 
 end subroutine hmatrix_setup
 

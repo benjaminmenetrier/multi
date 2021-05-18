@@ -45,7 +45,7 @@ os.system('make')
 # method in the function that builds the results files.
 
 #results_dir_root = os.path.join(directories['analysis_results'] + '/')
-results_dir_root = '/media/bayow/HDD2/multi-results/read_test_1'
+results_dir_root = '/media/bayow/HDD2/multi-results/read_test_w_obs_xb_and_xt'
 
 if not os.path.exists(results_dir_root):
     os.mkdir(results_dir_root)
@@ -55,9 +55,9 @@ os.chdir(directories['run_analysis'])
 start = time.perf_counter()
 ################################################################################
 # Parameters configurations:
-#i_no_ni = [[4,6], [4,4], [4,3]]
+
 i_no_ni = [[4,6]]
-i_nx = ['31,41,61,101','51,81,91,101']
+i_nx = ['31,41,61,101']
 i_nobs = [2000]
 i_sigma_obs = [0.1]
 i_Hnl_coeff = [0.]
@@ -79,6 +79,9 @@ for ii_nx in i_nx:
         full_res = int(ii_nx.split(',')[-1])
 print(full_res)
 
+# Determine the maximum number of observations:
+nobs_max = max(i_nobs)
+
 # iterations to run:
 iter_params = list(itertools.product(i_no_ni, i_nx, i_nobs, i_sigma_obs,
                                 i_Hnl_coeff, i_sigmabvar, i_Lb,
@@ -94,7 +97,7 @@ for rand_seed in i_rand_seed:
     outer_iterations_dict[rand_seed] = outer_iterations_list
 
 # Creates the initial state (background, truth and observations):
-init_state_gen(full_res, directories['multi'])
+init_state_gen(full_res, nobs_max, directories['multi'])
 
 print('Running the code multi')
 ################################################################################
@@ -105,10 +108,10 @@ def run_element_analysis(rand_seed, iter_params, directories, res_dir_list, oute
     of the ensemble.
     """
     # If True, gives more plots of all the variables:
-    extra_monitoring=True
-    
+    extra_monitoring=False
+
     run_multi(rand_seed, iter_params, directories, res_dir_list)
-    run_plots(res_dir_list, outer_iterations_list, extra_monitoring)
+    #run_plots(res_dir_list, outer_iterations_list, extra_monitoring)
 #-------------------------------------------------------------------------------
 
 print('Starting analysis:')

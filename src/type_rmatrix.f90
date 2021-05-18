@@ -97,23 +97,24 @@ end subroutine rmatrix_apply_inv
 ! Subroutine: rmatrix_randomize
 ! Purpose: randomize the R matrix
 !----------------------------------------------------------------------
-subroutine rmatrix_randomize(rmatrix,yo)
+subroutine rmatrix_randomize(rmatrix,obs_err,yo)
   
 implicit none
 
 ! Passed variables
 class(rmatrix_type),intent(in)   :: rmatrix
 real(8),intent(inout)            :: yo(rmatrix%nobs)
+real(8),intent(in)               :: obs_err(rmatrix%nobs)
 
 ! Local variable
-real(8)                          :: nu(rmatrix%nobs),y_err(rmatrix%nobs)
+real(8)                          :: y_err(rmatrix%nobs)
 integer                          :: iobs
 
 ! Gaussian random vector
-call rand_normal(rmatrix%nobs,nu)
+!call rand_normal(rmatrix%nobs,nu)
 
 ! Apply R matrix square-root
-call rmatrix%apply_sqrt(nu,y_err)
+call rmatrix%apply_sqrt(obs_err,y_err)
 
 do iobs=1,rmatrix%nobs
    yo(iobs) = yo(iobs)*(1+y_err(iobs))

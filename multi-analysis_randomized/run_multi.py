@@ -60,6 +60,7 @@ def run_multi(rand_seed, iter_params, directories, res_dir_list):
     #---------------------------
 
     res_dir_counter = 0
+    
     for no_ni, nx, nobs, sigma_obs, Hnl_coeff, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
 
         no = no_ni[0]
