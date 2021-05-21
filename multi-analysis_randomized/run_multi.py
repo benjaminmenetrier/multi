@@ -20,58 +20,49 @@ from analysis_tools import *
 ################################################################################
 ################################################################################
 def run_multi(nm, method, na, algo, no, ni, lmp_mode, test_ortho, shutoff_type,
-                         shutoff_value, interp_method, projective_Bmatrix,
-                         nx, ny, nos, sigma_obs,
-                         Hnl_coeff, sigmabvar, Lb, spvarmin, new_seed, filename,
-                         rand_seed, directories, res_dir_list):
-        """Run once the code multi, with only one given set of parameters.
-        """
-        no = no_ni[0]
-        ni = no_ni[1]
+              shutoff_value, interp_method, projective_Bmatrix,
+              nx, ny, nobs, sigma_obs,
+              Hnl_coeff, sigmabvar, Lb, spvarmin, new_seed, filename,
+              rand_seed, directories, res_dir):
+   
+    parameters={}
+    parameters['solver'] = [nm, method, na, algo, no, ni, lmp_mode, test_ortho,
+                            shutoff_type, shutoff_value,
+                            interp_method, projective_Bmatrix]
+    parameters['resolution'] = [nx, ny]
+    parameters['obs'] = [nobs, sigma_obs, Hnl_coeff]
+    parameters['background'] = [sigmabvar, Lb, spvarmin]
+    parameters['miscellanous'] = [new_seed, filename]
 
-        # square grid:
-        ny=nx
-        
-        parameters={}
-        parameters['solver'] = [nm, method, na, algo, no, ni, lmp_mode, test_ortho,
-                                shutoff_type, shutoff_value,
-                                interp_method, projective_Bmatrix]
-        parameters['resolution'] = [nx, ny]
-        parameters['obs'] = [nobs, sigma_obs, Hnl_coeff]
-        parameters['background'] = [sigmabvar, Lb, spvarmin]
-        parameters['miscellanous'] = [new_seed, filename]
+    namelist_write(parameters,directories['multi'],rand_seed)
 
-        namelist_write(parameters,directories['multi'],rand_seed)
-
-        res_dir = res_dir_list[res_dir_counter]
-
-        # Run the code:
-        os.chdir(directories['multi'])
-        # Copy the source code:
-        if os.path.exists(os.path.join(res_dir + "/src")):
-            rmtree(os.path.join(res_dir + "/src"))
-            copytree("src", os.path.join(res_dir + "/src"))
-        os.system(exec_command + f" namelist_{rand_seed} > multi.log")
-        # Copy the namelist in results directory:
-        copyfile(f"namelist_{rand_seed}", os.path.join(res_dir + f"/namelist_{rand_seed}"))
-        # Copy the results in the results directory:
-        copyfile(code_output, os.path.join(res_dir + "/output.nc"))
-        # Remove the results file and namelist from multi:
-        os.remove(f"namelist_{rand_seed}")
-        os.remove(f"output_{rand_seed}.nc")
-        os.chdir(directories['run_analysis'])
-        
-################################################################################
-################################################################################
-def run_multi_loops(rand_seed, iter_params, directories, res_dir_list):
-    """Run the code multi with the parametrizations given in iter_params
-    """
     # Path to the executable from multi:
     exec_command = os.path.join(directories['multi'] + '/build/bin/multi ')
 
     # Location of the raw output of the code:
     code_output = os.path.join(directories['multi'] + f'/output_{rand_seed}.nc')
     
+    # Run the code:
+    os.chdir(directories['multi'])
+    # Copy the source code:
+    if os.path.exists(os.path.join(res_dir + "/src")):
+        rmtree(os.path.join(res_dir + "/src"))
+    copytree("src", os.path.join(res_dir + "/src"))
+    os.system(exec_command + f" namelist_{rand_seed} > multi.log")
+    # Copy the namelist in results directory:
+    copyfile(f"namelist_{rand_seed}", os.path.join(res_dir + f"/namelist_{rand_seed}"))
+    # Copy the results in the results directory:
+    copyfile(code_output, os.path.join(res_dir + "/output.nc"))
+    # Remove the results file and namelist from multi:
+    os.remove(f"namelist_{rand_seed}")
+    os.remove(f"output_{rand_seed}.nc")
+    os.chdir(directories['run_analysis'])
+        
+################################################################################
+################################################################################
+def run_multi_loops(rand_seed, iter_params, directories, res_dir_list):
+    """Run the code multi with the parametrizations given in iter_params
+    """
     #---------------------------
     # Default values for the parameters in the namelist:
     # Solver:
@@ -102,15 +93,29 @@ def run_multi_loops(rand_seed, iter_params, directories, res_dir_list):
     new_seed = "T"
     filename = f'"output_{rand_seed}.nc"'
     #---------------------------
-            
-    res_dir_counter = 0        
-    with concurrent.futures.ProcessPoolExecutor() as executor:
+
+    res_dir_counter = 0
+    #with concurrent.futures.ProcessPoolExecutor() as executor:
+    #processes.append(executor.submit(run_multi, *args))
+    if True:
         for no_ni, nx, nobs, sigma_obs, Hnl_coeff, sigmabvar, Lb, interp_method, projective_Bmatrix, test_ortho in iter_params:
-            args = (nm, method, na, algo, no, ni, lmp_mode, test_ortho, shutoff_type,
-                         shutoff_value, interp_method, projective_Bmatrix, nx, ny, nos, sigma_obs,
+            # args = (nm, method, na, algo, no, ni, lmp_mode, test_ortho, shutoff_type,
+            #         shutoff_value, interp_method, projective_Bmatrix, nx, ny, nos, sigma_obs,
+            #         Hnl_coeff, sigmabvar, Lb, spvarmin, new_seed, filename,
+            #         rand_seed, directories, res_dir_list)
+
+            res_dir = res_dir_list[res_dir_counter]
+            
+            no = no_ni[0]
+            ni = no_ni[1]
+            
+            # square grid:
+            ny=nx
+ 
+            run_multi(nm, method, na, algo, no, ni, lmp_mode, test_ortho, shutoff_type,
+                         shutoff_value, interp_method, projective_Bmatrix, nx, ny, nobs, sigma_obs,
                          Hnl_coeff, sigmabvar, Lb, spvarmin, new_seed, filename,
-                         rand_seed, directories, res_dir_list)
-            processes.append(executor.submit(run_multi, *args))
+                         rand_seed, directories, res_dir)
             res_dir_counter += 1
             
 ################################################################################
