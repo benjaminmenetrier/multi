@@ -25,28 +25,30 @@ def run_plots_loops(res_dir_list, outer_iterations_list, extra_monitoring):
     """
     #----------------------------------------------------------------------------
     processes = []
-    with concurrent.futures.ProcessPoolExecutor() as executor:
-    #if True:
+    #with concurrent.futures.ProcessPoolExecutor() as executor:
+    if True:
         # Comparision between the different methods:
         for r, res_dir in enumerate(res_dir_list):
-            args = (res_dir, extra_monitoring)
-            processes.append(executor.submit(run_all_plots, *args))
-            
+            outer_iterations = outer_iterations_list[r]
+            args = (res_dir, outer_iterations, extra_monitoring)
+            #processes.append(executor.submit(run_all_plots, *args))
+            run_all_plots(res_dir, outer_iterations, extra_monitoring)
 ################################################################################
 ################################################################################
-def run_all_plots(res_dir, extra_monitoring):
+def run_all_plots(res_dir, outer_iterations, extra_monitoring):
     """Rune the comparision plots and the extra monitoring plots for one given 
        directory
     """
-    run_compare_plots(res_dir)
-    run_extra_plots(res_dir, extra_monitoring)
-         
+    run_compare_plots(res_dir, outer_iterations)
+    run_extra_plots(res_dir, outer_iterations, extra_monitoring)
+    
 ################################################################################
 ################################################################################
-def run_compare_plots(res_dir):
+def run_compare_plots(res_dir, outer_iterations):
     """Runs all the comparision plots between the different methods
     """
     try:
+    #if True:
         ds = netcdf_extract(res_dir)
         # Plots in observation space:
         obs_plot(ds, res_dir)
@@ -59,8 +61,8 @@ def run_compare_plots(res_dir):
         field_plot(x_true, out_name)
         
         # Comparision for 1D variables (cost functions, rho, beta ...):
-        compare_methods_plot(ds, outer_iterations_list[r], res_dir)
-        compare_methods_plot2(ds, outer_iterations_list[r], res_dir)
+        compare_methods_plot(ds, outer_iterations, res_dir)
+        compare_methods_plot2(ds, outer_iterations, res_dir)
         
         # Comparision for 2D variables at outer loop level:
         compare_methods_2D_outer(ds, res_dir)
@@ -69,19 +71,27 @@ def run_compare_plots(res_dir):
 
 ################################################################################
 ################################################################################
-def run_extra_plots(res_dir, extra_monitoring):
+def run_extra_plots(res_dir, outer_iterations, extra_monitoring):
     """Run the plots for extra monitoring (any outer and inner loops variables,
        matrices and fields.
     """
+    
+    # Get the data:
+    ds = netcdf_extract(res_dir)
+
+    # Plots comparision between lanczos and planczosif:
+    try:
+        lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations)
+    except:
+        print('Error, cannot plot lanczos vs planczosif for file \n', res_dir)
+
     # Extra monitoring at outer and inner loop level (all the variables):
     if extra_monitoring:        
-        # Get the data:
-        ds = netcdf_extract(res_dir)
 
-        # Plots comparision between lanczos and planczosif:
-        lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations_list[r])
-        lanczos_vs_planczosif_2D_outer(ds, res_dir)
-
+        try:
+            lanczos_vs_planczosif_2D_outer(ds, res_dir)
+        except:
+            print("Cannot plot lanczos vs planczosif 2D for file \n", res_dir)
         # Plots in model space:
         # At outer loop level:
         for met in ds.groups:
@@ -142,6 +152,7 @@ def run_extra_plots(res_dir, extra_monitoring):
                                         out_name = os.path.join(inner_field_dir + f'/{algo}_{field}_{io}_inner_{ii}')
                                         field_plot(dx, out_name)
                                     except:
-                                        print('Cannot plot matrix for ', met, io, field)    
+                                        print('Cannot plot matrix for ', met, io, field)
+
 ################################################################################
 ################################################################################
