@@ -301,13 +301,13 @@ def linearization_check(res_dir_dict, outer_iterations_dict, results_obj):
                         # Compute the average linearization test over the seeds:
                         for rs in range(nseeds):
                             # Lanczos:
-                            nl_diff_lanczos = ens_obj_list[rs][r][nl_keys[k]][met][0][ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][0][ii]
-                            l_diff_lanczos = ens_obj_list[rs][r][key][met][0][ii+1] - ens_obj_list[rs][r][key][met][0][ii]
+                            nl_diff_lanczos = ens_obj_list[rs][r][nl_keys[k]][met][0][(io+1)*ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][0][(io+1)*ii]
+                            l_diff_lanczos = ens_obj_list[rs][r][key][met][0][(io+1)*ii+1] - ens_obj_list[rs][r][key][met][0][(io+1)*ii]
                             linearization_test_ii_lanczos += nl_diff_lanczos / (l_diff_lanczos*1.)
 
                             # PlanczosIF:
-                            nl_diff_planczosif = ens_obj_list[rs][r][nl_keys[k]][met][1][ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][1][ii]
-                            l_diff_planczosif = ens_obj_list[rs][r][key][met][1][ii+1] - ens_obj_list[rs][r][key][met][1][ii]
+                            nl_diff_planczosif = ens_obj_list[rs][r][nl_keys[k]][met][1][(io+1)*ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][1][(io+1)*ii]
+                            l_diff_planczosif = ens_obj_list[rs][r][key][met][1][(io+1)*ii+1] - ens_obj_list[rs][r][key][met][1][(io+1)*ii]
                             linearization_test_ii_planczosif += nl_diff_planczosif / (l_diff_planczosif*1.)
                             
                         linearization_test_ii_lanczos = linearization_test_ii_lanczos / (nseeds*1.)

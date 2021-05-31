@@ -13,6 +13,9 @@ import numpy as np
 import sys
 import netCDF4 as nc
 
+print('Exiting: file already exists, are you sure to create a new file ?')
+sys.exit()
+
 #-------------------------------------------------------------------------------
 # Old trial with netcdf files:
 
