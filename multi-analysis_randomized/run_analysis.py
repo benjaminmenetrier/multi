@@ -45,7 +45,7 @@ os.system('make')
 # method in the function that builds the results files.
 
 #results_dir_root = os.path.join(directories['analysis_results'], 'sigmabvar_Hnl')
-results_dir_root = '/media/bayow/Seagate Expansion Drive/multi-results/linearization_test'
+results_dir_root = '/media/bayow/Seagate Expansion Drive/multi-results/True_results/no6-ni6/non-linear'
 
 if not os.path.exists(results_dir_root):
     os.mkdir(results_dir_root)
@@ -56,16 +56,16 @@ start = time.perf_counter()
 ################################################################################
 # Parameters configurations:
 
-i_no_ni = [[8,6], [8,12]]
-i_nx = ['21,31,41,51,61,71,81,91,101']
+i_no_ni = [[6,6]]
+i_nx = ['101,101,101,101', '21,41,81,101', '21,31,41,101', '21,61,81,101']
 i_nobs = [2000]
 i_sigma_obs = [0.1]
-i_Hnl_coeff = [0., 0.001, 0.01, 0.1, 1.]
-i_sigmabvar = [0.]
+i_Hnl_coeff = [0.01]
+i_sigmabvar = [0.01]
 i_Lb = [0.1]
 i_interp_method = ['"spectral"','"bilinear"','"nearest"']
 #i_interp_method = ['"spectral"']
-i_project_B = ["T"]
+i_project_B = ["F"]
 i_test_ortho = ["T"]
 
 # Size of the ensemble tu run:
@@ -112,7 +112,7 @@ def run_element_analysis(rand_seed, iter_params, directories, res_dir_list, oute
     extra_monitoring=False
 
     run_multi_loops(rand_seed, iter_params, directories, res_dir_list)
-    #run_plots_loops(res_dir_list, outer_iterations_list, extra_monitoring)
+    run_plots_loops(res_dir_list, outer_iterations_list, extra_monitoring)
 #-------------------------------------------------------------------------------
 
 print('Starting analysis:')
@@ -126,13 +126,13 @@ if True:
         args = (rand_seed, iter_params, directories, res_dir_list, outer_iterations_list)
         #processes.append(executor.submit(run_element_analysis, *args))
         run_element_analysis(rand_seed, iter_params, directories, res_dir_list, outer_iterations_list)
-        
+
 ################################################################################
 print('Starting ensemble analysis')
 
 results_obj = build_results_object(res_dir_dict, outer_iterations_dict)
 
-#ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict, results_obj)
+ensemble_compare_methods_plot(res_dir_dict, outer_iterations_dict, results_obj)
 
 linearization_check(res_dir_dict, outer_iterations_dict, results_obj)
 
