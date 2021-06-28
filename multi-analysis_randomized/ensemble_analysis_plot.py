@@ -269,74 +269,78 @@ def linearization_check(res_dir_dict, outer_iterations_dict, results_obj):
         no = len(outer_iterations_list)-1
         ni = outer_iterations_list[1]
 
-        ensemble_res_dir = res_dir_dict[0][r].split("seed")[0]
-        ensemble_res_dir = os.path.join(ensemble_res_dir, "averaged")
-        if not os.path.exists(ensemble_res_dir):
-            os.mkdir(ensemble_res_dir)
+        try:
+            ensemble_res_dir = res_dir_dict[0][r].split("seed")[0]
+            ensemble_res_dir = os.path.join(ensemble_res_dir, "averaged")
+            if not os.path.exists(ensemble_res_dir):
+                os.mkdir(ensemble_res_dir)
+
+            for k, key in enumerate(l_keys):
+
+                linearization_test[r][key] = []
+
+                for m, met in enumerate(methods):
+                    nseeds = len(res_dir_dict)
+
+                    linearization_test_lanczos = []
+                    linearization_test_planczosif = []
+
+                    linearization_test_met = []
+
+                    for io in range(no):
+                        # Loop over the outer iterations:
+                        linearization_test_io_lanczos = []
+                        linearization_test_io_planczosif = []
+
+                        linearization_test_io = []
+
+                        for ii in range(ni):
+                            # Loop over the inner iterations:
+                            linearization_test_ii_lanczos = 0
+                            linearization_test_ii_planczosif = 0
+
+                            # Compute the average linearization test over the seeds:
+                            for rs in range(nseeds):
+                                # Lanczos:
+                                nl_diff_lanczos = ens_obj_list[rs][r][nl_keys[k]][met][0][(io+1)*ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][0][(io+1)*ii]
+                                l_diff_lanczos = ens_obj_list[rs][r][key][met][0][(io+1)*ii+1] - ens_obj_list[rs][r][key][met][0][(io+1)*ii]
+                                linearization_test_ii_lanczos += nl_diff_lanczos / (l_diff_lanczos*1.)
+
+                                # PlanczosIF:
+                                nl_diff_planczosif = ens_obj_list[rs][r][nl_keys[k]][met][1][(io+1)*ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][1][(io+1)*ii]
+                                l_diff_planczosif = ens_obj_list[rs][r][key][met][1][(io+1)*ii+1] - ens_obj_list[rs][r][key][met][1][(io+1)*ii]
+                                linearization_test_ii_planczosif += nl_diff_planczosif / (l_diff_planczosif*1.)
+
+                            linearization_test_ii_lanczos = linearization_test_ii_lanczos / (nseeds*1.)
+                            linearization_test_ii_planczosif = linearization_test_ii_planczosif / (nseeds*1.)
+
+                            linearization_test_io_lanczos.append(linearization_test_ii_lanczos)
+                            linearization_test_io_planczosif.append(linearization_test_ii_planczosif)
+
+                            linearization_test_io.append([linearization_test_io_lanczos, linearization_test_io_planczosif])
+
+                        linearization_test_lanczos.append(linearization_test_io_lanczos)
+                        linearization_test_planczosif.append(linearization_test_io_planczosif)
+
+                        linearization_test_met.append(linearization_test_io)
+
+                    #linearization_test[r][key].append(linearization_test_met)
+                    linearization_test[r][key].append([linearization_test_lanczos, linearization_test_planczosif])
+
+                linearization_test[r][key] = np.array(linearization_test[r][key]).transpose(0,2,1,3)
             
-        for k, key in enumerate(l_keys):
+                # Plots the averaged curves:            
+                ylabel1 = labels[k]
+                ylabel2 = r"$B^{1/2}$ - $B$"
+                xlabel = "iterations"
+                out_name = os.path.join(ensemble_res_dir + f'/linearization_test_{key}.png')
+                print('plotting:', out_name)
+                linearization_plot(linearization_test[r][key], ylabel1, linearization_test[r][key], ylabel2,
+                                 xlabel, outer_iterations_list, legend, out_name)
+
+        except:
+            print("Error with linearization check")
             
-            linearization_test[r][key] = []
-                    
-            for m, met in enumerate(methods):
-                nseeds = len(res_dir_dict)
-                
-                linearization_test_lanczos = []
-                linearization_test_planczosif = []
-                
-                linearization_test_met = []
-
-                for io in range(no):
-                    # Loop over the outer iterations:
-                    linearization_test_io_lanczos = []
-                    linearization_test_io_planczosif = []
-                    
-                    linearization_test_io = []
-                    
-                    for ii in range(ni):
-                        # Loop over the inner iterations:
-                        linearization_test_ii_lanczos = 0
-                        linearization_test_ii_planczosif = 0
-                        
-                        # Compute the average linearization test over the seeds:
-                        for rs in range(nseeds):
-                            # Lanczos:
-                            nl_diff_lanczos = ens_obj_list[rs][r][nl_keys[k]][met][0][(io+1)*ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][0][(io+1)*ii]
-                            l_diff_lanczos = ens_obj_list[rs][r][key][met][0][(io+1)*ii+1] - ens_obj_list[rs][r][key][met][0][(io+1)*ii]
-                            linearization_test_ii_lanczos += nl_diff_lanczos / (l_diff_lanczos*1.)
-
-                            # PlanczosIF:
-                            nl_diff_planczosif = ens_obj_list[rs][r][nl_keys[k]][met][1][(io+1)*ii+1] - ens_obj_list[rs][r][nl_keys[k]][met][1][(io+1)*ii]
-                            l_diff_planczosif = ens_obj_list[rs][r][key][met][1][(io+1)*ii+1] - ens_obj_list[rs][r][key][met][1][(io+1)*ii]
-                            linearization_test_ii_planczosif += nl_diff_planczosif / (l_diff_planczosif*1.)
-                            
-                        linearization_test_ii_lanczos = linearization_test_ii_lanczos / (nseeds*1.)
-                        linearization_test_ii_planczosif = linearization_test_ii_planczosif / (nseeds*1.)
-
-                        linearization_test_io_lanczos.append(linearization_test_ii_lanczos)
-                        linearization_test_io_planczosif.append(linearization_test_ii_planczosif)
-
-                        linearization_test_io.append([linearization_test_io_lanczos, linearization_test_io_planczosif])
-                        
-                    linearization_test_lanczos.append(linearization_test_io_lanczos)
-                    linearization_test_planczosif.append(linearization_test_io_planczosif)
-
-                    linearization_test_met.append(linearization_test_io)
-                    
-                #linearization_test[r][key].append(linearization_test_met)
-                linearization_test[r][key].append([linearization_test_lanczos, linearization_test_planczosif])
-                
-            linearization_test[r][key] = np.array(linearization_test[r][key]).transpose(0,2,1,3)
-            
-            # Plots the averaged curves:            
-            ylabel1 = labels[k]
-            ylabel2 = r"$B^{1/2}$ - $B$"
-            xlabel = "iterations"
-            out_name = os.path.join(ensemble_res_dir + f'/linearization_test_{key}.png')
-            print('plotting:', out_name)
-            linearization_plot(linearization_test[r][key], ylabel1, linearization_test[r][key], ylabel2,
-                             xlabel, outer_iterations_list, legend, out_name)
-
 ################################################################################
 ################################################################################
 def linearization_plot(obj_list, ylabel1, diff_list, ylabel2, xlabel,

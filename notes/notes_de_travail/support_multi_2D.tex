@@ -36,504 +36,793 @@
 [shadow=false]
 
 
-\begin{frame}{Content}
-\begin{itemize}
-\item Non linearity induced by H operator:\\
-($Hx = (1-\alpha) x+ \alpha x^3$).
-\item Number of outer loops vs. inner loops.\\
-\item Non linearity induced by changing the resolution at outer loop level.
-\item Varying the projective B matrix option.\\
-\item Varying the interpolation method.
-\end{itemize}
+% ------------------------------------------------------------------------------------------
+% seed
+
+\begin{frame}{Illustrative example of an ensemble analysis with 20 seeds}
+\begin{center}
+\begin{figure}
+\includegraphics[scale=0.25]{img/seed/seeds.png}
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Choosing the same initial random state}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/seed/xt.png}
+  \caption{Truth $x^t$ at full resolution (101x101).}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/seed/obs.png}
+  \caption{Corresponding observations ($n_{obs}=2000$).}
+\endminipage
+\end{figure}
+\end{center}
 \end{frame}
 
 
 % ------------------------------------------------------------------------------------------
-% ------------------------------------------------------------------------------------------
+% Hnl vs Hl at full res
 
-\begin{frame}
+\begin{frame}{Non linearity induced by the observation operator $\mathcal{H}$ without changing the resolution}
 \begin{center}
-\huge{Non linearity induced by H operator:}\\
+$\mathcal{H}x = (1-\alpha) x+ \alpha x^3$.\\
 \vspace{+0.5cm}
-\Large{Full resolution, varying $\alpha$ parameter with the same relinearization scheme: $no=4, ni=6$,\\
-spectral interpolation and projective B matrix,
-$\sigma^o=0.01$}
-\end{center}
-\end{frame}
-
-%alpha=0
-\begin{frame}{Full resolution; linear H; $J$ vs $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0/compare_j.png}
-  \caption{$\alpha = 0$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0/compare_j_nl.png}
-  \caption{$\alpha = 0$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%alpha=0.01
-\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.01/compare_j.png}
-  \caption{$\alpha = 0.01$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.01/compare_j_nl.png}
-  \caption{$\alpha = 0.01$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%alpha=0.02
-\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.02/compare_j.png}
-  \caption{$\alpha = 0.02$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.02/compare_j_nl.png}
-  \caption{$\alpha = 0.02$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%alpha=0.05
-\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.05/compare_j.png}
-  \caption{$\alpha = 0.05$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.05/compare_j_nl.png}
-  \caption{$\alpha = 0.05$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%alpha=0.1
-\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.1/compare_j.png}
-  \caption{$\alpha = 0.1$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.1/compare_j_nl.png}
-  \caption{$\alpha = 0.1$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%alpha=0.5
-\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.5/compare_j.png}
-  \caption{$\alpha = 0.5$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/0.5/compare_j_nl.png}
-  \caption{$\alpha = 0.5$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%alpha=1
-\begin{frame}{Full resolution; non linear H; $J$ vs $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/1/compare_j.png}
-  \caption{$\alpha = 1$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha/1/compare_j_nl.png}
-  \caption{$\alpha = 1$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-
-\begin{frame}{Conclusion on the non linearity induced by H}
- \begin{itemize}
-  \item Very sensitive to $\alpha$ even for small values.
-  \item The case with $\alpha = 1$ seems better than the case with $\alpha = 0.5$...\\
-  $\longrightarrow$ What could be the reason for it ?
-  \item It seems that there are too much inner loops before relinearization but the iteration at which the "jump" occurs seems NOT correlated to the value of $\alpha$.
- \end{itemize}
- \vspace{+0.5cm}
-$\longrightarrow$ Need to study the number of inner iterations vs. outer iterations.
-\end{frame}
-
-% ------------------------------------------------------------------------------------------
-% ------------------------------------------------------------------------------------------
-
-\begin{frame}
-\begin{center}
-\large{Full resolution, varying the number of inner and outer loops with a non linear H and the same total number of iterations ($n_o \times n_i =24$)\\
-(spectral interpolation and projective B matrix, $\sigma^o=0.01$)}
-\end{center}
-\end{frame}
-
-% ------------------------------------------------------------------------------------------
-%alpha = 0.05
-
-%Jnl
-\begin{frame}{Full resolution; non linear H ($\alpha = 0.05$): $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no2_ni12/compare_j_nl.png}
-  \caption{$n_o = 2, n_i = 12$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no4_ni6/compare_j_nl.png}
-  \caption{$n_o = 4, n_i = 6$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-\begin{frame}{Full resolution; non linear H ($\alpha = 0.05$): $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no4_ni6/compare_j_nl.png}
-  \caption{$n_o = 4, n_i = 6$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no6_ni4/compare_j_nl.png}
-  \caption{$n_o = 6, n_i = 4$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%J
-\begin{frame}{Full resolution; non linear H ($\alpha = 0.05$): $J$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no2_ni12/compare_j.png}
-  \caption{$n_o = 2, n_i = 12$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no4_ni6/compare_j.png}
-  \caption{$n_o = 4, n_i = 6$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-\begin{frame}{Full resolution; non linear H ($\alpha = 0.05$): $J$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no4_ni6/compare_j.png}
-  \caption{$n_o = 4, n_i = 6$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.05/no6_ni4/compare_j.png}
-  \caption{$n_o = 6, n_i = 4$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%------------------------------------------------------------------------------------------
-%alpha = 0.1
-
-%Jnl
-\begin{frame}{Full resolution; non linear H ($\alpha = 0.1$): $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.1/no4_ni6/compare_j_nl.png}
-  \caption{$n_o = 4, n_i = 6$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.1/no6_ni4/compare_j_nl.png}
-  \caption{$n_o = 6, n_i = 4$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%J
-\begin{frame}{Full resolution; non linear H ($\alpha = 0.1$): $J$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.1/no4_ni6/compare_j.png}
-  \caption{$n_o = 4, n_i = 6$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha0.1/no6_ni4/compare_j.png}
-  \caption{$n_o = 6, n_i = 4$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%------------------------------------------------------------------------------------------
-%alpha = 1
-
-%Jnl
-\begin{frame}{Full resolution; non linear H ($\alpha = 1$): $J^{nl}$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha1/no4_ni6/compare_j_nl.png}
-  \caption{$n_o = 4, n_i = 6$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha1/no6_ni4/compare_j_nl.png}
-  \caption{$n_o = 6, n_i = 4$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%J
-\begin{frame}{Full resolution; non linear H ($\alpha = 1$): $J$}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha1/no4_ni6/compare_j.png}
-  \caption{$n_o = 4, n_i = 6$}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/Hnl_full_res/ni_vs_no/alpha1/no6_ni4/compare_j.png}
-  \caption{$n_o = 6, n_i = 4$}
-\endminipage
-\end{figure}
-\end{center}
-\end{frame}
-
-%------------------------------------------------------------------------------------------
-\begin{frame}{Conclusion on the number of inner and outer loops}
-\begin{itemize}
- \item As expected, the assimilation scheme with the more outer loops is equal or better than the others. 
- \item There is often a "jump" in the linear cost functions just after relinearization, BUT it seems not necessarily correlated to the behaviour of the non linear cost function (or it is not trivial).
- \item Problem: The first inner iterations in the first case with 12 inner iterations seems better than the case with 6 inner iterations whereas the case with 4 inner iterations seems better than the case with 6 inner iterations:\\
- $\longrightarrow$ The problem is too much dependant on the initial background and observation states that are randomly generated (?): there is a difference of $10^7 - 10^8$ in the cost function at the beggining in these cases! 
-\end{itemize}
-\end{frame}
-
-%------------------------------------------------------------------------------------------
-%------------------------------------------------------------------------------------------
-\begin{frame}
-\begin{center}
-\huge{Non linearity induced by the change of resolution between the outer loops:}\\
+Full resolution (101 x 101), varying $\alpha$ parameter with 8 outer loops and 12 inner loops.\\
 \vspace{+0.5cm}
- \Large{(Linear H operator, spectral interpolation and projective B matrix, $\sigma^o=0.01$, $no=2, ni=12$)}
+Plotting the following ratio $R$ to monitor the goodness of the linearization of the cost functions:\\
+$$R_i(J) = \dfrac{(J^{x,nl}_{i+1} - J^{x,nl}_i)}{(J^x_{i+1} - J^x_i)}, $$
+where $i$ represents the $i^{th}$ inner iteration, and $x=$ "obs", "background" or "total".
 \end{center}
 \end{frame}
 
-%projT sp ------------------------------------------------------------------------------------------
-\begin{frame}{Linear H, spectral interpolation and projective B matrix}
+% ------------------------------------------------------------------------------------------
+
+%alpha=0 vs. alpha=0.01
+\begin{frame}{Full resolution; $\alpha=0$ vs. $\alpha=0.00001$}
 \begin{center}
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/11-101/sp/T/compare_j_nl.png}
-  \caption{resolutions: 11 > 101}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0/interp-spectral/projT/averaged/linearization_test_J.png}
+  \caption{$\alpha = 0$.}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/51-101/sp/T/compare_j_nl.png}
-  \caption{resolutions: 51 > 101}
-\endminipage
-\end{figure}
-(The jump is also present in the $J^o$ and the residue)
-\end{center}
-\end{frame}
-
-
-\begin{frame}{Linear H, spectral interpolation and projective B matrix}
-\begin{center}
-\begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/51-101/sp/T/compare_j_nl.png}
-  \caption{resolutions: 51 > 101}
-\endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/91-101/sp/T/compare_j_nl.png}
-  \caption{resolutions: 91 > 101}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.00001/interp-spectral/projT/averaged/linearization_test_J.png}
+  \caption{$\alpha = 0.00001$.}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-%jb
-\begin{frame}{Linear H, spectral interpolation and projective B matrix}
+%alpha=0.0001 vs. alpha=0.001
+\begin{frame}{Full resolution; $\alpha=0.0001$ vs. $\alpha=0.001$}
 \begin{center}
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/11-101/sp/T/compare_jb_nl.png}
-  \caption{resolutions: 11 > 101}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.0001/interp-spectral/projT/averaged/linearization_test_J.png}
+  \caption{$\alpha = 0.0001$.}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/51-101/sp/T/compare_jb_nl.png}
-  \caption{resolutions: 51 > 101}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.001/interp-spectral/projT/averaged/linearization_test_J.png}
+  \caption{$\alpha = 0.001$.}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-
-\begin{frame}{Linear H, spectral interpolation and projective B matrix}
+%alpha = 0.01 vs alpha = 0.1
+\begin{frame}{Full resolution; $\alpha=0.01$ vs. $\alpha=0.1$}
 \begin{center}
 \begin{figure}
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/51-101/sp/T/compare_jb_nl.png}
-  \caption{resolutions: 51 > 101}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.01/interp-spectral/projT/averaged/linearization_test_J.png}
+  \caption{$\alpha = 0.01$.}
 \endminipage\hfill
 \minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/91-101/sp/T/compare_jb_nl.png}
-  \caption{resolutions: 91 > 101}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.1/interp-spectral/projT/averaged/linearization_test_J.png}
+  \caption{$\alpha = 0.1$.}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-% diff methods %------------------------------------------------------------------------------------------
-% diff methods %------------------------------------------------------------------------------------------
+% ni 6 vs 24
+\begin{frame}{Effects of the inner loops: $\alpha=0.0001$; $ni=24$ vs. $ni=6$}
+\begin{center}
+\begin{figure}
+\minipage{0.5\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.0001ni6/interp-spectral/projT/averaged/linearization_test_J.png}
+  \caption{$\alpha = 0.0001$ with $ni=6$.}
+\endminipage\hfill
+\minipage{0.5\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.0001ni24/interp-spectral/projT/averaged/linearization_test_J.png}
+  \caption{$\alpha = 0.0001$ with $ni=24$.}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+% Jb vs Jo:
+\begin{frame}{$R(J_b)$ vs. $R(J_o)$: full resolution, $\alpha = 0.0001$, $ni=12$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.0001/interp-spectral/projT/averaged/linearization_test_Jb.png}
+  \caption{$R(J_b)$.}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.0001/interp-spectral/projT/averaged/linearization_test_Jo.png}
+  \caption{$R(J_o)$.}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+% convergence:
+\begin{frame}{Convergence: full resolution, $\alpha = 0.0001$, $ni=12$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.0001/interp-spectral/projT/averaged/compare_Jb.png}
+  \caption{$J_b$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.0001/interp-spectral/projT/averaged/compare_Jo.png}
+  \caption{$J_o$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Convergence: full resolution, $\alpha = 0.1$, $ni=12$}
+\begin{center}
+\begin{figure}
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.1/interp-spectral/projT/averaged/compare_Jb.png}
+  \caption{$J_b$}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{img/Hnl_full_res/alpha0.1/interp-spectral/projT/averaged/compare_Jo.png}
+  \caption{$J_o$}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%conclusion
+\begin{frame}{Sorth conclusion}
+\begin{itemize}
+\item The ratio $R$ grows "exponentially" with $\alpha$ but stays sufficently low for $\alpha<0.001$.\\
+\item $R(J_b) = 1$ (modulo numerical noise) $\longrightarrow$ OK.
+\item $R(J_o)$ shows some peaks at the beggining of the inner loops and seems to be closer to 1 at the end of the minimization:\\
+$\longrightarrow$ convergence reached ?
+\item Discussion on the effect of the number of inner loops needed.
+\item The convergence seems to be reached even with $\alpha>0.001$.
+\item Differences between the methods and preconditionners appear when the non-linearity grows up.
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------------------------------------------------
+% Non linearity induced by changing the resolution:
+
+\begin{frame}{Non linearity induced by changing the resolution}
+\begin{center}
+Linear $\mathcal{H}$ operator, but changing the resolution at the outer loop level.\\
+Same parameters as before.\\
+Progressive change: resolutions = 21,31,41,51,61,71,81,101\\
+Interpolations: spectral, nearest neighboor, bilinear.\\
+\end{center}
+\end{frame}
+
+% progessive
+%-------------------------------------------
+%spectral
+\begin{frame}{Progressive change of resolution / spectral interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-spectral/projT/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-spectral/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Progressive change of resolution / spectral interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-spectral/projT/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-spectral/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+%-------------------------------------------
+%nearest
+\begin{frame}{Progressive change of resolution / nearest interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Progressive change of resolution / nearest interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Progressive change of resolution / nearest interpolation}
+\begin{center}
+Standard method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/seed_0/standard/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/seed_0/standard/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Progressive change of resolution / nearest interpolation}
+\begin{center}
+Alternative method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/seed_0/alternative/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/seed_0/alternative/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Progressive change of resolution / nearest interpolation}
+\begin{center}
+Theoretical method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/seed_0/theoretical/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-nearest/projT/seed_0/theoretical/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%-------------------------------------------
+%bilinear
+\begin{frame}{Progressive change of resolution / bilinear interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-bilinear/projT/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-bilinear/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Progressive change of resolution / bilinear interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-bilinear/projT/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-bilinear/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Progressive change of resolution / bilinear interpolation}
+\begin{center}
+Standard method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-bilinear/projT/seed_0/standard/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-bilinear/projT/seed_0/standard/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Progressive change of resolution / bilinear interpolation}
+\begin{center}
+Alternative method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-bilinear/projT/seed_0/alternative/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/prog/interp-bilinear/projT/seed_0/alternative/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%conclusion
+\begin{frame}{Short conclusion}
+\begin{itemize}
+\item Only the spectral interpolation allows the methods and preconditionners to be equal (expected!).\\
+\item There might be a problem with the theoretical method, especially at the beggining of the second outer loop (?). Note that this method differs from the others in the fact that it uses the exact B matrix.\\
+\item The linearization of the background cost function is not good when using the standard method and non transitive interpolators.
+\item Only the alternative method seems to converge with non transitive interpolators, and the differences between the preconditionners in this case is higher (at the inner loop level) than for the other methods.\\
+\item $B^{1/2}$ is always lower than $B$ for $J_o$ with the alternative method.
+\end{itemize}
+\end{frame}
+
+%------------------------------------------------------------------------------------------
+% low3
+\begin{frame}
+\begin{center}
+3 loops at low resolution:\\
+Resolutions = 21,21,21,51,61,71,81,101
+\end{center}
+\end{frame}
+
+%spectral
+\begin{frame}{3 loops at low resolution / spectral interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-spectral/projT/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-spectral/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{3 loops at low resolution / spectral interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-spectral/projT/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-spectral/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+%-------------------------------------------
+%nearest
+\begin{frame}{3 loops at low resolution / nearest interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-nearest/projT/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-nearest/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{3 loops at low resolution / nearest interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-nearest/projT/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-nearest/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%-------------------------------------------
+%bilinear
+\begin{frame}{3 loops at low resolution / bilinear interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-bilinear/projT/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-bilinear/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{3 loops at low resolution / bilinear interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-bilinear/projT/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/Hl_res/low3/interp-bilinear/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%------------------------------------------------------------------------------------------
+% Hnl + reso
 
 \begin{frame}
 \begin{center}
-\huge{Varying the projective B matrix option:}\\
-\vspace{+0.5cm}
- \Large{(Linear H operator, spectral interpolation, $\sigma^o=0.01$, $no=2, ni=12$)}
+Non linear observation operator with $\alpha=0.0001$.\\
+Progressive change of resolution.\\
+Projective B matrix.
 \end{center}
 \end{frame}
 
-% projF sp %------------------------------------------------------------------------------------------
-\begin{frame}{Linear H, spectral interpolation and NON projective B matrix}
+%spectral
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - Projective B matrix / spectral interpolation}
 \begin{center}
 \begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/11-101/sp/F/compare_j_nl.png}
-  \caption{resolutions: 11 > 101}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-spectral/projT/averaged/compare_Jo.png}
+  %\caption{}
 \endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/51-101/sp/F/compare_j_nl.png}
-  \caption{resolutions: 51 > 101}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-spectral/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Linear H, spectral interpolation and NON projective B matrix}
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - Projective B matrix / spectral interpolation}
 \begin{center}
 \begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/51-101/sp/F/compare_j_nl.png}
-  \caption{resolutions: 51 > 101}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-spectral/projT/averaged/compare_Jb.png}
+  %\caption{}
 \endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/91-101/sp/F/compare_j_nl.png}
-  \caption{resolutions: 91 > 101}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-spectral/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+%-------------------------------------------
+%nearest
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - Projective B matrix / nearest interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-nearest/projT/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-nearest/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-%jb
-\begin{frame}{Linear H, spectral interpolation and NON projective B matrix}
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - Projective B matrix / nearest interpolation}
 \begin{center}
 \begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/11-101/sp/F/compare_jb_nl.png}
-  \caption{resolutions: 11 > 101}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-nearest/projT/averaged/compare_Jb.png}
+  %\caption{}
 \endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/51-101/sp/F/compare_jb_nl.png}
-  \caption{resolutions: 51 > 101}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-nearest/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Linear H, spectral interpolation and NON projective B matrix}
+
+
+%-------------------------------------------
+%bilinear
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - Projective B matrix / bilinear interpolation}
 \begin{center}
 \begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/51-101/sp/F/compare_jb_nl.png}
-  \caption{resolutions: 51 > 101}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-bilinear/projT/averaged/compare_Jo.png}
+  %\caption{}
 \endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/jump_cost/alpha0/91-101/sp/F/compare_jb_nl.png}
-  \caption{resolutions: 91 > 101}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-bilinear/projT/averaged/compare_Jo_nl.png}
+  %\caption{}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
 
-\begin{frame}{Short conclusions on the projective B matrix (1)}
-\begin{center}
-\begin{itemize}
- \item There might be a jump in the cost function at the first inner iteration of a new outer loop which is also present in the residue and in the $J^o$ and seems due to the change of resolution..\\   
- \item There is no differences between the methods if the B matrix is projective and if the interpolation is transitive (spectral).\\
- \item There are differences if the B matrix is not projective, and it occurs after the first outer loop.\\
- \item The higher the change of resolution, the higher the difference between the methods.\\
-\end{itemize}
-\end{center}
-\end{frame}
-
-\begin{frame}{Short conclusions on the projective B matrix (2)}
-\begin{center}
-\begin{itemize}
- \item In these cases, the alternative and standard methods give the same results and differ from the theoretical one when the B matrix is not projective.\\
- \item The theoretical method seems to give the same results for the $J^o$ with or without a projective B matrix while the $J^b$ is different (and shows a decrease after the first outer loop).
-\end{itemize}
-\end{center}
-\end{frame}
-
-% sigmabvar ------------------------------------------------------------------------------------------
-\begin{frame}{Checking the effects of $\sigma^b_{var}$}
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - Projective B matrix / bilinear interpolation}
 \begin{center}
 \begin{figure}
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/sigmabvar/xt/0.1/xt.png}
-  \caption{$\sigma^b_{var} = 0.1$}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-bilinear/projT/averaged/compare_Jb.png}
+  %\caption{}
 \endminipage\hfill
-\minipage{0.49\textwidth}
-  \includegraphics[width=\linewidth]{img/sigmabvar/xt/1/xt.png}
-  \caption{$\sigma^b_{var} = 1$}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0/interp-bilinear/projT/averaged/compare_Jb_nl.png}
+  %\caption{}
 \endminipage
 \end{figure}
 \end{center}
 \end{frame}
-%------------------------------------------------------------------------------------------
+
+\begin{frame}
+\begin{center}
+Non linear observation operator with $\alpha=0.00001$.\\
+Progressive change of resolution.\\
+Non projective B matrix with $\sigma^b_{var} = 0.1$.
+\end{center}
+\end{frame}
+
+%spectral
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / spectral interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-spectral/projF/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-spectral/projF/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / spectral interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-spectral/projF/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-spectral/projF/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%-------------------------------------------
+%nearest
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / nearest interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / nearest interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / nearest interpolation}
+\begin{center}
+Theoretical method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/theoretical/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/theoretical/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / nearest interpolation}
+\begin{center}
+Theoretical method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/theoretical/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/theoretical/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / nearest interpolation}
+\begin{center}
+Standard method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/standard/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/standard/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
 
 
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / nearest interpolation}
+\begin{center}
+Standard method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/standard/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/standard/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
 
-%------------------------------------------------------------------------------------------
-%------------------------------------------------------------------------------------------
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / nearest interpolation}
+\begin{center}
+Alternative method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/alternative/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/alternative/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
 
 
-%------------------------------------------------------------------------------------------
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / nearest interpolation}
+\begin{center}
+Alternative method:
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/alternative/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-nearest/projF/seed_0/alternative/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+%-------------------------------------------
+%bilinear
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / bilinear interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-bilinear/projF/averaged/compare_Jo.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-bilinear/projF/averaged/compare_Jo_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
+
+\begin{frame}{Non linear $\mathcal{H}$ - progressive change of resolution - non projective B matrix / bilinear interpolation}
+\begin{center}
+\begin{figure}
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-bilinear/projF/averaged/compare_Jb.png}
+  %\caption{}
+\endminipage\hfill
+\minipage{0.45\textwidth}
+  \includegraphics[width=\linewidth]{img/hnl_e-5_res_prog/sigb0.1/interp-bilinear/projF/averaged/compare_Jb_nl.png}
+  %\caption{}
+\endminipage
+\end{figure}
+\end{center}
+\end{frame}
 
 % Conclusions ------------------------------------------------------------------------------------------
+\begin{frame}{Short Conclusion}
+\begin{itemize}
+\item Differences between the preconditionners are observed when using a non transitive interpolator or/and a non projective B matrix.\\
+\item The differences between the preconditionner are stronger when using the alternative method and in this case, the $B$ preconditionning is haigher than the $B^{1/2}$ preconditionning in the first inner loops.
+\item The linearized background cost function with the standard method is equal to the one with the alternative method whereas the non linear vesrion of the background cost function with the standard method is equal to the one with the theoretical method.
+\item Question on the $J^b$: should we compute it at full resolution ?
+\end{itemize}
+\end{frame}
 %------------------------------------------------------------------------------------------
 
 

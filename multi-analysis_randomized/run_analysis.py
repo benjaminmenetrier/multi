@@ -45,7 +45,7 @@ os.system('make')
 # method in the function that builds the results files.
 
 #results_dir_root = os.path.join(directories['analysis_results'], 'sigmabvar_Hnl')
-results_dir_root = '/media/bayow/Seagate Expansion Drive/multi-results/True_results/no6-ni6/non-linear'
+results_dir_root = '/media/bayow/Seagate Expansion Drive/multi-results/pres_results/Hnl_reso'
 
 if not os.path.exists(results_dir_root):
     os.mkdir(results_dir_root)
@@ -56,16 +56,16 @@ start = time.perf_counter()
 ################################################################################
 # Parameters configurations:
 
-i_no_ni = [[6,6]]
-i_nx = ['101,101,101,101', '21,41,81,101', '21,31,41,101', '21,61,81,101']
+i_no_ni = [[8,12]]
+i_nx = ['21,31,41,51,61,71,81,101']
 i_nobs = [2000]
 i_sigma_obs = [0.1]
-i_Hnl_coeff = [0.01]
-i_sigmabvar = [0.01]
+i_Hnl_coeff = [0.00001]
+i_sigmabvar = [0., 0.1]
 i_Lb = [0.1]
 i_interp_method = ['"spectral"','"bilinear"','"nearest"']
 #i_interp_method = ['"spectral"']
-i_project_B = ["F"]
+i_project_B = ["T","F"]
 i_test_ortho = ["T"]
 
 # Size of the ensemble tu run:
@@ -118,14 +118,14 @@ def run_element_analysis(rand_seed, iter_params, directories, res_dir_list, oute
 print('Starting analysis:')
 
 processes = []
-#with concurrent.futures.ProcessPoolExecutor() as executor:
-if True:
+with concurrent.futures.ProcessPoolExecutor() as executor:
+#if True:
     for rand_seed in i_rand_seed:
         res_dir_list = res_dir_dict[rand_seed]
         outer_iterations_list = outer_iterations_dict[rand_seed]
         args = (rand_seed, iter_params, directories, res_dir_list, outer_iterations_list)
-        #processes.append(executor.submit(run_element_analysis, *args))
-        run_element_analysis(rand_seed, iter_params, directories, res_dir_list, outer_iterations_list)
+        processes.append(executor.submit(run_element_analysis, *args))
+        #run_element_analysis(rand_seed, iter_params, directories, res_dir_list, outer_iterations_list)
 
 ################################################################################
 print('Starting ensemble analysis')

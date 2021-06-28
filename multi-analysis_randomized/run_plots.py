@@ -26,14 +26,14 @@ def run_plots_loops(res_dir_list, outer_iterations_list, extra_monitoring):
     """
     #----------------------------------------------------------------------------
     processes = []
-    #with concurrent.futures.ProcessPoolExecutor() as executor:
-    if True:
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+    #if True:
         # Comparision between the different methods:
         for r, res_dir in enumerate(res_dir_list):
             outer_iterations = outer_iterations_list[r]
             args = (res_dir, outer_iterations, extra_monitoring)
-            #processes.append(executor.submit(run_all_plots, *args))
-            run_all_plots(res_dir, outer_iterations, extra_monitoring)
+            processes.append(executor.submit(run_all_plots, *args))
+            #run_all_plots(res_dir, outer_iterations, extra_monitoring)
 ################################################################################
 ################################################################################
 def run_all_plots(res_dir, outer_iterations, extra_monitoring):
