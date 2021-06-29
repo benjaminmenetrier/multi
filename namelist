@@ -1,26 +1,27 @@
 &solver
-nm = 3
+nm = 2
 method = "theoretical", "standard", "alternative"
-na = 2
+na = 1
 algorithm = "lanczos", "planczosif"
-no = 3
-ni = 5
+no = 2
+ni = 12
 lmp_mode = "none"
 test_ortho = F
 shutoff_type = 0
-shutoff_value = 0.01
-transitive_interp = T
+shutoff_value = 0.00
+interp_method = "spectral"
 projective_Bmatrix = F
 /
 
 &resolutions
-nx = 101,121,151,
-ny = 101,121,151,
+nx = 11,11,
+ny = 11,11,
 /
 
 &observations
 nobs = 100
 sigma_obs = 0.01
+Hnl_coeff = 0.0
 /
 
 &background

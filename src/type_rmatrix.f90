@@ -7,13 +7,15 @@
 !----------------------------------------------------------------------
 module type_rmatrix
 
+use tools_kinds
 use tools_rand
+use type_geom
 
 implicit none
 
 type rmatrix_type
    integer :: nobs
-   real(8),allocatable :: sigmao(:)
+   real(kind_real),allocatable :: sigmao(:)
 contains
    procedure :: setup => rmatrix_setup
    procedure :: apply_sqrt => rmatrix_apply_sqrt
@@ -34,7 +36,7 @@ implicit none
 ! Passed variables
 class(rmatrix_type),intent(inout) :: rmatrix
 integer,intent(in) :: nobs
-real(8),intent(in) :: sigma_obs
+real(kind_real),intent(in) :: sigma_obs
 
 ! Local variables
 integer :: iobs
@@ -65,8 +67,8 @@ implicit none
 
 ! Passed variables
 class(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(in) :: yin(rmatrix%nobs)
-real(8),intent(out) :: yout(rmatrix%nobs)
+real(kind_real),intent(in) :: yin(rmatrix%nobs)
+real(kind_real),intent(out) :: yout(rmatrix%nobs)
 
 ! Multiply by standard-deviation
 yout = yin*rmatrix%sigmao
@@ -83,8 +85,8 @@ implicit none
 
 ! Passed variables
 class(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(in) :: yin(rmatrix%nobs)
-real(8),intent(out) :: yout(rmatrix%nobs)
+real(kind_real),intent(in) :: yin(rmatrix%nobs)
+real(kind_real),intent(out) :: yout(rmatrix%nobs)
 
 ! Divide by variance
 yout = yin/rmatrix%sigmao**2
@@ -95,22 +97,22 @@ end subroutine rmatrix_apply_inv
 ! Subroutine: rmatrix_randomize
 ! Purpose: randomize the R matrix
 !----------------------------------------------------------------------
-subroutine rmatrix_randomize(rmatrix,yout)
-
+subroutine rmatrix_randomize(rmatrix,yo)
+  
 implicit none
 
 ! Passed variables
 class(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(out) :: yout(rmatrix%nobs)
+real(kind_real),intent(out) :: yo(rmatrix%nobs)
 
 ! Local variable
-real(8) :: nu(rmatrix%nobs)
+real(kind_real) :: nu(rmatrix%nobs)
 
 ! Gaussian random vector
 call rand_normal(rmatrix%nobs,nu)
 
 ! Apply R matrix square-root
-call rmatrix%apply_sqrt(nu,yout)
+call rmatrix%apply_sqrt(nu,yo)
 
 end subroutine rmatrix_randomize
 

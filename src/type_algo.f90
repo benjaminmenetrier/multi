@@ -7,9 +7,11 @@
 !----------------------------------------------------------------------
 module type_algo
 
+use tools_const
+use tools_kinds
 use type_bmatrix
 use type_geom
-use type_hmatrix
+use type_hoperator
 use type_lmp
 use type_rmatrix
 
@@ -17,21 +19,26 @@ implicit none
 
 type algo_type
    integer :: nimax
-   real(8),allocatable :: dx(:,:)
-   real(8),allocatable :: dva(:)
-   real(8),allocatable :: dxabar(:)
-   real(8),allocatable :: jb(:)
-   real(8),allocatable :: jo(:)
-   real(8),allocatable :: j(:)
-   real(8),allocatable :: jb_nl(:)
-   real(8),allocatable :: jo_nl(:)
-   real(8),allocatable :: j_nl(:)
-   real(8),allocatable :: eigenval(:)
-   real(8),allocatable :: eigenvec(:,:)
-   real(8),allocatable :: lancvec(:,:)
-   real(8) :: lastbeta
-   real(8),allocatable :: rho_sqrt(:)
-   real(8),allocatable :: beta(:)
+   real(kind_real),allocatable :: xg(:)
+   real(kind_real),allocatable :: dvb(:)
+   real(kind_real),allocatable :: dxbbar(:)
+   real(kind_real),allocatable :: d(:)
+
+   real(kind_real),allocatable :: dx(:,:)
+   real(kind_real),allocatable :: dva(:)
+   real(kind_real),allocatable :: dxabar(:)
+   real(kind_real),allocatable :: jb_quad(:)
+   real(kind_real),allocatable :: jo_quad(:)
+   real(kind_real),allocatable :: j_quad(:)
+   real(kind_real),allocatable :: jb_full(:)
+   real(kind_real),allocatable :: jo_full(:)
+   real(kind_real),allocatable :: j_full(:)
+   real(kind_real),allocatable :: eigenval(:)
+   real(kind_real),allocatable :: eigenvec(:,:)
+   real(kind_real),allocatable :: lancvec(:,:)
+   real(kind_real) :: lastbeta
+   real(kind_real),allocatable :: rho_sqrt(:)
+   real(kind_real),allocatable :: beta(:)
 contains
    procedure :: alloc => algo_alloc
    procedure :: write => algo_write
@@ -46,7 +53,7 @@ contains
 ! Subroutine: algo_alloc
 ! Purpose: allocate algo
 !----------------------------------------------------------------------
-subroutine algo_alloc(algo,geom,ni)
+subroutine algo_alloc(algo,geom,ni,nobs)
 
 implicit none
 
@@ -54,17 +61,22 @@ implicit none
 class(algo_type),intent(inout) :: algo
 type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
+integer,intent(in) :: nobs
 
 ! Release memory
+if (allocated(algo%xg)) deallocate(algo%xg)
+if (allocated(algo%dvb)) deallocate(algo%dvb)
+if (allocated(algo%dxbbar)) deallocate(algo%dxbbar)
+if (allocated(algo%d)) deallocate(algo%d)
 if (allocated(algo%dx)) deallocate(algo%dx)
 if (allocated(algo%dva)) deallocate(algo%dva)
 if (allocated(algo%dxabar)) deallocate(algo%dxabar)
-if (allocated(algo%jb)) deallocate(algo%jb)
-if (allocated(algo%jo)) deallocate(algo%jo)
-if (allocated(algo%j)) deallocate(algo%j)
-if (allocated(algo%jb_nl)) deallocate(algo%jb_nl)
-if (allocated(algo%jo_nl)) deallocate(algo%jo_nl)
-if (allocated(algo%j_nl)) deallocate(algo%j_nl)
+if (allocated(algo%jb_quad)) deallocate(algo%jb_quad)
+if (allocated(algo%jo_quad)) deallocate(algo%jo_quad)
+if (allocated(algo%j_quad)) deallocate(algo%j_quad)
+if (allocated(algo%jb_full)) deallocate(algo%jb_full)
+if (allocated(algo%jo_full)) deallocate(algo%jo_full)
+if (allocated(algo%j_full)) deallocate(algo%j_full)
 if (allocated(algo%eigenval)) deallocate(algo%eigenval)
 if (allocated(algo%eigenvec)) deallocate(algo%eigenvec)
 if (allocated(algo%lancvec)) deallocate(algo%lancvec)
@@ -72,15 +84,19 @@ if (allocated(algo%rho_sqrt)) deallocate(algo%rho_sqrt)
 if (allocated(algo%beta)) deallocate(algo%beta)
 
 ! Allocation
+allocate(algo%xg(geom%nh))
+allocate(algo%dvb(geom%nh))
+allocate(algo%dxbbar(geom%nh))
+allocate(algo%d(nobs))
 allocate(algo%dx(geom%nh,ni))
 allocate(algo%dva(geom%nh))
 allocate(algo%dxabar(geom%nh))
-allocate(algo%jb(0:ni))
-allocate(algo%jo(0:ni))
-allocate(algo%j(0:ni))
-allocate(algo%jb_nl(0:ni))
-allocate(algo%jo_nl(0:ni))
-allocate(algo%j_nl(0:ni))
+allocate(algo%jb_quad(0:ni))
+allocate(algo%jo_quad(0:ni))
+allocate(algo%j_quad(0:ni))
+allocate(algo%jb_full(0:ni))
+allocate(algo%jo_full(0:ni))
+allocate(algo%j_full(0:ni))
 allocate(algo%eigenval(ni))
 allocate(algo%eigenvec(ni,ni))
 allocate(algo%lancvec(geom%nh,ni+1))
@@ -88,22 +104,26 @@ allocate(algo%rho_sqrt(0:ni))
 allocate(algo%beta(0:ni))
 
 ! Initialization at missing value
-algo%nimax = -999
-algo%dx = -999.0
-algo%dva = -999.0
-algo%dxabar = -999.0
-algo%jb = -999.0
-algo%jo = -999.0
-algo%j = -999.0
-algo%jb_nl = -999.0
-algo%jo_nl = -999.0
-algo%j_nl = -999.0
-algo%eigenval = -999.0
-algo%eigenvec = -999.0
-algo%lancvec = -999.0
-algo%lastbeta = -999.0
-algo%rho_sqrt = -999.0
-algo%beta = -999.0
+algo%nimax = msv_int
+algo%xg = msv_real
+algo%dvb = msv_real
+algo%dxbbar = msv_real
+algo%d = msv_real
+algo%dx = msv_real
+algo%dva = msv_real
+algo%dxabar = msv_real
+algo%jb_quad = msv_real
+algo%jo_quad = msv_real
+algo%j_quad = msv_real
+algo%jb_full = msv_real
+algo%jo_full = msv_real
+algo%j_full = msv_real
+algo%eigenval = msv_real
+algo%eigenvec = msv_real
+algo%lancvec = msv_real
+algo%lastbeta = msv_real
+algo%rho_sqrt = msv_real
+algo%beta = msv_real
 
 end subroutine algo_alloc
 
@@ -124,8 +144,8 @@ integer,intent(in) :: subgrpid
 ! Local variables
 integer :: ii
 integer :: nx_id,ny_id,nimax_id,nimax_plus_one_id
-integer :: dx_id,jb_id,jo_id,j_id,jb_nl_id,jo_nl_id,j_nl_id,eigenval_id,rho_sqrt_id,beta_id
-real(8) :: dx_2d(geom%nx,geom%ny)
+integer :: dx_id,jb_quad_id,jo_quad_id,j_quad_id,jb_full_id,jo_full_id,j_full_id,eigenval_id,rho_sqrt_id,beta_id
+real(kind_real) :: dx_2d(geom%nx,geom%ny)
 
 ! Create dimensions
 call ncerr('algo_write',nf90_inq_dimid(grpid,'nx',nx_id))
@@ -134,28 +154,28 @@ call ncerr('algo_write',nf90_def_dim(subgrpid,'nimax',algo%nimax,nimax_id))
 call ncerr('algo_write',nf90_def_dim(subgrpid,'nimax_plus_one',algo%nimax+1,nimax_plus_one_id))
 
 ! Create variables
-call ncerr('algo_write',nf90_def_var(subgrpid,'dx',nf90_double,(/nx_id,ny_id,nimax_id/),dx_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'jb',nf90_double,(/nimax_plus_one_id/),jb_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'jo',nf90_double,(/nimax_plus_one_id/),jo_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'j',nf90_double,(/nimax_plus_one_id/),j_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'jb_nl',nf90_double,(/nimax_plus_one_id/),jb_nl_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'jo_nl',nf90_double,(/nimax_plus_one_id/),jo_nl_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'j_nl',nf90_double,(/nimax_plus_one_id/),j_nl_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'eigenval',nf90_double,(/nimax_id/),eigenval_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'rho_sqrt',nf90_double,(/nimax_plus_one_id/),rho_sqrt_id))
-call ncerr('algo_write',nf90_def_var(subgrpid,'beta',nf90_double,(/nimax_plus_one_id/),beta_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'dx',nc_kind_real,(/nx_id,ny_id,nimax_id/),dx_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'jb_quad',nc_kind_real,(/nimax_plus_one_id/),jb_quad_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'jo_quad',nc_kind_real,(/nimax_plus_one_id/),jo_quad_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'j_quad',nc_kind_real,(/nimax_plus_one_id/),j_quad_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'jb_full',nc_kind_real,(/nimax_plus_one_id/),jb_full_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'jo_full',nc_kind_real,(/nimax_plus_one_id/),jo_full_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'j_full',nc_kind_real,(/nimax_plus_one_id/),j_full_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'eigenval',nc_kind_real,(/nimax_id/),eigenval_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'rho_sqrt',nc_kind_real,(/nimax_plus_one_id/),rho_sqrt_id))
+call ncerr('algo_write',nf90_def_var(subgrpid,'beta',nc_kind_real,(/nimax_plus_one_id/),beta_id))
 
 ! Write variables
 do ii=1,algo%nimax
    dx_2d = reshape(algo%dx(:,ii),(/geom%nx,geom%ny/))
    call ncerr('algo_write',nf90_put_var(subgrpid,dx_id,dx_2d,(/1,1,ii/),(/geom%nx,geom%ny,1/)))
 end do
-call ncerr('algo_write',nf90_put_var(subgrpid,jb_id,algo%jb(0:algo%nimax)))
-call ncerr('algo_write',nf90_put_var(subgrpid,jo_id,algo%jo(0:algo%nimax)))
-call ncerr('algo_write',nf90_put_var(subgrpid,j_id,algo%j(0:algo%nimax)))
-call ncerr('algo_write',nf90_put_var(subgrpid,jb_nl_id,algo%jb_nl(0:algo%nimax)))
-call ncerr('algo_write',nf90_put_var(subgrpid,jo_nl_id,algo%jo_nl(0:algo%nimax)))
-call ncerr('algo_write',nf90_put_var(subgrpid,j_nl_id,algo%j_nl(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,jb_quad_id,algo%jb_quad(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,jo_quad_id,algo%jo_quad(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,j_quad_id,algo%j_quad(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,jb_full_id,algo%jb_full(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,jo_full_id,algo%jo_full(0:algo%nimax)))
+call ncerr('algo_write',nf90_put_var(subgrpid,j_full_id,algo%j_full(0:algo%nimax)))
 call ncerr('algo_write',nf90_put_var(subgrpid,eigenval_id,algo%eigenval(1:algo%nimax)))
 call ncerr('algo_write',nf90_put_var(subgrpid,rho_sqrt_id,algo%rho_sqrt(0:algo%nimax)))
 call ncerr('algo_write',nf90_put_var(subgrpid,beta_id,algo%beta(0:algo%nimax)))
@@ -166,7 +186,7 @@ end subroutine algo_write
 ! Subroutine: algo_apply_lanczos
 ! Purpose: Lanczos algorithm in control space
 !----------------------------------------------------------------------
-subroutine algo_apply_lanczos(algo,geom,bmatrix,hmatrix,rmatrix,dvb,d,ni,lmp,shutoff_type,shutoff_value)
+subroutine algo_apply_lanczos(algo,geom,bmatrix,hoperator,rmatrix,ni,lmp,shutoff_type,shutoff_value)
 
 implicit none
 
@@ -174,55 +194,54 @@ implicit none
 class(algo_type),intent(inout) :: algo
 type(geom_type),intent(in) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
-type(hmatrix_type),intent(in) :: hmatrix
+type(hoperator_type),intent(in) :: hoperator
 type(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(in) :: dvb(geom%nh)
-real(8),intent(in) :: d(hmatrix%nobs)
 integer,intent(in) :: ni
 type(lmp_type),intent(in) :: lmp
-integer,intent(in)  :: shutoff_type
-real(8),intent(in)  :: shutoff_value
+integer,intent(in) :: shutoff_type
+real(kind_real),intent(in) :: shutoff_value
 
 ! Local variables
 integer :: ii,ji,info
-real(8) :: accuracy
-real(8) :: xtmp(geom%nh),ytmp(hmatrix%nobs),ytmp2(hmatrix%nobs),y(ni,ni),subdiag(ni-1),work(max(1,2*ni-2))
-real(8) :: alpha(0:ni),beta(0:ni+1),rho(0:ni)
-real(8) :: vtmp(geom%nh),vtmp2(geom%nh)
-real(8) :: p(geom%nh,0:ni),q(geom%nh,0:ni),r(geom%nh,0:ni),s(geom%nh,0:ni),rhs(ni),u(geom%nh,ni),v(geom%nh,0:ni+1),w(geom%nh,0:ni)
-real(8),allocatable :: eigenvec(:,:)
+real(kind_real) :: accuracy
+real(kind_real) :: xtmp(geom%nh),ytmp(hoperator%nobs),ytmp2(hoperator%nobs),y(ni,ni),subdiag(ni-1),work(max(1,2*ni-2))
+real(kind_real) :: alpha(0:ni),beta(0:ni+1),rho(0:ni)
+real(kind_real) :: vtmp(geom%nh),vtmp2(geom%nh)
+real(kind_real) :: p(geom%nh,0:ni),q(geom%nh,0:ni),r(geom%nh,0:ni),s(geom%nh,0:ni),rhs(ni),u(geom%nh,ni),v(geom%nh,0:ni+1)
+real(kind_real) :: w(geom%nh,0:ni)
+real(kind_real),allocatable :: eigenvec(:,:)
 logical :: convergence
 
 ! Initialization
-s(:,0) = 0.0
-v(:,0) = 0.0
-call rmatrix%apply_inv(d,ytmp)
-call hmatrix%apply_ad(geom,ytmp,xtmp)
+s(:,0) = zero
+v(:,0) = zero
+call rmatrix%apply_inv(algo%d,ytmp)
+call hoperator%apply_ad(geom,algo%xg,ytmp,xtmp)
 call bmatrix%apply_sqrt_ad(geom,xtmp,vtmp)
-vtmp = dvb+vtmp
+vtmp = algo%dvb+vtmp
 call lmp%apply_sqrt_ad(geom,ni,lmp%io,vtmp,r(:,0))
 beta(0) = sqrt(sum(r(:,0)**2))
 v(:,1) = r(:,0)/beta(0)
-beta(1) = 0.0
-rhs = 0.0
+beta(1) = zero
+rhs = zero
 rhs(1) = beta(0)
 convergence = .false.
 ii = 0
 
-! Initialize linear cost function
-algo%jb(0) = 0.5*sum((0.0-dvb)**2)
-call rmatrix%apply_inv(d,ytmp)
-algo%jo(0) = 0.5*sum(d*ytmp)
-algo%j(0) = algo%jb(0)+algo%jo(0)
+! Initialize quadratic cost function
+algo%jb_quad(0) = 0.5*sum((zero-algo%dvb)**2)
+call rmatrix%apply_inv(algo%d,ytmp)
+algo%jo_quad(0) = 0.5*sum(algo%d*ytmp)
+algo%j_quad(0) = algo%jb_quad(0)+algo%jo_quad(0)
 
 do while ((.not.convergence).and.(ii<ni))
    ! Update
    ii = ii+1
    call lmp%apply_sqrt(geom,ni,lmp%io,v(:,ii),vtmp)
    call bmatrix%apply_sqrt(geom,vtmp,xtmp)
-   call hmatrix%apply(geom,xtmp,ytmp)
+   call hoperator%apply_tl(geom,algo%xg,xtmp,ytmp)
    call rmatrix%apply_inv(ytmp,ytmp2)
-   call hmatrix%apply_ad(geom,ytmp2,xtmp)
+   call hoperator%apply_ad(geom,algo%xg,ytmp2,xtmp)
    call bmatrix%apply_sqrt_ad(geom,xtmp,vtmp2)
    vtmp = vtmp+vtmp2
    call lmp%apply_sqrt_ad(geom,ni,lmp%io,vtmp,q(:,ii))
@@ -244,7 +263,7 @@ do while ((.not.convergence).and.(ii<ni))
    ! Compute eigenpairs
    if (ii==1) then
       algo%eigenval(1) = alpha(1)
-      algo%eigenvec(1,1) = 1.0
+      algo%eigenvec(1,1) = one
    else
       allocate(eigenvec(ii,ii))
       algo%eigenval(1:ii) = alpha(1:ii)
@@ -255,7 +274,7 @@ do while ((.not.convergence).and.(ii<ni))
          write(*,'(a,i2)') '         Error in dsteqr: ',info
          stop
       end if
-      algo%eigenval(1:ii) = max(algo%eigenval(1:ii),1.0)
+      algo%eigenval(1:ii) = max(algo%eigenval(1:ii),one)
       deallocate(eigenvec)
    end if
 
@@ -277,24 +296,31 @@ do while ((.not.convergence).and.(ii<ni))
       end do
    end if
 
-   ! Compute linear cost function
-   algo%jb(ii) = 0.5*sum((u(:,ii)-dvb)**2)
-   call hmatrix%apply(geom,algo%dx(:,ii),ytmp)
-   call rmatrix%apply_inv((d-ytmp),ytmp2)
-   algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
-   algo%j(ii) = algo%jb(ii)+algo%jo(ii)
+   ! Compute quadratic cost function
+   algo%jb_quad(ii) = 0.5*sum((u(:,ii)-algo%dvb)**2)
+   call hoperator%apply_tl(geom,algo%xg,algo%dx(:,ii),ytmp)
+   call rmatrix%apply_inv((algo%d-ytmp),ytmp2)
+   algo%jo_quad(ii) = 0.5*sum((algo%d-ytmp)*ytmp2)
+   algo%j_quad(ii) = algo%jb_quad(ii)+algo%jo_quad(ii)
 
    ! Stopping criterion based on the Jb increase
    if (shutoff_type==1) then
-      if (algo%jb(ii)/algo%jb(ii-1)<shutoff_value) then
+      if (algo%jb_quad(ii)/algo%jb_quad(ii-1)<shutoff_value) then
          write(*,'(a)') '         Convergence reached, based on the Jb increase'
          convergence = .true.
          algo%nimax = ii-1
        end if
    end if
 
+   ! Stopping criterion based on the J stagnation
+   if (abs(algo%j_quad(ii)-algo%j_quad(ii-1))<1.0e-12_kind_real*algo%j_quad(ii-1)) then
+      write(*,'(a)') '         Convergence reached, based on the J stagnation'
+      convergence = .true.
+      algo%nimax = ii-1
+   end if
+
    ! Check cost function
-   if (algo%j(ii)>algo%j(ii-1)) then
+   if (algo%j_quad(ii)>algo%j_quad(ii-1)) then  
       write(*,'(a)') '         Error: increasing cost function in Lanczos'
       stop
    end if
@@ -307,13 +333,13 @@ if (.not.convergence) then
 end if
 
 ! Final update
-algo%dva = u(:,algo%nimax)
+if (algo%nimax>0) algo%dva = u(:,algo%nimax)
 
 ! Lanczos vectors
-algo%lancvec = v(:,1:algo%nimax+1)
+if (algo%nimax>0) algo%lancvec = v(:,1:algo%nimax+1)
 
 ! Last beta value
-algo%lastbeta = beta(algo%nimax+1)
+if (algo%nimax>0) algo%lastbeta = beta(algo%nimax+1)
 
 ! Lanczos to CG
 beta(0) = sqrt(sum(r(:,0)**2))
@@ -338,7 +364,7 @@ end subroutine algo_apply_lanczos
 ! Subroutine: algo_apply_planczosif
 ! Purpose: PLanczosIF algorithm in linear space
 !----------------------------------------------------------------------
-subroutine algo_apply_planczosif(algo,geom,bmatrix,hmatrix,rmatrix,dxbbar,d,ni,lmp,shutoff_type,shutoff_value)
+subroutine algo_apply_planczosif(algo,geom,bmatrix,hoperator,rmatrix,ni,lmp,shutoff_type,shutoff_value)
 
 implicit none
 
@@ -346,57 +372,55 @@ implicit none
 class(algo_type),intent(inout) :: algo
 type(geom_type) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
-type(hmatrix_type),intent(in) :: hmatrix
+type(hoperator_type),intent(in) :: hoperator
 type(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(in) :: dxbbar(geom%nh)
-real(8),intent(in) :: d(hmatrix%nobs)
 integer,intent(in) :: ni
 type(lmp_type),intent(in) :: lmp
 integer,intent(in) :: shutoff_type
-real(8),intent(in) :: shutoff_value
+real(kind_real),intent(in) :: shutoff_value
 
 ! Local variables
 integer :: ii,ji,info
-real(8) :: accuracy
-real(8) :: xtmp(geom%nh),ytmp(hmatrix%nobs),ytmp2(hmatrix%nobs),y(ni,ni),rhs(ni),subdiag(ni-1),work(max(1,2*ni-2))
-real(8) :: alpha(0:ni),beta(0:ni+1),rho(0:ni)
-real(8) :: dxb(geom%nh),dxbar(geom%nh,ni)
-real(8) :: l(geom%nh,0:ni),p(geom%nh,0:ni),pbar(geom%nh,0:ni),q(geom%nh,0:ni),r(geom%nh,0:ni),s(geom%nh,0:ni)
-real(8) :: tbar(geom%nh,0:ni),t(geom%nh,0:ni),v(geom%nh,0:ni+1),w(geom%nh,0:ni),zbar(geom%nh,0:ni+1),z(geom%nh,0:ni+1)
-real(8),allocatable :: eigenvec(:,:)
+real(kind_real) :: accuracy
+real(kind_real) :: xtmp(geom%nh),ytmp(hoperator%nobs),ytmp2(hoperator%nobs),y(ni,ni),rhs(ni),subdiag(ni-1),work(max(1,2*ni-2))
+real(kind_real) :: alpha(0:ni),beta(0:ni+1),rho(0:ni)
+real(kind_real) :: dxb(geom%nh),dxbar(geom%nh,ni)
+real(kind_real) :: l(geom%nh,0:ni),p(geom%nh,0:ni),pbar(geom%nh,0:ni),q(geom%nh,0:ni),r(geom%nh,0:ni),s(geom%nh,0:ni)
+real(kind_real) :: tbar(geom%nh,0:ni),t(geom%nh,0:ni),v(geom%nh,0:ni+1),w(geom%nh,0:ni),zbar(geom%nh,0:ni+1),z(geom%nh,0:ni+1)
+real(kind_real),allocatable :: eigenvec(:,:)
 logical :: convergence
 
 ! Initialization
-s(:,0) = 0.0
-v(:,0) = 0.0
-call rmatrix%apply_inv(d,ytmp)
-call hmatrix%apply_ad(geom,ytmp,xtmp)
-r(:,0) = dxbbar+xtmp
+s(:,0) = zero
+v(:,0) = zero
+call rmatrix%apply_inv(algo%d,ytmp)
+call hoperator%apply_ad(geom,algo%xg,ytmp,xtmp)
+r(:,0) = algo%dxbbar+xtmp
 call lmp%apply(geom,ni,lmp%io,r(:,0),tbar(:,0))
 call bmatrix%apply(geom,tbar(:,0),t(:,0))
 beta(0) = sqrt(sum(r(:,0)*t(:,0)))
 v(:,1) = r(:,0)/beta(0)
 zbar(:,1) = tbar(:,0)/beta(0)
 z(:,1) = t(:,0)/beta(0)
-beta(1) = 0.0
-rhs = 0.0
+beta(1) = zero
+rhs = zero
 rhs(1) = beta(0)
 convergence = .false.
 ii = 0
 
 ! Initialize cost function
-call bmatrix%apply(geom,dxbbar,dxb)
-algo%jb(0) = 0.5*sum((0.0-dxb)*(0.0-dxbbar))
-call rmatrix%apply_inv(d,ytmp)
-algo%jo(0) = 0.5*sum(d*ytmp)
-algo%j(0) = algo%jb(0)+algo%jo(0)
+call bmatrix%apply(geom,algo%dxbbar,dxb)
+algo%jb_quad(0) = 0.5*sum((zero-dxb)*(zero-algo%dxbbar))
+call rmatrix%apply_inv(algo%d,ytmp)
+algo%jo_quad(0) = 0.5*sum(algo%d*ytmp)
+algo%j_quad(0) = algo%jb_quad(0)+algo%jo_quad(0)
 
 do while ((.not.convergence).and.(ii<ni))
    ! Update
    ii = ii+1
-   call hmatrix%apply(geom,z(:,ii),ytmp)
+   call hoperator%apply_tl(geom,algo%xg,z(:,ii),ytmp)
    call rmatrix%apply_inv(ytmp,ytmp2)
-   call hmatrix%apply_ad(geom,ytmp2,xtmp)
+   call hoperator%apply_ad(geom,algo%xg,ytmp2,xtmp)
    q(:,ii) = zbar(:,ii)+xtmp-beta(ii)*v(:,ii-1)
    alpha(ii) = sum(q(:,ii)*z(:,ii))
    w(:,ii) = q(:,ii)-alpha(ii)*v(:,ii)
@@ -419,7 +443,7 @@ do while ((.not.convergence).and.(ii<ni))
    ! Compute eigenpairs
    if (ii==1) then
       algo%eigenval(1) = alpha(1)
-      algo%eigenvec(1,1) = 1.0
+      algo%eigenvec(1,1) = one
    else
       allocate(eigenvec(ii,ii))
       algo%eigenval(1:ii) = alpha(1:ii)
@@ -430,7 +454,7 @@ do while ((.not.convergence).and.(ii<ni))
          write(*,'(a,i2)') '         Error in dsteqr: ',info
          stop
       end if
-      algo%eigenval(1:ii) = max(algo%eigenval(1:ii),1.0)
+      algo%eigenval(1:ii) = max(algo%eigenval(1:ii),one)
       deallocate(eigenvec)
    end if
 
@@ -452,24 +476,31 @@ do while ((.not.convergence).and.(ii<ni))
       end do
    end if
 
-   ! Compute cost function
-   algo%jb(ii) = 0.5*sum((algo%dx(:,ii)-dxb)*(dxbar(:,ii)-dxbbar))
-   call hmatrix%apply(geom,algo%dx(:,ii),ytmp)
-   call rmatrix%apply_inv(d-ytmp,ytmp2)
-   algo%jo(ii) = 0.5*sum((d-ytmp)*ytmp2)
-   algo%j(ii) = algo%jb(ii)+algo%jo(ii)
+   ! Compute quadratic cost function
+   algo%jb_quad(ii) = 0.5*sum((algo%dx(:,ii)-dxb)*(dxbar(:,ii)-algo%dxbbar))
+   call hoperator%apply_tl(geom,algo%xg,algo%dx(:,ii),ytmp)
+   call rmatrix%apply_inv(algo%d-ytmp,ytmp2)
+   algo%jo_quad(ii) = 0.5*sum((algo%d-ytmp)*ytmp2)
+   algo%j_quad(ii) = algo%jb_quad(ii)+algo%jo_quad(ii)
 
    ! Stopping criterion based on the Jb increase
    if (shutoff_type==1) then
-      if (algo%jb(ii)/algo%jb(ii-1)<shutoff_value) then
+      if (algo%jb_quad(ii)/algo%jb_quad(ii-1)<shutoff_value) then
          write(*,'(a)') '         Convergence reached, based on the Jb increase'
          convergence = .true.
          algo%nimax = ii-1
        end if
    end if
 
+   ! Stopping criterion based on the J stagnation
+   if (abs(algo%j_quad(ii)-algo%j_quad(ii-1))<1.0e-12_kind_real*algo%j_quad(ii-1)) then
+      write(*,'(a)') '         Convergence reached, based on the J stagnation'
+      convergence = .true.
+      algo%nimax = ii-1
+   end if
+
    ! Check cost function
-   if (algo%j(ii)>algo%j(ii-1)) then
+   if (algo%j_quad(ii)>algo%j_quad(ii-1)) then  
       write(*,'(a)') '         Error: increasing cost function in Lanczos'
       stop
    end if
@@ -482,13 +513,13 @@ if (.not.convergence) then
 end if
 
 ! Final update
-algo%dxabar = dxbar(:,algo%nimax)
+if (algo%nimax>0) algo%dxabar = dxbar(:,algo%nimax)
 
 ! Lanczos vectors
-algo%lancvec = v(:,1:algo%nimax+1)
+if (algo%nimax>0) algo%lancvec = v(:,1:algo%nimax+1)
 
 ! Last beta value
-algo%lastbeta = beta(algo%nimax+1)
+if (algo%nimax>0) algo%lastbeta = beta(algo%nimax+1)
 
 ! PLanczosIF to PCGIF
 call bmatrix%apply(geom,r(:,0),l(:,0))
@@ -498,10 +529,8 @@ rho(0) = sum(r(:,0)*z(:,0))
 beta(0) = sqrt(sum(r(:,0)*z(:,0)))
 pbar(:,0) = zbar(:,0)
 p(:,0) = z(:,0)
-
 algo%rho_sqrt(0)=sqrt(rho(0))
 algo%beta(0)=beta(0)
-
 do ii=1,algo%nimax
    r(:,ii) = -beta(ii+1)*y(ii,ii)*v(:,ii+1)
    call bmatrix%apply(geom,r(:,ii),l(:,ii))
@@ -522,9 +551,9 @@ end subroutine algo_apply_planczosif
 
 !----------------------------------------------------------------------
 ! Subroutine: algo_compute_cost
-! Purpose: compute nonlinear cost function
+! Purpose: compute full cost function
 !----------------------------------------------------------------------
-subroutine algo_compute_cost(algo,geom,bmatrix,hmatrix,rmatrix,xb,xg,ni)
+subroutine algo_compute_cost(algo,geom,bmatrix,hoperator,rmatrix,xb)
 
 implicit none
 
@@ -532,34 +561,32 @@ implicit none
 class(algo_type),intent(inout) :: algo
 type(geom_type),intent(in) :: geom
 type(bmatrix_type),intent(in) :: bmatrix
-type(hmatrix_type),intent(in) :: hmatrix
+type(hoperator_type),intent(in) :: hoperator
 type(rmatrix_type),intent(in) :: rmatrix
-real(8),intent(in) :: xb(geom%nh)
-real(8),intent(in) :: xg(geom%nh)
-integer,intent(in) :: ni
+real(kind_real),intent(in) :: xb(geom%nh)
 
 ! Local variables
 integer :: ii
-real(8) :: xtmp(geom%nh),ytmp(hmatrix%nobs),ytmp2(hmatrix%nobs)
+real(kind_real) :: xtmp(geom%nh),ytmp(hoperator%nobs),ytmp2(hoperator%nobs)
 
-! Initialize nonlinear cost function
-call bmatrix%apply_inv(geom,xg-xb,xtmp)
-algo%jb_nl(0) = 0.5*sum((xg-xb)*xtmp)
-call hmatrix%apply(geom,xg,ytmp)
-ytmp = ytmp-hmatrix%yo
+! Initialize full cost function
+call bmatrix%apply_inv(geom,algo%xg-xb,xtmp)
+algo%jb_full(0) = 0.5*sum((algo%xg-xb)*xtmp)
+call hoperator%apply(geom,algo%xg,ytmp)
+ytmp = ytmp-hoperator%yo
 call rmatrix%apply_inv(ytmp,ytmp2)
-algo%jo_nl(0) = 0.5*sum(ytmp*ytmp2)
-algo%j_nl(0) = algo%jb_nl(0)+algo%jo_nl(0)
+algo%jo_full(0) = 0.5*sum(ytmp*ytmp2)
+algo%j_full(0) = algo%jb_full(0)+algo%jo_full(0)
 
 do ii=1,algo%nimax
-   ! Compute nonlinear cost function
-   call bmatrix%apply_inv(geom,xg+algo%dx(:,ii)-xb,xtmp)
-   algo%jb_nl(ii) = 0.5*sum((xg+algo%dx(:,ii)-xb)*xtmp)
-   call hmatrix%apply(geom,(xg+algo%dx(:,ii)),ytmp)
-   ytmp = ytmp-hmatrix%yo
+   ! Compute full cost function
+   call bmatrix%apply_inv(geom,algo%xg+algo%dx(:,ii)-xb,xtmp)
+   algo%jb_full(ii) = 0.5*sum((algo%xg+algo%dx(:,ii)-xb)*xtmp)
+   call hoperator%apply(geom,(algo%xg+algo%dx(:,ii)),ytmp)
+   ytmp = ytmp-hoperator%yo
    call rmatrix%apply_inv(ytmp,ytmp2)
-   algo%jo_nl(ii) = 0.5*sum(ytmp*ytmp2)
-   algo%j_nl(ii) = algo%jb_nl(ii)+algo%jo_nl(ii)
+   algo%jo_full(ii) = 0.5*sum(ytmp*ytmp2)
+   algo%j_full(ii) = algo%jb_full(ii)+algo%jo_full(ii)
 end do
 
 end subroutine algo_compute_cost
