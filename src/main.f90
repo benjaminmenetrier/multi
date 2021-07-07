@@ -713,19 +713,6 @@ write(*,'(a)') ''
 write(*,'(a)') 'General comparison'
 write(*,'(a)') ''
 
-io = 1
-im = 1
-jm = 1
-ia = 1
-ja = 2
-do ii=0,ni
-   print*, algo(io,ia,im)%j_quad(ii),algo(io,ja,jm)%j_quad(ii),algo(io,ia,im)%j_quad(ii)-algo(io,ja,jm)%j_quad(ii)
-end do
-print*
-do ii=1,ni
-   print*, sum((algo(io,ia,im)%dx(:,ii)-algo(io,ja,jm)%dx(:,ii))**2)
-end do
-
 ! Allocation
 allocate(maxdiff(na,na,nm,nm))
 

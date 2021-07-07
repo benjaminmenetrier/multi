@@ -62,12 +62,12 @@ real(kind_real) :: x1_2d(geom%nx,geom%ny),x2_2d(geom%nx,geom%ny),sigmab_2d(geom%
 if (allocated(bmatrix%sigmab)) deallocate(bmatrix%sigmab)
 
 ! Allocation
-allocate(bmatrix%spvar(0:geom%kmax,-geom%lmax:geom%lmax))
+allocate(bmatrix%spvar(0:geom_full%kmax,-geom_full%lmax:geom_full%lmax))
 allocate(bmatrix%sigmab(geom%nh))
 
 ! Compute spectral variance
-do k=0,geom%kmax
-   do l=-geom%lmax,geom%lmax
+do k=0,geom_full%kmax
+   do l=-geom_full%lmax,geom_full%lmax
       ! Compute k*^2
       kstarsq = real(k**2+l**2,kind_real)
 
