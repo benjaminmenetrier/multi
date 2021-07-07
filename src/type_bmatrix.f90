@@ -94,9 +94,24 @@ end do
 x = zero
 x(1) = one
 call geom_full%gp2sp(x,v)
+
+write(*,'(a)') 'norm of v'
+write(*, '(e11.5)') NORM2(bmatrix%spvar)
+
 call bmatrix%apply_spvar(geom_full,v)
+
+write(*,'(a)') 'norm of Bspvar.v'
+write(*, '(e11.5)') NORM2(v)
+
 call geom_full%sp2gp(v,x)
+
+write(*,'(a)') 'norm of x'
+write(*, '(e11.5)') NORM2(x)
+
 bmatrix%spvar = bmatrix%spvar/x(1)
+
+write(*,'(a)') 'norm of Bspvar'
+write(*, '(e11.5)') NORM2(bmatrix%spvar) 
 
 ! Direct + inverse test on B
 call random_number(x1)
@@ -265,18 +280,35 @@ call geom%real_to_complex(v,cp)
 ! Complex to full
 call geom%complex_to_full(cp,cp_full)
 
+write(*,'(a)') 'cmplx to full:'
+write(*, '(e11.5)') NORM2(aimag(cp_full))
+
+write(*,'(a)') 'norm of Bspvar1:'
+write(*, '(e11.5)') NORM2(bmatrix%spvar)
+
 ! Apply spectral variance
 do k=0,geom%kmax
    do l=-geom%lmax,geom%lmax
       cp_full(k,l) = cp_full(k,l)*bmatrix%spvar(k,l)
+      write(*, '(a, e11.5, a, e11.5)') 'cp_full(k,l), bmatrix%spvar(k,l)', cp_full(k,l), bmatrix%spvar(k,l)
    end do
 end do
+
+write(*,'(a)') 'norm of cp_full*spvar:'
+write(*, '(e11.5)') NORM2(real(cp_full))
 
 ! Full to complex
 call geom%full_to_complex(cp_full,cp)
 
+write(*,'(a)') 'full to complex'
+!write(*, '(e11.5)') cp(0,0)
+write(*, '(e11.5)') NORM2(real(cp))
+
 ! Complex to real
 call geom%complex_to_real(cp,v)
+
+write(*,'(a)') 'cp2real'
+write(*, '(e11.5)') NORM2(v)
 
 end subroutine bmatrix_apply_spvar
 
