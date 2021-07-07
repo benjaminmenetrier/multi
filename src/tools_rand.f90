@@ -7,6 +7,9 @@
 !----------------------------------------------------------------------
 module tools_rand
 
+use tools_kinds
+use tools_const
+
 implicit none
 
 contains
@@ -36,7 +39,7 @@ allocate(seed(nseed))
 if (rand_seed) then
    call system_clock(count=seed_offset)
 else
-   seed_offset = 0.0
+   seed_offset = 0
 end if
 
 ! Define seed
@@ -59,31 +62,31 @@ implicit none
 
 ! Passed variables
 integer,intent(in) :: n
-real(8),intent(out) :: rand(n)
+real(kind_real),intent(out) :: rand(n)
 
 ! Local variables
 integer :: iset,i
-real(8) :: rsq,v1,v2,fac,gset,gasdev
+real(kind_real) :: rsq,v1,v2,fac,gset,gasdev
 
 ! Normal distribution
 iset = 0
 do i=1,n
    if(iset==0) then
-      rsq=0.0
-      do while((rsq>=1.0).or.(rsq<=0.0))
+      rsq = zero
+      do while((rsq>=one).or.(rsq<=zero))
          call random_number(v1)
-         v1=2.0*v1-1.0
+         v1=two*v1-one
          call random_number(v2)
-         v2=2.0*v2-1.0
+         v2=two*v2-one
          rsq=v1**2+v2**2
       end do
-      fac=sqrt(-2.0*log(rsq)/rsq)
-      gset=v1*fac
-      gasdev=v2*fac
-      iset=1
+      fac = sqrt(-two*log(rsq)/rsq)
+      gset = v1*fac
+      gasdev = v2*fac
+      iset = 1
    else
-      gasdev=gset
-      iset=0
+      gasdev = gset
+      iset = 0
    end if
    rand(i) = gasdev
 end do

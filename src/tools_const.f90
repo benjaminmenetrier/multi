@@ -7,8 +7,17 @@
 !----------------------------------------------------------------------
 module tools_const
 
+use tools_kinds
+
 implicit none
 
-real(8),parameter :: pi = acos(-1.0)
+real(kind_real),parameter :: zero = 0.0_kind_real
+real(kind_real),parameter :: one = 1.0_kind_real
+real(kind_real),parameter :: two = 2.0_kind_real
+real(kind_real),parameter :: pi = acos(-one)
+
+! Missing values
+integer,parameter :: msv_int = -999
+real(kind_real),parameter :: msv_real = -999.0_kind_real
 
 end module tools_const

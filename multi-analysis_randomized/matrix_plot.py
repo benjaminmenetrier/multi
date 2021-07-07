@@ -28,10 +28,11 @@ plt.rcParams.update({"text.usetex": True, "font.size" : 15})
 def obs_plot(ds, res_dir):
     """Plots the observations:
     """
+    
     out_name = os.path.join(res_dir + '/obs.png')
     x_obs = np.array(ds['x_obs'][:])
     y_obs = np.array(ds['y_obs'][:])
-    obs_val = np.array(ds['obs_val'][:])
+    obs_val = np.array(ds['yo'][:])
     
     print("plotting:", out_name)
     fig = plt.figure()

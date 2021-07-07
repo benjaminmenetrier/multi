@@ -44,8 +44,8 @@ os.system('make')
 # /!\ the word "seed" is forbidden in this string because of the use of a split
 # method in the function that builds the results files.
 
-#results_dir_root = os.path.join(directories['analysis_results'], 'sigmabvar_Hnl')
-results_dir_root = '/media/bayow/Seagate Expansion Drive/multi-results/pres_results/Hnl_reso'
+#results_dir_root = os.path.join(directories['analysis_results'], 'new_version_test')
+results_dir_root = '/media/bayow/Seagate Expansion Drive/multi-results/new_version/no7_reso_Hl'
 
 if not os.path.exists(results_dir_root):
     os.mkdir(results_dir_root)
@@ -56,12 +56,13 @@ start = time.perf_counter()
 ################################################################################
 # Parameters configurations:
 
-i_no_ni = [[8,12]]
-i_nx = ['21,31,41,51,61,71,81,101']
+i_no_ni = [[7,2],[7,4]]
+i_nx = ['41,51,61,71,81,91,101']
+#i_nx = ['101']
 i_nobs = [2000]
 i_sigma_obs = [0.1]
-i_Hnl_coeff = [0.00001]
-i_sigmabvar = [0., 0.1]
+i_Hnl_coeff = [0.]
+i_sigmabvar = [0.]
 i_Lb = [0.1]
 i_interp_method = ['"spectral"','"bilinear"','"nearest"']
 #i_interp_method = ['"spectral"']

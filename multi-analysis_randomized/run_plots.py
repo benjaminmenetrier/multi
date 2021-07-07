@@ -24,7 +24,6 @@ import netCDF4 as nc
 def run_plots_loops(res_dir_list, outer_iterations_list, extra_monitoring):
     """Run all the plots:
     """
-    #----------------------------------------------------------------------------
     processes = []
     with concurrent.futures.ProcessPoolExecutor() as executor:
     #if True:
@@ -82,6 +81,7 @@ def run_extra_plots(res_dir, outer_iterations, extra_monitoring):
     with nc.Dataset(res_dir+"/output.nc","r") as ds:
         
         # Plots comparision between lanczos and planczosif:
+        #if True:
         try:
             lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations)
         except:

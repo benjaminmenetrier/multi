@@ -89,11 +89,16 @@ def lanczos_vs_planczosif_plot(ds, res_dir, outer_iterations):
     """
     lanczos, planczosif={}, {}
 
-    keys = ['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
+    #keys = ['j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
     
-    labels = [r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
-              r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
+    #labels = [r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
+    #          r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
 
+    keys = ['j_full', 'jo_full', 'jb_full', 'j_quad', 'jo_quad', 'jb_quad', 'rho_sqrt', 'beta']
+    
+    labels = [r'$J^{full}$', r'$J_o^{full}$', r'$J_b^{full}$', r'$J^{quad}$', r'$J_o^{quad}$',
+              r'$J_b^{quad}$', r'$\sqrt{\rho}$', r'$\beta$']
+    
     for met in ds.groups:
         met_dir = os.path.join(res_dir + f'/{met}')
 
@@ -136,11 +141,16 @@ def compare_methods_plot(ds, outer_iterations, res_dir):
     lanczos, planczosif, obj_list, diff_list={}, {}, {}, {}
 
     # Dirty trick here: j_nl is doubled because of a problem of figure size ... cannot find how to fix it...
-    keys=['j_nl', 'j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
+    # keys=['j_nl', 'j_nl', 'jo_nl', 'jb_nl', 'j', 'jo', 'jb', 'rho_sqrt', 'beta']
     
-    labels=[r'$J^{nl}$', r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$', r'$J_b$',
-            r'$\sqrt{\rho}$', r'$\beta$']
+    # labels=[r'$J^{nl}$', r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$', r'$J_b$',
+    #         r'$\sqrt{\rho}$', r'$\beta$']
 
+    keys = ['j_full', 'jo_full', 'jb_full', 'j_quad', 'jo_quad', 'jb_quad', 'rho_sqrt', 'beta']
+    
+    labels = [r'$J^{full}$', r'$J_o^{full}$', r'$J_b^{full}$', r'$J^{quad}$', r'$J_o^{quad}$',
+              r'$J_b^{quad}$', r'$\sqrt{\rho}$', r'$\beta$']
+    
     legend = []
     for met in ds.groups:
         legend_met = []
@@ -192,11 +202,16 @@ def compare_methods_plot2(ds, outer_iterations, res_dir):
     """
     diff_dict = {}
 
-    keys=['j_nl', 'jo_nl', 'jb_nl', 'j','jo', 'jb', 'rho_sqrt', 'beta']
+    # keys=['j_nl', 'jo_nl', 'jb_nl', 'j','jo', 'jb', 'rho_sqrt', 'beta']
 
-    labels=[r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
-            r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
+    # labels=[r'$J^{nl}$', r'$J_o^{nl}$', r'$J_b^{nl}$', r'$J$', r'$J_o$',
+    #         r'$J_b$', r'$\sqrt{\rho}$', r'$\beta$']
 
+    keys = ['j_full', 'jo_full', 'jb_full', 'j_quad', 'jo_quad', 'jb_quad', 'rho_sqrt', 'beta']
+    
+    labels = [r'$J^{full}$', r'$J_o^{full}$', r'$J_b^{full}$', r'$J^{quad}$', r'$J_o^{quad}$',
+              r'$J_b^{quad}$', r'$\sqrt{\rho}$', r'$\beta$']
+    
     ds_th = ds['theoretical']
     for k, key in enumerate(keys):
         diff_dict[key] = {}

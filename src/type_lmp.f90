@@ -7,27 +7,28 @@
 !----------------------------------------------------------------------
 module type_lmp
 
+use tools_kinds
 use type_geom
 
 implicit none
 
 type outer_type
    ! Spectral / Ritz LMP
-   real(8),allocatable :: eigenval(:)
-   real(8),allocatable :: eigenvec(:,:)
-   real(8),allocatable :: omega(:)
-   real(8),allocatable :: lancvec(:,:)
-   real(8),allocatable :: lancvec1(:,:)
-   real(8),allocatable :: lancvec2(:,:)
-   real(8),allocatable :: ritzvec(:,:)
-   real(8),allocatable :: ritzvec1(:,:)
-   real(8),allocatable :: ritzvec2(:,:)
+   real(kind_real),allocatable :: eigenval(:)
+   real(kind_real),allocatable :: eigenvec(:,:)
+   real(kind_real),allocatable :: omega(:)
+   real(kind_real),allocatable :: lancvec(:,:)
+   real(kind_real),allocatable :: lancvec1(:,:)
+   real(kind_real),allocatable :: lancvec2(:,:)
+   real(kind_real),allocatable :: ritzvec(:,:)
+   real(kind_real),allocatable :: ritzvec1(:,:)
+   real(kind_real),allocatable :: ritzvec2(:,:)
 end type outer_type
 
 type lmp_type
    character(len=1024) :: mode
    integer :: io
-   real(8),allocatable :: lancvec_trunc(:,:)
+   real(kind_real),allocatable :: lancvec_trunc(:,:)
    type(outer_type),allocatable :: outer(:)
 contains
    procedure :: alloc => lmp_alloc
@@ -102,21 +103,21 @@ end if
 
 ! Initialization at missing value
 if (io>1) then
-   lmp%lancvec_trunc = -999.0
+   lmp%lancvec_trunc = msv_real
    do jo=2,io
       select case (trim(lmp%mode))
       case ('spectral','ritz')
-         lmp%outer(jo)%eigenval = -999.0
-         lmp%outer(jo)%eigenvec = -999.0
-         lmp%outer(jo)%lancvec = -999.0
-         lmp%outer(jo)%ritzvec = -999.0
+         lmp%outer(jo)%eigenval = msv_real
+         lmp%outer(jo)%eigenvec = msv_real
+         lmp%outer(jo)%lancvec = msv_real
+         lmp%outer(jo)%ritzvec = msv_real
          if (trim(algo_name)=='planczosif') then
-            lmp%outer(jo)%lancvec1 = -999.0
-            lmp%outer(jo)%lancvec2 = -999.0
-            lmp%outer(jo)%ritzvec1 = -999.0
-            lmp%outer(jo)%ritzvec2 = -999.0
+            lmp%outer(jo)%lancvec1 = msv_real
+            lmp%outer(jo)%lancvec2 = msv_real
+            lmp%outer(jo)%ritzvec1 = msv_real
+            lmp%outer(jo)%ritzvec2 = msv_real
          end if
-         lmp%outer(jo)%omega = -999.0
+         lmp%outer(jo)%omega = msv_real
       end select
    end do
 end if
@@ -136,12 +137,12 @@ class(lmp_type),intent(in) :: lmp
 type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 integer,intent(in) :: io
-real(8),intent(in) :: x(geom%nh)
-real(8),intent(out) :: px(geom%nh)
+real(kind_real),intent(in) :: x(geom%nh)
+real(kind_real),intent(out) :: px(geom%nh)
 
 ! Local variables
 integer :: jo,ii
-real(8) :: tmp
+real(kind_real) :: tmp
 
 ! Initialization
 px = x
@@ -152,12 +153,12 @@ do jo=2,io
    case ('spectral','ritz')
       ! Spectral LMP
       do ii=1,ni
-         px = px+lmp%outer(jo)%ritzvec2(:,ii)*(1.0/lmp%outer(jo)%eigenval(ii)-1.0)*sum(lmp%outer(jo)%ritzvec1(:,ii)*x)
+         px = px+lmp%outer(jo)%ritzvec2(:,ii)*(one/lmp%outer(jo)%eigenval(ii)-one)*sum(lmp%outer(jo)%ritzvec1(:,ii)*x)
       end do
 
       ! Last Ritz term
       if (trim(lmp%mode)=='ritz') then
-         tmp = 0.0
+         tmp = zero
          do ii=1,ni
             tmp = tmp+lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec1(:,ii)*x)
          end do
@@ -185,12 +186,12 @@ class(lmp_type),intent(in) :: lmp
 type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 integer,intent(in) :: io
-real(8),intent(in) :: x(geom%nh)
-real(8),intent(out) :: px(geom%nh)
+real(kind_real),intent(in) :: x(geom%nh)
+real(kind_real),intent(out) :: px(geom%nh)
 
 ! Local variables
 integer :: jo,ii
-real(8) :: tmp
+real(kind_real) :: tmp
 
 ! Initialization
 px = x
@@ -201,12 +202,12 @@ do jo=io,2,-1
    case ('spectral','ritz')
       ! Spectral LMP adjoint
       do ii=1,ni
-         px = px+lmp%outer(jo)%ritzvec1(:,ii)*(1.0/lmp%outer(jo)%eigenval(ii)-1.0)*sum(lmp%outer(jo)%ritzvec2(:,ii)*x)
+         px = px+lmp%outer(jo)%ritzvec1(:,ii)*(one/lmp%outer(jo)%eigenval(ii)-one)*sum(lmp%outer(jo)%ritzvec2(:,ii)*x)
       end do
 
       ! Last Ritz term adjoint
       if (trim(lmp%mode)=='ritz') then
-         tmp = 0.0
+         tmp = zero
          do ii=1,ni
             tmp = tmp+lmp%outer(jo)%omega(ii)*sum(lmp%outer(jo)%ritzvec2(:,ii)*x)
          end do
@@ -234,12 +235,12 @@ class(lmp_type),intent(in) :: lmp
 type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 integer,intent(in) :: io
-real(8),intent(in) :: x(geom%nh)
-real(8),intent(out) :: px(geom%nh)
+real(kind_real),intent(in) :: x(geom%nh)
+real(kind_real),intent(out) :: px(geom%nh)
 
 ! Local variables
 integer :: jo,ii
-real(8) :: pxtmp(geom%nh)
+real(kind_real) :: pxtmp(geom%nh)
 
 ! Initialization
 px = x
@@ -253,7 +254,7 @@ do jo=io,2,-1
 
       ! Spectral LMP square-root
       do ii=1,ni
-         pxtmp = pxtmp+lmp%outer(jo)%ritzvec(:,ii)*(1.0/sqrt(lmp%outer(jo)%eigenval(ii))-1.0)*sum(lmp%outer(jo)%ritzvec(:,ii)*px)
+         pxtmp = pxtmp+lmp%outer(jo)%ritzvec(:,ii)*(one/sqrt(lmp%outer(jo)%eigenval(ii))-one)*sum(lmp%outer(jo)%ritzvec(:,ii)*px)
       end do
 
       ! Last Ritz term square-root
@@ -283,12 +284,12 @@ class(lmp_type),intent(in) :: lmp
 type(geom_type),intent(in) :: geom
 integer,intent(in) :: ni
 integer,intent(in) :: io
-real(8),intent(in) :: x(geom%nh)
-real(8),intent(out) :: px(geom%nh)
+real(kind_real),intent(in) :: x(geom%nh)
+real(kind_real),intent(out) :: px(geom%nh)
 
 ! Local variables
 integer :: jo,ii
-real(8) :: pxtmp(geom%nh)
+real(kind_real) :: pxtmp(geom%nh)
 
 ! Initialization
 px = x
@@ -302,7 +303,7 @@ do jo=2,io
 
       ! Spectral LMP square-root adjoint
       do ii=1,ni
-         pxtmp = pxtmp+lmp%outer(jo)%ritzvec(:,ii)*(1.0/sqrt(lmp%outer(jo)%eigenval(ii))-1.0)*sum(lmp%outer(jo)%ritzvec(:,ii)*px)
+         pxtmp = pxtmp+lmp%outer(jo)%ritzvec(:,ii)*(one/sqrt(lmp%outer(jo)%eigenval(ii))-one)*sum(lmp%outer(jo)%ritzvec(:,ii)*px)
       end do
 
       ! Last Ritz term square-root adjoint
