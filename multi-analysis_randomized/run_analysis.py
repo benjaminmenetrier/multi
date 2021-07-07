@@ -62,11 +62,11 @@ i_nx = ['41,51,61,71,81,91,101']
 i_nobs = [2000]
 i_sigma_obs = [0.1]
 i_Hnl_coeff = [0.]
-i_sigmabvar = [0.]
+i_sigmabvar = [0.1]
 i_Lb = [0.1]
 i_interp_method = ['"spectral"','"bilinear"','"nearest"']
 #i_interp_method = ['"spectral"']
-i_project_B = ["T","F"]
+i_project_B = ["F"]
 i_test_ortho = ["T"]
 
 # Size of the ensemble tu run:
